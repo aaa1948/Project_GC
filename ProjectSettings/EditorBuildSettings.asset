@@ -14,7 +14,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/hyeon/Level LV.1.unity
     guid: e95e2e3aa328d3f41856637e373eaaec
-  - enabled: 1
+  - enabled: 0
     path: Assets/hyeon/Level 1.unity
     guid: 6eb5776ae899cfa4bb770415280cfcce
   m_configObjects:
