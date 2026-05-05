@@ -12,15 +12,24 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 160a7fac6fdace04195ea832efe0918b, type: 3}
   m_Name: Sale
   m_EditorClassIdentifier: 
-  itemName: "\uCCB4\uB825\uD68C\uBCF5"
-  itemRarity: 3
-  description: "\uCCB4\uB825\uD68C\uBCF5"
+  itemName: "\uCE7C\uC298 \uC6B0\uC720"
+  itemRarity: 0
+  itemTag: 0
+  description: "\uCD5C\uB300 \uCCB4\uB825+20%"
   itemIcon: {fileID: 21300000, guid: 36a18b04299514fddac3e34217aee043, type: 3}
   cost: 1
   abilityPrefab: {fileID: 0}
   atkSpeedBoost: 0
   atkDamageBoost: 0
-  maxHpBoost: 50
-  moveSpeedBoost: 0
+  maxHpBoost: 20
+  projSpeedBoost: 0
   armorBoost: 0
+  moveSpeedBoost: 0
+  critBoost: 0
+  magnetBoost: 0
+  expBoost: 0
   luckBoost: 0
+  extraProjectiles: 0
+  giveShield: 0
+  extraRevives: 0
+  invincibilityBoost: 0

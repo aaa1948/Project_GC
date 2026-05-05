@@ -76,7 +76,7 @@ namespace Vampire
             }
         }
 
-        // 버튼에서 호출되는 클릭 이벤트 (인자가 2개로 늘었습니다!)
+        //  수정된 부분: 결제 성공 시 상점 닫고 상인 파괴하기
         public void OnClickPurchaseItem(MerchantItemBlueprint itemToBuy, ShopItemButton clickedButton)
         {
             if (ProcessPayment(itemToBuy.cost))
@@ -88,7 +88,23 @@ namespace Vampire
                     statApplier.ApplyStats(itemToBuy);
                 }
 
-                clickedButton.MarkAsSoldOut();
+                // (이제 버튼을 품절 상태로 만들 필요가 없습니다. 창이 바로 닫히니까요!)
+                // clickedButton.MarkAsSoldOut(); 
+
+                //  새로 추가된 "택 1 시스템" 로직 
+
+                // 1. 어떤 상인과 거래했는지 임시로 저장해둠
+                MerchantNPC npcToDestroy = currentInteractingNPC;
+
+                // 2. 상점 UI 닫기 및 시간 재개 (CloseShop에서 currentInteractingNPC가 null로 변함)
+                CloseShop();
+
+                // 3. 거래가 끝난 상인 오브젝트를 맵에서 지워버림 (퇴근)
+                if (npcToDestroy != null)
+                {
+                    Debug.Log("<color=magenta>[시스템]</color> 거래 완료! 아저씨가 퇴근했습니다.");
+                    Destroy(npcToDestroy.gameObject);
+                }
             }
         }
 
@@ -107,6 +123,10 @@ namespace Vampire
                     // 예: 100골드 차감 -> IncreaseCoinsGained(-100)
                     currentStats.IncreaseCoinsGained(-cost);
                     return true; // 결제 성공
+                }
+                else
+                {
+                    Debug.LogWarning("[상점] 골드가 부족합니다!");
                 }
             }
             else

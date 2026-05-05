@@ -22,9 +22,13 @@ namespace Vampire
         void Update()
         {
             timeSinceLastAttack += Time.deltaTime;
-            if (timeSinceLastAttack >= cooldown.Value)
+
+            //  적용: 실제 쿨타임 = 기본 쿨타임 / 공격 속도 배율
+            float effectiveCooldown = cooldown.Value / playerCharacter.AttackSpeedMultiplier;
+
+            if (timeSinceLastAttack >= effectiveCooldown)
             {
-                timeSinceLastAttack = Mathf.Repeat(timeSinceLastAttack, cooldown.Value);
+                timeSinceLastAttack = Mathf.Repeat(timeSinceLastAttack, effectiveCooldown);
                 Attack();
             }
         }
