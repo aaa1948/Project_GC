@@ -447,6 +447,54 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 51365782}
   m_CullTransparentMesh: 1
+--- !u!1 &64523753
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 64523754}
+  - component: {fileID: 64523755}
+  m_Layer: 0
+  m_Name: SilverRunRewarder
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &64523754
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 64523753}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1207884298}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &64523755
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 64523753}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 512583cb88ae8b5448618e393cc62b5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  normalMonsterSilverMin: 1
+  normalMonsterSilverMax: 2
+  bossMonsterBonusSilver: 100
+  debugLog: 1
 --- !u!1 &74421787
 GameObject:
   m_ObjectHideFlags: 0
@@ -2896,6 +2944,31 @@ MonoBehaviour:
   hitMaterial: {fileID: 2100000, guid: 82ebeb73078cc4145aa889870d58ae0a, type: 2}
   deathMaterial: {fileID: 2100000, guid: a3417b1068f7c4e129b88a8aa9254c5b, type: 2}
   deathParticles: {fileID: 869581549}
+  characterBlueprint: {fileID: 0}
+  alive: 1
+  currentLevel: 1
+  currentExp: 0
+  nextLevelExp: 5
+  expToNextLevel: 5
+  currentHealth: 0
+  movementSpeed:
+    value: 0
+    upgrades: []
+  armor:
+    value: 0
+    upgrades: 
+  attackSpeedMultiplier: 1
+  damageMultiplier: 1
+  maxHealthBonus: 0
+  projectileSpeedMultiplier: 1
+  magnetRangeBonus: 0
+  expMultiplier: 1
+  critChance: 0.05
+  luckMultiplier: 1
+  additionalProjectiles: 0
+  hasShield: 0
+  reviveCount: 0
+  invincibilityTimeBonus: 0
 --- !u!1 &869581548
 GameObject:
   m_ObjectHideFlags: 0
@@ -8554,6 +8627,8 @@ Transform:
   - {fileID: 1727210730}
   - {fileID: 2076536165}
   - {fileID: 1347853661}
+  - {fileID: 64523754}
+  - {fileID: 2027675424}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1225378374
@@ -20468,6 +20543,51 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6a3ec1a2b69024277bf41f4c020257bf, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!1 &2027675423
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2027675424}
+  - component: {fileID: 2027675425}
+  m_Layer: 0
+  m_Name: LobbyLoadoutApplier
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2027675424
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2027675423}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1207884298}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2027675425
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2027675423}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5bde36bc0478f6d4aa2e6deaa470feb4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  debugLog: 1
 --- !u!1 &2076536164
 GameObject:
   m_ObjectHideFlags: 0
@@ -20484,7 +20604,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2076536165
 Transform:
   m_ObjectHideFlags: 0

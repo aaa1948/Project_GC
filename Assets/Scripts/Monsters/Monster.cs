@@ -166,6 +166,7 @@ namespace Vampire
 
             if (killedByPlayer)
             {
+                SilverRunRewarder.RewardMonsterKill(monsterBlueprint);
                 DropLoot();
             }
 
