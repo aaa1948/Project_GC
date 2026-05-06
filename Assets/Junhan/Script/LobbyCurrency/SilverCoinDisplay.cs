@@ -5,13 +5,24 @@ namespace Vampire
 {
     public class SilverCoinDisplay : MonoBehaviour
     {
+        [Header("UI")]
         [SerializeField] private TextMeshProUGUI silverText;
-        [SerializeField] private string format = "{0}";
+
+        [Header("Display Format")]
+        [SerializeField] private string format = "실버코인 : {0:N0}";
+
+        [Header("Options")]
+        [SerializeField] private bool updateOnEnable = true;
+        [SerializeField] private bool useComma = true;
 
         private void OnEnable()
         {
             SilverWallet.OnChanged += UpdateDisplay;
-            UpdateDisplay(SilverWallet.Silver);
+
+            if (updateOnEnable)
+            {
+                UpdateDisplay(SilverWallet.Silver);
+            }
         }
 
         private void OnDisable()
@@ -31,7 +42,15 @@ namespace Vampire
                 return;
             }
 
-            silverText.text = string.Format(format, value);
+            if (useComma)
+            {
+                silverText.text = string.Format(format, value);
+            }
+            else
+            {
+                string noCommaFormat = format.Replace(":N0", "");
+                silverText.text = string.Format(noCommaFormat, value);
+            }
         }
     }
 }

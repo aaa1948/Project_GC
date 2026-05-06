@@ -865,6 +865,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a6b80e7467b636044aedc77f203dfcc8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  addSilverKey: 290
+  resetSilverKey: 291
+  addAmount: 1000
+  debugLog: 1
 --- !u!4 &546263973
 Transform:
   m_ObjectHideFlags: 0
@@ -1791,7 +1795,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   silverText: {fileID: 1804934018}
-  format: '{0}'
+  format: 'silvercoin : {0:N0}'
+  updateOnEnable: 1
+  useComma: 1
 --- !u!4 &1045751434
 Transform:
   m_ObjectHideFlags: 0
