@@ -56,6 +56,25 @@ namespace Vampire
         [SerializeField] protected int reviveCount = 0;
         [SerializeField] protected float invincibilityTimeBonus = 0f;
 
+        [Header("Dash Settings")]
+        [SerializeField] protected bool enableDash = true;
+        [SerializeField] protected float dashDistance = 3.5f;
+        [SerializeField] protected float dashDuration = 0.14f;
+        [SerializeField] protected float dashRechargeTime = 1.2f;
+        [SerializeField] protected int maxDashCharges = 1;
+        [SerializeField] protected bool invincibleDuringDash = true;
+        [SerializeField] protected bool stopVelocityAfterDash = true;
+
+        [Header("Dash Collision")]
+        [Tooltip("체크하면 대쉬 중 플레이어의 일반 충돌 콜라이더를 Trigger로 바꿔 몬스터를 밀지 않고 관통합니다.")]
+        [SerializeField] protected bool passThroughCollidersDuringDash = true;
+
+        [Tooltip("기존 Trigger 콜라이더까지 같이 처리할지 여부입니다. 보통은 꺼두는 것을 추천합니다.")]
+        [SerializeField] protected bool includeTriggerCollidersInDashGhost = false;
+
+        [Header("Dash Debug")]
+        [SerializeField] protected bool debugDashLog = false;
+
         protected SpriteRenderer spriteRenderer;
         protected SpriteAnimator spriteAnimator;
         protected AbilityManager abilityManager;
@@ -67,6 +86,14 @@ namespace Vampire
         protected CoroutineQueue coroutineQueue;
         protected Coroutine hitAnimationCoroutine = null;
         protected Vector2 moveDirection;
+
+        protected bool isDashing = false;
+        protected int currentDashCharges = 1;
+        protected Coroutine dashCoroutine = null;
+        protected Coroutine dashRechargeCoroutine = null;
+
+        private readonly List<Collider2D> dashGhostedColliders = new List<Collider2D>();
+        private readonly Dictionary<Collider2D, bool> originalTriggerStateByCollider = new Dictionary<Collider2D, bool>();
 
         public Vector2 LookDirection
         {
@@ -96,11 +123,15 @@ namespace Vampire
         public int AdditionalProjectiles => additionalProjectiles;
         public float InvincibilityTimeBonus => invincibilityTimeBonus;
 
+        public int CurrentDashCharges => currentDashCharges;
+        public int MaxDashCharges => maxDashCharges;
+        public bool IsDashing => isDashing;
+
         public UnityEvent<float> OnDealDamage { get; } = new UnityEvent<float>();
         public UnityEvent OnDeath { get; } = new UnityEvent();
 
         public CharacterBlueprint Blueprint => characterBlueprint;
-        public Vector2 Velocity => rb.velocity;
+        public Vector2 Velocity => rb != null ? rb.velocity : Vector2.zero;
 
         // Spatial Hash Grid Client Interface
         public Vector2 Position => transform.position;
@@ -116,6 +147,11 @@ namespace Vampire
             spriteRenderer = spriteAnimator.GetComponent<SpriteRenderer>();
 
             characterBlueprint = CrossSceneData.CharacterBlueprint;
+        }
+
+        private void OnDisable()
+        {
+            RestoreDashCollisionGhost();
         }
 
         public virtual void Init(EntityManager entityManager, AbilityManager abilityManager, StatsManager statsManager)
@@ -149,16 +185,32 @@ namespace Vampire
             abilityManager.RegisterUpgradeableValue(armor, true);
 
             zPositioner.Init(transform);
+
+            InitDash();
         }
 
         protected virtual void Update()
         {
-            lookIndicator.transform.localPosition = lookDirection * lookIndicatorRadius;
-            spriteRenderer.flipX = lookDirection.x < 0;
+            UpdateDashInput();
+
+            if (lookIndicator != null)
+            {
+                lookIndicator.transform.localPosition = lookDirection * lookIndicatorRadius;
+            }
+
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.flipX = lookDirection.x < 0;
+            }
         }
 
         protected virtual void FixedUpdate()
         {
+            if (isDashing)
+            {
+                return;
+            }
+
             if (moveDirection != Vector2.zero)
             {
                 lookDirection = moveDirection;
@@ -172,6 +224,286 @@ namespace Vampire
             {
                 rb.velocity += moveDirection * characterBlueprint.acceleration * Time.deltaTime;
             }
+        }
+
+        private void InitDash()
+        {
+            maxDashCharges = Mathf.Max(1, maxDashCharges);
+            currentDashCharges = maxDashCharges;
+        }
+
+        private void UpdateDashInput()
+        {
+            if (!CanReadDashInput())
+            {
+                return;
+            }
+
+            bool dashPressed =
+                Keyboard.current.leftShiftKey.wasPressedThisFrame ||
+                Keyboard.current.rightShiftKey.wasPressedThisFrame;
+
+            if (dashPressed)
+            {
+                TryDash();
+            }
+        }
+
+        private bool CanReadDashInput()
+        {
+            if (!enableDash)
+            {
+                return false;
+            }
+
+            if (!alive)
+            {
+                return false;
+            }
+
+            if (Keyboard.current == null)
+            {
+                return false;
+            }
+
+            if (abilitySelectionDialog != null && abilitySelectionDialog.MenuOpen)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool TryDash()
+        {
+            if (!enableDash)
+            {
+                return false;
+            }
+
+            if (!alive)
+            {
+                return false;
+            }
+
+            if (isDashing)
+            {
+                return false;
+            }
+
+            if (currentDashCharges <= 0)
+            {
+                if (debugDashLog)
+                {
+                    Debug.Log("[Dash] 사용 가능한 대쉬 횟수가 없습니다.");
+                }
+
+                return false;
+            }
+
+            Vector2 dashDirection = GetDashDirection();
+
+            if (dashDirection == Vector2.zero)
+            {
+                return false;
+            }
+
+            currentDashCharges--;
+
+            if (dashCoroutine != null)
+            {
+                StopCoroutine(dashCoroutine);
+            }
+
+            dashCoroutine = StartCoroutine(DashCoroutine(dashDirection));
+
+            if (dashRechargeCoroutine == null)
+            {
+                dashRechargeCoroutine = StartCoroutine(DashRechargeCoroutine());
+            }
+
+            if (debugDashLog)
+            {
+                Debug.Log($"[Dash] 대쉬 사용 | 남은 대쉬 = {currentDashCharges}/{maxDashCharges}");
+            }
+
+            return true;
+        }
+
+        private Vector2 GetDashDirection()
+        {
+            if (moveDirection != Vector2.zero)
+            {
+                return moveDirection.normalized;
+            }
+
+            if (lookDirection != Vector2.zero)
+            {
+                return lookDirection.normalized;
+            }
+
+            return Vector2.right;
+        }
+
+        private IEnumerator DashCoroutine(Vector2 dashDirection)
+        {
+            isDashing = true;
+            ApplyDashCollisionGhost();
+
+            if (rb != null)
+            {
+                rb.velocity = Vector2.zero;
+            }
+
+            StartWalkAnimation();
+
+            Vector2 startPosition = rb != null ? rb.position : (Vector2)transform.position;
+            Vector2 targetPosition = startPosition + dashDirection.normalized * dashDistance;
+
+            float elapsed = 0f;
+            float safeDuration = Mathf.Max(0.01f, dashDuration);
+
+            while (elapsed < safeDuration)
+            {
+                float t = elapsed / safeDuration;
+                float easedT = 1f - Mathf.Pow(1f - t, 3f);
+                Vector2 nextPosition = Vector2.Lerp(startPosition, targetPosition, easedT);
+
+                if (rb != null)
+                {
+                    rb.MovePosition(nextPosition);
+                }
+                else
+                {
+                    transform.position = nextPosition;
+                }
+
+                elapsed += Time.fixedDeltaTime;
+                yield return new WaitForFixedUpdate();
+            }
+
+            if (rb != null)
+            {
+                rb.MovePosition(targetPosition);
+
+                if (stopVelocityAfterDash)
+                {
+                    rb.velocity = Vector2.zero;
+                }
+            }
+            else
+            {
+                transform.position = targetPosition;
+            }
+
+            yield return new WaitForFixedUpdate();
+
+            RestoreDashCollisionGhost();
+
+            isDashing = false;
+            dashCoroutine = null;
+
+            if (debugDashLog)
+            {
+                Debug.Log("[Dash] 대쉬 종료");
+            }
+        }
+
+        private void ApplyDashCollisionGhost()
+        {
+            if (!passThroughCollidersDuringDash)
+            {
+                return;
+            }
+
+            RestoreDashCollisionGhost();
+
+            Collider2D[] colliders = GetComponentsInChildren<Collider2D>(true);
+
+            for (int i = 0; i < colliders.Length; i++)
+            {
+                Collider2D targetCollider = colliders[i];
+
+                if (targetCollider == null)
+                {
+                    continue;
+                }
+
+                if (!targetCollider.enabled)
+                {
+                    continue;
+                }
+
+                if (targetCollider.isTrigger && !includeTriggerCollidersInDashGhost)
+                {
+                    continue;
+                }
+
+                originalTriggerStateByCollider[targetCollider] = targetCollider.isTrigger;
+                dashGhostedColliders.Add(targetCollider);
+
+                targetCollider.isTrigger = true;
+            }
+
+            if (debugDashLog)
+            {
+                Debug.Log($"[Dash] 충돌 관통 활성화 | 대상 콜라이더 수 = {dashGhostedColliders.Count}");
+            }
+        }
+
+        private void RestoreDashCollisionGhost()
+        {
+            if (dashGhostedColliders.Count <= 0)
+            {
+                originalTriggerStateByCollider.Clear();
+                return;
+            }
+
+            for (int i = 0; i < dashGhostedColliders.Count; i++)
+            {
+                Collider2D targetCollider = dashGhostedColliders[i];
+
+                if (targetCollider == null)
+                {
+                    continue;
+                }
+
+                if (originalTriggerStateByCollider.TryGetValue(targetCollider, out bool originalIsTrigger))
+                {
+                    targetCollider.isTrigger = originalIsTrigger;
+                }
+            }
+
+            dashGhostedColliders.Clear();
+            originalTriggerStateByCollider.Clear();
+
+            if (debugDashLog)
+            {
+                Debug.Log("[Dash] 충돌 관통 해제");
+            }
+        }
+
+        private IEnumerator DashRechargeCoroutine()
+        {
+            while (currentDashCharges < maxDashCharges)
+            {
+                yield return new WaitForSeconds(dashRechargeTime);
+
+                if (!alive)
+                {
+                    dashRechargeCoroutine = null;
+                    yield break;
+                }
+
+                currentDashCharges = Mathf.Min(currentDashCharges + 1, maxDashCharges);
+
+                if (debugDashLog)
+                {
+                    Debug.Log($"[Dash] 대쉬 충전 | 현재 대쉬 = {currentDashCharges}/{maxDashCharges}");
+                }
+            }
+
+            dashRechargeCoroutine = null;
         }
 
         public void GainExp(float exp)
@@ -240,6 +572,11 @@ namespace Vampire
 
         public override void Knockback(Vector2 knockback)
         {
+            if (isDashing)
+            {
+                return;
+            }
+
             rb.velocity += knockback * Mathf.Sqrt(rb.drag);
         }
 
@@ -247,6 +584,16 @@ namespace Vampire
         {
             if (!alive)
             {
+                return;
+            }
+
+            if (isDashing && invincibleDuringDash)
+            {
+                if (debugDashLog)
+                {
+                    Debug.Log("[Dash] 대쉬 무적으로 피해 무시");
+                }
+
                 return;
             }
 
@@ -305,6 +652,7 @@ namespace Vampire
         private IEnumerator DeathAnimation()
         {
             alive = false;
+            RestoreDashCollisionGhost();
 
             spriteRenderer.sharedMaterial = deathMaterial;
 
@@ -387,7 +735,10 @@ namespace Vampire
 
         public void StopWalkAnimation()
         {
-            spriteAnimator.StopAnimating(true);
+            if (spriteAnimator != null)
+            {
+                spriteAnimator.StopAnimating(true);
+            }
         }
 
         public void SetMoveDirection(InputAction.CallbackContext context)
@@ -482,6 +833,34 @@ namespace Vampire
         public void AddInvincibilityTime(float amount)
         {
             invincibilityTimeBonus += amount;
+        }
+
+        // =====================================================================
+        // Dash 확장용 메서드
+        // 나중에 증강/아이템에서 호출해서 대쉬 횟수나 성능을 늘릴 수 있음
+        // =====================================================================
+
+        public void AddDashCharge(int amount)
+        {
+            if (amount <= 0)
+            {
+                return;
+            }
+
+            maxDashCharges += amount;
+            currentDashCharges = Mathf.Min(currentDashCharges + amount, maxDashCharges);
+        }
+
+        public void AddDashDistance(float amount)
+        {
+            dashDistance += amount;
+            dashDistance = Mathf.Max(0.1f, dashDistance);
+        }
+
+        public void AddDashRechargeSpeed(float amount)
+        {
+            dashRechargeTime -= amount;
+            dashRechargeTime = Mathf.Max(0.1f, dashRechargeTime);
         }
     }
 }
