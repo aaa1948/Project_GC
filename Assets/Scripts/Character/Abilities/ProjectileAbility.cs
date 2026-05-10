@@ -44,12 +44,35 @@ namespace Vampire
 
         protected virtual void LaunchProjectile()
         {
-            //  적용: 최종 데미지 = 기본 데미지 * 공격력 배율
-            float totalDamage = damage.Value * playerCharacter.DamageMultiplier;
+            // 1. 데이터 확인 로그 (이게 찍혀야 합니다!)
+            int extra = playerCharacter.AdditionalProjectiles;
+            int total = 1 + extra;
+            Debug.Log($"<color=orange>[LaunchProjectile 호출]</color> 총 {total}발 부채꼴 발사 시도");
 
-            Projectile projectile = entityManager.SpawnProjectile(projectileIndex, playerCharacter.CenterTransform.position, totalDamage, knockback.Value, speed.Value, monsterLayer);
-            projectile.OnHitDamageable.AddListener(playerCharacter.OnDealDamage.Invoke);
-            projectile.Launch(playerCharacter.LookDirection);
+            float totalDamage = damage.Value * playerCharacter.DamageMultiplier;
+            float spreadAngle = 30f;
+
+            for (int i = 0; i < total; i++)
+            {
+                float offsetAngle = (i - (total - 1) / 2f) * spreadAngle;
+                Quaternion rotation = Quaternion.Euler(0, 0, offsetAngle);
+                Vector2 shotDirection = rotation * playerCharacter.LookDirection;
+
+                Projectile projectile = entityManager.SpawnProjectile(
+                    projectileIndex,
+                    playerCharacter.CenterTransform.position,
+                    totalDamage,
+                    knockback.Value,
+                    speed.Value,
+                    monsterLayer
+                );
+
+                //  이 로그가 콘솔에 찍히는지 꼭 확인해주세요!
+                Debug.Log($"<color=cyan>[생성 완료]</color> {i + 1}번째 발사체 ID: {projectile.gameObject.GetInstanceID()} | 각도: {offsetAngle}");
+
+                projectile.OnHitDamageable.AddListener(playerCharacter.OnDealDamage.Invoke);
+                projectile.Launch(shotDirection);
+            }
         }
     }
 }

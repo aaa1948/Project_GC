@@ -7,7 +7,7 @@ namespace Vampire
     public class Projectile : MonoBehaviour
     {
         [SerializeField] protected SpriteRenderer projectileSpriteRenderer;
-        [SerializeField] protected float maxDistance;
+        [SerializeField] public float maxDistance;
         [SerializeField] protected float rotationSpeed = 0;
         [SerializeField] protected float airResistance = 0;
         [SerializeField] protected ParticleSystem destructionParticleSystem;

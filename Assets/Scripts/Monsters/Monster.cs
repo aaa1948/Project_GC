@@ -166,6 +166,11 @@ namespace Vampire
 
             if (killedByPlayer)
             {
+                if (playerCharacter != null && playerCharacter.HealOnKill > 0)
+                {
+                    playerCharacter.GainHealth(playerCharacter.HealOnKill);
+                }
+
                 SilverRunRewarder.RewardMonsterKill(monsterBlueprint);
                 DropLoot();
             }

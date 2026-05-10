@@ -83,6 +83,16 @@ namespace Vampire
                 monsterLayer
             );
 
+            if (playerCharacter != null)
+            {
+                // 1. 식염수/성장호르몬 효과 (크기)
+                projectile.transform.localScale = Vector3.one * playerCharacter.ProjectileSizeMultiplier;
+
+                // 2. 인공 눈물 효과 (사거리 multiplier 적용)  [수정된 부분!]
+                // duration 대신 maxDistance를 사용합니다.
+                projectile.maxDistance *= playerCharacter.RangeMultiplier;
+            }
+
             if (projectile is SyringeProjectile syringeProjectile)
             {
                 syringeProjectile.ConfigureSpecials(BuildSpecialRuntime());
@@ -185,6 +195,12 @@ namespace Vampire
         public int GetEffectiveProjectileCount()
         {
             int totalCount = projectileCount.Value;
+
+            //  [추가] 상점에서 산 '일회용 주사기' 보너스 적용!
+            if (playerCharacter != null)
+            {
+                totalCount += playerCharacter.AdditionalProjectiles;
+            }
 
             if (lifeBurnEnabled)
             {

@@ -37,6 +37,7 @@ namespace Vampire
         [Header("Upgradeable Systems")]
         [SerializeField] protected UpgradeableMovementSpeed movementSpeed;
         [SerializeField] protected UpgradeableArmor armor;
+        [SerializeField] protected float rangeMultiplier = 1.0f; // 기본 1배
 
         [Header("Combat Stat Pockets")]
         [SerializeField] protected float attackSpeedMultiplier = 1.0f;
@@ -49,6 +50,10 @@ namespace Vampire
         [SerializeField] protected float expMultiplier = 1.0f;
         [SerializeField] protected float critChance = 0.05f;
         [SerializeField] protected float luckMultiplier = 1.0f;
+        [SerializeField] protected float lifeSteal = 0f;
+        [SerializeField] protected float healOnKill = 0f;
+        [SerializeField] protected float projectileSizeMultiplier = 1.0f; // 기본 크기 1배
+
 
         [Header("Special Ability Flags")]
         [SerializeField] protected int additionalProjectiles = 0;
@@ -75,6 +80,10 @@ namespace Vampire
         [Header("Dash Debug")]
         [SerializeField] protected bool debugDashLog = false;
 
+        [Header("Recovery Stats")]
+        [SerializeField] protected float healOnIdlePerSecond = 0f; // 정지 시 초당 회복량
+
+
         protected SpriteRenderer spriteRenderer;
         protected SpriteAnimator spriteAnimator;
         protected AbilityManager abilityManager;
@@ -88,6 +97,7 @@ namespace Vampire
         protected Vector2 moveDirection;
 
         protected bool isDashing = false;
+        protected bool isInvincible = false;
         protected int currentDashCharges = 1;
         protected Coroutine dashCoroutine = null;
         protected Coroutine dashRechargeCoroutine = null;
@@ -122,7 +132,10 @@ namespace Vampire
         public float CritChance => critChance;
         public int AdditionalProjectiles => additionalProjectiles;
         public float InvincibilityTimeBonus => invincibilityTimeBonus;
-
+        public float LifeSteal => lifeSteal;
+        public float HealOnKill => healOnKill;
+        public float ProjectileSizeMultiplier => projectileSizeMultiplier;
+        public float RangeMultiplier => rangeMultiplier;
         public int CurrentDashCharges => currentDashCharges;
         public int MaxDashCharges => maxDashCharges;
         public bool IsDashing => isDashing;
@@ -162,6 +175,15 @@ namespace Vampire
 
             OnDealDamage.AddListener(statsManager.IncreaseDamageDealt);
 
+            // 2.  [추가된 진짜 흡혈 로직!] 데미지를 줄 때마다 흡혈 수치만큼 체력 회복
+            OnDealDamage.AddListener((damage) =>
+            {
+                if (lifeSteal > 0)
+                {
+                    GainHealth(damage * lifeSteal);
+                }
+            });
+
             coroutineQueue = new CoroutineQueue(this);
             coroutineQueue.StartLoop();
 
@@ -193,6 +215,9 @@ namespace Vampire
         {
             UpdateDashInput();
 
+            //  [추가] 정지 시 회복 로직 호출
+            HandleHealOnIdle();
+
             if (lookIndicator != null)
             {
                 lookIndicator.transform.localPosition = lookDirection * lookIndicatorRadius;
@@ -203,6 +228,17 @@ namespace Vampire
                 spriteRenderer.flipX = lookDirection.x < 0;
             }
         }
+
+        private void HandleHealOnIdle()
+        {
+            // 회복량이 설정되어 있고, 캐릭터가 멈춰있을 때 (속도가 거의 0일 때)
+            // velocity 변수명이 다르다면 rb.velocity.magnitude 등으로 수정해 주세요!
+            if (healOnIdlePerSecond > 0 && Velocity.magnitude < 0.1f)
+            {
+                GainHealth(healOnIdlePerSecond * Time.deltaTime);
+            }
+        }
+
 
         protected virtual void FixedUpdate()
         {
@@ -597,6 +633,11 @@ namespace Vampire
                 return;
             }
 
+            if (isInvincible)
+            {
+                return;
+            }
+
             if (hasShield)
             {
                 hasShield = false;
@@ -642,11 +683,15 @@ namespace Vampire
 
         private IEnumerator HitAnimation()
         {
+            isInvincible = true;
+
             spriteRenderer.sharedMaterial = hitMaterial;
 
             yield return new WaitForSeconds(0.15f + invincibilityTimeBonus);
 
             spriteRenderer.sharedMaterial = defaultMaterial;
+
+            isInvincible = false;
         }
 
         private IEnumerator DeathAnimation()
@@ -718,6 +763,10 @@ namespace Vampire
         public void UpdateMoveSpeed()
         {
             rb.drag = characterBlueprint.acceleration / (movementSpeed.Value * movementSpeed.Value);
+        }
+        public void AddHealOnIdle(float amount)
+        {
+            healOnIdlePerSecond += amount;
         }
 
         public void Move(Vector2 moveDirection)
@@ -794,6 +843,10 @@ namespace Vampire
             movementSpeed.Value += amount;
             UpdateMoveSpeed();
         }
+        public void AddRangeBoost(float amount)
+        {
+            rangeMultiplier += amount;
+        }
 
         public void AddMagnetRange(float amount)
         {
@@ -815,6 +868,19 @@ namespace Vampire
             luckMultiplier += amount;
         }
 
+        public void AddLifeSteal(float amount)
+        {
+            lifeSteal += amount;
+        }
+
+        public void AddHealOnKill(float amount)
+        {
+            healOnKill += amount;
+        }
+        public void AddProjectileSize(float amount)
+        {
+            projectileSizeMultiplier += amount;
+        }
         public void AddProjectileCount(int count)
         {
             additionalProjectiles += count;
