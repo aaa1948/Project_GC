@@ -9,7 +9,11 @@ namespace Vampire
             Poison,
             Explosion,
             Homing,
-            Pierce
+            Pierce,
+
+            // 신규 특수 증강
+            Honey,
+            Mosquito
         }
 
         [Header("Special Augment")]
@@ -21,7 +25,7 @@ namespace Vampire
         {
             base.Init(abilityManager, entityManager, playerCharacter);
 
-            // 특수증강은 한 번만 선택 가능하게 한다.
+            // 특수 증강은 한 번만 선택 가능하게 한다.
             maxLevel = 1;
 
             syringeDartAbility = abilityManager.GetComponentInChildren<SyringeDartAbility>(true);
@@ -58,6 +62,14 @@ namespace Vampire
                 case SpecialAugmentType.Pierce:
                     syringeDartAbility.EnablePierceAugment();
                     break;
+
+                case SpecialAugmentType.Honey:
+                    syringeDartAbility.EnableHoneyAugment();
+                    break;
+
+                case SpecialAugmentType.Mosquito:
+                    syringeDartAbility.EnableMosquitoAugment();
+                    break;
             }
         }
 
@@ -81,6 +93,12 @@ namespace Vampire
 
                 case SpecialAugmentType.Pierce:
                     return !syringeDartAbility.HasPierceAugment() && base.RequirementsMet();
+
+                case SpecialAugmentType.Honey:
+                    return !syringeDartAbility.HasHoneyAugment() && base.RequirementsMet();
+
+                case SpecialAugmentType.Mosquito:
+                    return !syringeDartAbility.HasMosquitoAugment() && base.RequirementsMet();
 
                 default:
                     return false;

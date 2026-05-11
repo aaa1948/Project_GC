@@ -9,9 +9,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 3303242751642225015}
-  - component: {fileID: -3629666374954996886}
+  - component: {fileID: 3020181257210482451}
   m_Layer: 9
-  m_Name: Syringe Life Burn Augment
+  m_Name: Hedgehog Needle Legendary Augment
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -32,7 +32,7 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &-3629666374954996886
+--- !u!114 &3020181257210482451
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 04888055976ca8546aa76a06d6c16f6d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  image: {fileID: 1796705745, guid: 4a9825874034d4671b1dc9f6c8707eca, type: 3}
+  image: {fileID: 346848254, guid: 4a9825874034d4671b1dc9f6c8707eca, type: 3}
   localizedName:
     m_TableReference:
       m_TableCollectionName: GUID:7293f9ffd63774eb1b5120a3e14cb7f5
@@ -65,7 +65,7 @@ MonoBehaviour:
     m_LocalVariables: []
   rarity: 9
   augmentTier: 2
-  augmentType: 0
+  augmentType: 2
   references:
     version: 2
     RefIds: []

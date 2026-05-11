@@ -2958,6 +2958,7 @@ MonoBehaviour:
   armor:
     value: 0
     upgrades: 
+  rangeMultiplier: 1
   attackSpeedMultiplier: 1
   damageMultiplier: 1
   maxHealthBonus: 0
@@ -2966,6 +2967,9 @@ MonoBehaviour:
   expMultiplier: 1
   critChance: 0.05
   luckMultiplier: 1
+  lifeSteal: 0
+  healOnKill: 0
+  projectileSizeMultiplier: 1
   additionalProjectiles: 0
   hasShield: 0
   reviveCount: 0
@@ -2980,6 +2984,7 @@ MonoBehaviour:
   passThroughCollidersDuringDash: 1
   includeTriggerCollidersInDashGhost: 0
   debugDashLog: 0
+  healOnIdlePerSecond: 0
 --- !u!114 &856782962
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21149,7 +21154,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &2076536165
 Transform:
   m_ObjectHideFlags: 0

@@ -1,0 +1,719 @@
+using System.Collections.Generic;
+using System.Reflection;
+using UnityEngine;
+using UnityEngine.InputSystem;
+
+namespace Vampire
+{
+    public class CursorControlledNeedleController : MonoBehaviour
+    {
+        private Character sourceCharacter;
+        private EntityManager entityManager;
+        private SyringeDartAbility sourceNeedleAbility;
+
+        private GameObject projectilePrefab;
+        private LayerMask monsterLayer;
+
+        private float followSpeed;
+        private float hitRadius;
+        private float damageMultiplier;
+        private float damageInterval;
+        private float visualScale;
+        private float homingHitRadiusBonus;
+
+        private Vector2 backDisplayOffset;
+        private float backDisplaySpacing;
+        private float backDisplayArcHeight;
+        private float backDisplayScale;
+
+        private Transform cursorNeedleTransform;
+        private Transform backDisplayRoot;
+        private SpriteRenderer cursorNeedleRenderer;
+
+        private Sprite projectileSprite;
+        private int projectileSortingLayerId;
+        private int projectileSortingOrder;
+
+        private int lastDisplayedSpecialCount = -1;
+
+        private readonly List<GameObject> backDisplayNeedles = new List<GameObject>();
+        private readonly Dictionary<int, float> nextDamageAllowedTimeByTarget = new Dictionary<int, float>();
+
+        private static bool hasWarnedHealMethodMissing = false;
+
+        public static CursorControlledNeedleController Create(
+            Character sourceCharacter,
+            EntityManager entityManager,
+            SyringeDartAbility sourceNeedleAbility,
+            float followSpeed,
+            float hitRadius,
+            float damageMultiplier,
+            float damageInterval,
+            float visualScale,
+            float homingHitRadiusBonus,
+            Vector2 backDisplayOffset,
+            float backDisplaySpacing,
+            float backDisplayArcHeight,
+            float backDisplayScale)
+        {
+            GameObject controllerObject = new GameObject("Cursor Controlled Needle Controller");
+            CursorControlledNeedleController controller = controllerObject.AddComponent<CursorControlledNeedleController>();
+
+            controller.Init(
+                sourceCharacter,
+                entityManager,
+                sourceNeedleAbility,
+                followSpeed,
+                hitRadius,
+                damageMultiplier,
+                damageInterval,
+                visualScale,
+                homingHitRadiusBonus,
+                backDisplayOffset,
+                backDisplaySpacing,
+                backDisplayArcHeight,
+                backDisplayScale
+            );
+
+            return controller;
+        }
+
+        private void Init(
+            Character sourceCharacter,
+            EntityManager entityManager,
+            SyringeDartAbility sourceNeedleAbility,
+            float followSpeed,
+            float hitRadius,
+            float damageMultiplier,
+            float damageInterval,
+            float visualScale,
+            float homingHitRadiusBonus,
+            Vector2 backDisplayOffset,
+            float backDisplaySpacing,
+            float backDisplayArcHeight,
+            float backDisplayScale)
+        {
+            this.sourceCharacter = sourceCharacter;
+            this.entityManager = entityManager;
+            this.sourceNeedleAbility = sourceNeedleAbility;
+
+            this.followSpeed = Mathf.Max(0.01f, followSpeed);
+            this.hitRadius = Mathf.Max(0.05f, hitRadius);
+            this.damageMultiplier = Mathf.Max(0.01f, damageMultiplier);
+            this.damageInterval = Mathf.Max(0.05f, damageInterval);
+            this.visualScale = Mathf.Max(0.01f, visualScale);
+            this.homingHitRadiusBonus = Mathf.Max(0f, homingHitRadiusBonus);
+
+            this.backDisplayOffset = backDisplayOffset;
+            this.backDisplaySpacing = Mathf.Max(0.01f, backDisplaySpacing);
+            this.backDisplayArcHeight = Mathf.Max(0f, backDisplayArcHeight);
+            this.backDisplayScale = Mathf.Max(0.01f, backDisplayScale);
+
+            projectilePrefab = sourceNeedleAbility.ProjectilePrefab;
+            monsterLayer = sourceNeedleAbility.MonsterLayer;
+
+            CacheProjectileVisualInfo();
+
+            transform.position = sourceCharacter.CenterTransform.position;
+
+            CreateCursorNeedleVisual();
+            CreateBackDisplayRoot();
+
+            if (sourceCharacter.OnDeath != null)
+            {
+                sourceCharacter.OnDeath.AddListener(DestroySelf);
+            }
+
+            UpdateBackDisplay(true);
+        }
+
+        private void Update()
+        {
+            if (sourceCharacter == null || sourceNeedleAbility == null)
+            {
+                Destroy(gameObject);
+                return;
+            }
+
+            transform.position = sourceCharacter.CenterTransform.position;
+
+            UpdateCursorNeedleFollow();
+            UpdateCursorNeedleHeavyVisual();
+            UpdateBackDisplay(false);
+            DetectAndDamageEnemies();
+        }
+
+        private void CacheProjectileVisualInfo()
+        {
+            SpriteRenderer sourceRenderer = null;
+
+            if (projectilePrefab != null)
+            {
+                sourceRenderer = projectilePrefab.GetComponentInChildren<SpriteRenderer>();
+            }
+
+            if (sourceRenderer != null)
+            {
+                projectileSprite = sourceRenderer.sprite;
+                projectileSortingLayerId = sourceRenderer.sortingLayerID;
+                projectileSortingOrder = sourceRenderer.sortingOrder;
+            }
+            else
+            {
+                Debug.LogWarning("[이기어침] 투사체 프리팹에서 SpriteRenderer를 찾지 못했습니다. 이기어침 시각 오브젝트가 보이지 않을 수 있습니다.");
+            }
+        }
+
+        private void CreateCursorNeedleVisual()
+        {
+            GameObject cursorNeedleObject = new GameObject("Cursor Controlled Needle");
+            cursorNeedleTransform = cursorNeedleObject.transform;
+            cursorNeedleTransform.SetParent(transform);
+
+            Vector3 startPosition = GetMouseWorldPositionOrPlayerPosition();
+            cursorNeedleTransform.position = startPosition;
+
+            cursorNeedleRenderer = cursorNeedleObject.AddComponent<SpriteRenderer>();
+            cursorNeedleRenderer.sprite = projectileSprite;
+            cursorNeedleRenderer.sortingLayerID = projectileSortingLayerId;
+            cursorNeedleRenderer.sortingOrder = projectileSortingOrder + 10;
+            cursorNeedleRenderer.color = new Color(1f, 1f, 1f, 0.95f);
+
+            cursorNeedleTransform.localScale = Vector3.one * visualScale;
+        }
+
+        private void CreateBackDisplayRoot()
+        {
+            GameObject backRootObject = new GameObject("Cursor Needle Back Display");
+            backDisplayRoot = backRootObject.transform;
+            backDisplayRoot.SetParent(transform);
+            backDisplayRoot.localPosition = backDisplayOffset;
+        }
+
+        private void UpdateCursorNeedleFollow()
+        {
+            if (cursorNeedleTransform == null)
+            {
+                return;
+            }
+
+            Vector3 targetPosition = GetMouseWorldPositionOrPlayerPosition();
+            Vector3 currentPosition = cursorNeedleTransform.position;
+
+            float lerpFactor = 1f - Mathf.Exp(-followSpeed * Time.deltaTime);
+            Vector3 nextPosition = Vector3.Lerp(currentPosition, targetPosition, lerpFactor);
+
+            Vector3 moveDirection = nextPosition - currentPosition;
+
+            cursorNeedleTransform.position = nextPosition;
+
+            if (moveDirection.sqrMagnitude > 0.0001f)
+            {
+                float angle = Mathf.Atan2(moveDirection.y, moveDirection.x) * Mathf.Rad2Deg;
+                cursorNeedleTransform.rotation = Quaternion.Euler(0f, 0f, angle);
+            }
+        }
+
+        private void UpdateCursorNeedleHeavyVisual()
+        {
+            if (cursorNeedleTransform == null || sourceNeedleAbility == null)
+            {
+                return;
+            }
+
+            float heavySizeMultiplier = sourceNeedleAbility.GetCursorNeedleHeavySizeMultiplier();
+            cursorNeedleTransform.localScale = Vector3.one * visualScale * heavySizeMultiplier;
+
+            if (cursorNeedleRenderer != null)
+            {
+                float chargeRatio = sourceNeedleAbility.GetCursorHeavyChargeRatio();
+
+                // 충전 중일수록 살짝 밝아지는 느낌
+                float brightness = Mathf.Lerp(0.95f, 1.25f, chargeRatio);
+                cursorNeedleRenderer.color = new Color(brightness, brightness, brightness, 0.95f);
+            }
+        }
+
+        private Vector3 GetMouseWorldPositionOrPlayerPosition()
+        {
+            if (Mouse.current != null && Camera.main != null && sourceCharacter != null)
+            {
+                Vector3 screenPosition = Mouse.current.position.ReadValue();
+                screenPosition.z = Mathf.Abs(Camera.main.transform.position.z - sourceCharacter.CenterTransform.position.z);
+
+                Vector3 worldPosition = Camera.main.ScreenToWorldPoint(screenPosition);
+                worldPosition.z = sourceCharacter.CenterTransform.position.z;
+
+                return worldPosition;
+            }
+
+            if (sourceCharacter != null)
+            {
+                return sourceCharacter.CenterTransform.position;
+            }
+
+            return Vector3.zero;
+        }
+
+        private void UpdateBackDisplay(bool forceRebuild)
+        {
+            if (backDisplayRoot == null || sourceNeedleAbility == null)
+            {
+                return;
+            }
+
+            backDisplayRoot.localPosition = backDisplayOffset;
+
+            int specialCount = sourceNeedleAbility.GetActiveSpecialAugmentCount();
+
+            if (!forceRebuild && specialCount == lastDisplayedSpecialCount)
+            {
+                return;
+            }
+
+            lastDisplayedSpecialCount = specialCount;
+            RebuildBackDisplay(specialCount);
+        }
+
+        private void RebuildBackDisplay(int specialCount)
+        {
+            for (int i = 0; i < backDisplayNeedles.Count; i++)
+            {
+                if (backDisplayNeedles[i] != null)
+                {
+                    Destroy(backDisplayNeedles[i]);
+                }
+            }
+
+            backDisplayNeedles.Clear();
+
+            if (specialCount <= 0)
+            {
+                return;
+            }
+
+            float totalWidth = (specialCount - 1) * backDisplaySpacing;
+
+            for (int i = 0; i < specialCount; i++)
+            {
+                GameObject needleObject = new GameObject($"Back Display Needle {i + 1}");
+                Transform needleTransform = needleObject.transform;
+                needleTransform.SetParent(backDisplayRoot);
+
+                float x = (i * backDisplaySpacing) - (totalWidth * 0.5f);
+
+                float normalized = specialCount <= 1
+                    ? 0f
+                    : Mathf.InverseLerp(0f, specialCount - 1, i) * 2f - 1f;
+
+                float y = -Mathf.Abs(normalized) * backDisplayArcHeight;
+
+                needleTransform.localPosition = new Vector3(x, y, 0f);
+                needleTransform.localScale = Vector3.one * backDisplayScale;
+                needleTransform.localRotation = Quaternion.Euler(0f, 0f, -90f - normalized * 18f);
+
+                SpriteRenderer renderer = needleObject.AddComponent<SpriteRenderer>();
+                renderer.sprite = projectileSprite;
+                renderer.sortingLayerID = projectileSortingLayerId;
+                renderer.sortingOrder = projectileSortingOrder + 8;
+                renderer.color = new Color(1f, 1f, 1f, 0.75f);
+
+                backDisplayNeedles.Add(needleObject);
+            }
+        }
+
+        private void DetectAndDamageEnemies()
+        {
+            if (cursorNeedleTransform == null || sourceNeedleAbility == null)
+            {
+                return;
+            }
+
+            SyringeSpecialRuntime runtime = sourceNeedleAbility.GetCurrentSpecialRuntime();
+
+            float heavySizeMultiplier = sourceNeedleAbility.GetCursorNeedleHeavySizeMultiplier();
+
+            float effectiveHitRadius = hitRadius * heavySizeMultiplier;
+
+            if (runtime.homingEnabled)
+            {
+                effectiveHitRadius += homingHitRadiusBonus;
+            }
+
+            Collider2D[] hits = Physics2D.OverlapCircleAll(
+                cursorNeedleTransform.position,
+                effectiveHitRadius,
+                monsterLayer
+            );
+
+            if (hits == null || hits.Length == 0)
+            {
+                return;
+            }
+
+            int maxTargetsThisTick = CalculateMaxTargetsThisTick(runtime);
+            int damagedTargetCount = 0;
+
+            HashSet<int> checkedTargetsThisFrame = new HashSet<int>();
+
+            foreach (Collider2D hit in hits)
+            {
+                if (hit == null)
+                {
+                    continue;
+                }
+
+                IDamageable damageable = hit.GetComponentInParent<IDamageable>();
+                Component damageableComponent = damageable as Component;
+
+                if (damageable == null || damageableComponent == null)
+                {
+                    continue;
+                }
+
+                int targetId = damageableComponent.gameObject.GetInstanceID();
+
+                if (checkedTargetsThisFrame.Contains(targetId))
+                {
+                    continue;
+                }
+
+                checkedTargetsThisFrame.Add(targetId);
+
+                if (!CanDamageTarget(targetId))
+                {
+                    continue;
+                }
+
+                DamageTarget(damageable, damageableComponent, runtime);
+
+                nextDamageAllowedTimeByTarget[targetId] = Time.time + damageInterval;
+                damagedTargetCount++;
+
+                if (damagedTargetCount >= maxTargetsThisTick)
+                {
+                    break;
+                }
+            }
+        }
+
+        private int CalculateMaxTargetsThisTick(SyringeSpecialRuntime runtime)
+        {
+            if (sourceNeedleAbility.IsCursorNeedleHeavyPierceUnlimited())
+            {
+                return int.MaxValue;
+            }
+
+            int maxTargets = 1;
+
+            if (runtime.pierceEnabled)
+            {
+                if (runtime.pierceCount >= int.MaxValue / 2)
+                {
+                    return int.MaxValue;
+                }
+
+                maxTargets += Mathf.Max(0, runtime.pierceCount);
+            }
+
+            int heavyPierceBonus = sourceNeedleAbility.GetCursorNeedleHeavyPierceBonus();
+
+            if (heavyPierceBonus >= int.MaxValue / 2)
+            {
+                return int.MaxValue;
+            }
+
+            maxTargets += Mathf.Max(0, heavyPierceBonus);
+
+            return Mathf.Max(1, maxTargets);
+        }
+
+        private bool CanDamageTarget(int targetId)
+        {
+            if (!nextDamageAllowedTimeByTarget.TryGetValue(targetId, out float nextAllowedTime))
+            {
+                return true;
+            }
+
+            return Time.time >= nextAllowedTime;
+        }
+
+        private void DamageTarget(IDamageable damageable, Component damageableComponent, SyringeSpecialRuntime runtime)
+        {
+            if (damageable == null || damageableComponent == null || sourceNeedleAbility == null)
+            {
+                return;
+            }
+
+            Vector2 knockbackDirection = Vector2.zero;
+
+            if (cursorNeedleTransform != null)
+            {
+                knockbackDirection = (Vector2)damageableComponent.transform.position - (Vector2)cursorNeedleTransform.position;
+
+                if (knockbackDirection.sqrMagnitude > 0.0001f)
+                {
+                    knockbackDirection.Normalize();
+                }
+            }
+
+            float heavyDamageMultiplier = sourceNeedleAbility.GetCursorNeedleHeavyDamageMultiplier();
+            float heavyKnockbackMultiplier = sourceNeedleAbility.GetCursorNeedleHeavyKnockbackMultiplier();
+
+            float damage = sourceNeedleAbility.GetEffectiveDamage() * damageMultiplier * heavyDamageMultiplier;
+            float knockback = sourceNeedleAbility.GetEffectiveKnockback() * heavyKnockbackMultiplier;
+
+            damageable.TakeDamage(damage, knockbackDirection * knockback);
+
+            if (sourceCharacter != null && sourceCharacter.OnDealDamage != null)
+            {
+                sourceCharacter.OnDealDamage.Invoke(damage);
+            }
+
+            if (runtime.poisonEnabled)
+            {
+                ApplyPoison(damageableComponent, runtime);
+            }
+
+            if (runtime.honeyEnabled)
+            {
+                ApplyHoneySlow(damageableComponent, runtime);
+            }
+
+            if (runtime.mosquitoEnabled)
+            {
+                ApplyMosquitoHeal(damageableComponent, runtime);
+            }
+
+            if (runtime.explosionEnabled)
+            {
+                ApplyExplosion(damageableComponent.gameObject, runtime);
+            }
+        }
+
+        private void ApplyPoison(Component damageableComponent, SyringeSpecialRuntime runtime)
+        {
+            Monster monster = damageableComponent.GetComponent<Monster>() ??
+                              damageableComponent.GetComponentInParent<Monster>();
+
+            if (monster == null)
+            {
+                return;
+            }
+
+            PoisonStatus poisonStatus = monster.GetComponent<PoisonStatus>();
+
+            if (poisonStatus == null)
+            {
+                poisonStatus = monster.gameObject.AddComponent<PoisonStatus>();
+            }
+
+            poisonStatus.Apply(
+                runtime.poisonDuration,
+                runtime.poisonTickInterval,
+                runtime.poisonTickDamage
+            );
+        }
+
+        private void ApplyHoneySlow(Component damageableComponent, SyringeSpecialRuntime runtime)
+        {
+            Monster monster = damageableComponent.GetComponent<Monster>() ??
+                              damageableComponent.GetComponentInParent<Monster>();
+
+            if (monster == null)
+            {
+                return;
+            }
+
+            HoneySlowStatus honeySlowStatus = monster.GetComponent<HoneySlowStatus>();
+
+            if (honeySlowStatus == null)
+            {
+                honeySlowStatus = monster.gameObject.AddComponent<HoneySlowStatus>();
+            }
+
+            honeySlowStatus.Apply(
+                runtime.honeyDuration,
+                runtime.honeySlowMultiplier
+            );
+        }
+
+        private void ApplyMosquitoHeal(Component damageableComponent, SyringeSpecialRuntime runtime)
+        {
+            // HP 1 전설 증강이 켜져 있으면 이기어침에서도 모기침 회복은 무조건 막는다.
+            if (runtime.healingBlocked)
+            {
+                return;
+            }
+
+            if (sourceCharacter == null)
+            {
+                return;
+            }
+
+            float healAmount = runtime.mosquitoHealPerHit;
+
+            if (IsBossLikeTarget(damageableComponent))
+            {
+                healAmount *= runtime.mosquitoBossHealMultiplier;
+            }
+
+            TryHealPlayer(healAmount);
+        }
+
+        private bool IsBossLikeTarget(Component damageableComponent)
+        {
+            if (damageableComponent == null)
+            {
+                return false;
+            }
+
+            Component[] components = damageableComponent.GetComponentsInParent<Component>();
+
+            foreach (Component component in components)
+            {
+                if (component == null)
+                {
+                    continue;
+                }
+
+                string typeName = component.GetType().Name;
+
+                if (typeName.Contains("Boss"))
+                {
+                    return true;
+                }
+            }
+
+            string objectName = damageableComponent.gameObject.name;
+
+            return objectName.Contains("Boss") || objectName.Contains("보스");
+        }
+
+        private void TryHealPlayer(float healAmount)
+        {
+            if (sourceCharacter == null || healAmount <= 0f)
+            {
+                return;
+            }
+
+            string[] healMethodNames =
+            {
+                "GainHealth",
+                "Heal",
+                "AddHealth",
+                "RestoreHealth"
+            };
+
+            MethodInfo healMethod = null;
+
+            foreach (string methodName in healMethodNames)
+            {
+                healMethod = sourceCharacter.GetType().GetMethod(
+                    methodName,
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+                    null,
+                    new System.Type[] { typeof(float) },
+                    null
+                );
+
+                if (healMethod != null)
+                {
+                    break;
+                }
+            }
+
+            if (healMethod == null)
+            {
+                if (!hasWarnedHealMethodMissing)
+                {
+                    Debug.LogWarning(
+                        "[이기어침/모기침] Character에서 체력 회복 메서드를 찾지 못했습니다. " +
+                        "GainHealth(float), Heal(float), AddHealth(float), RestoreHealth(float) 중 하나가 필요합니다."
+                    );
+
+                    hasWarnedHealMethodMissing = true;
+                }
+
+                return;
+            }
+
+            healMethod.Invoke(sourceCharacter, new object[] { healAmount });
+        }
+
+        private void ApplyExplosion(GameObject originalTarget, SyringeSpecialRuntime runtime)
+        {
+            if (cursorNeedleTransform == null)
+            {
+                return;
+            }
+
+            Collider2D[] hits = Physics2D.OverlapCircleAll(
+                cursorNeedleTransform.position,
+                runtime.explosionRadius,
+                monsterLayer
+            );
+
+            HashSet<int> damagedIds = new HashSet<int>();
+
+            foreach (Collider2D hit in hits)
+            {
+                IDamageable splashDamageable = hit.GetComponentInParent<IDamageable>();
+                Component splashComponent = splashDamageable as Component;
+
+                if (splashDamageable == null || splashComponent == null)
+                {
+                    continue;
+                }
+
+                int splashId = splashComponent.gameObject.GetInstanceID();
+
+                if (originalTarget != null && splashId == originalTarget.GetInstanceID())
+                {
+                    continue;
+                }
+
+                if (damagedIds.Contains(splashId))
+                {
+                    continue;
+                }
+
+                damagedIds.Add(splashId);
+                splashDamageable.TakeDamage(runtime.explosionDamage, Vector2.zero);
+            }
+        }
+
+        private void DestroySelf()
+        {
+            if (gameObject != null)
+            {
+                Destroy(gameObject);
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (sourceCharacter != null && sourceCharacter.OnDeath != null)
+            {
+                sourceCharacter.OnDeath.RemoveListener(DestroySelf);
+            }
+        }
+
+        private void OnDrawGizmosSelected()
+        {
+            if (cursorNeedleTransform == null)
+            {
+                return;
+            }
+
+            float previewRadius = hitRadius;
+
+            if (sourceNeedleAbility != null)
+            {
+                previewRadius *= sourceNeedleAbility.GetCursorNeedleHeavySizeMultiplier();
+            }
+
+            Gizmos.DrawWireSphere(cursorNeedleTransform.position, previewRadius);
+        }
+    }
+}
