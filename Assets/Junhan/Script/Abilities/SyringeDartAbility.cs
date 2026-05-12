@@ -22,6 +22,8 @@ namespace Vampire
         [SerializeField] private bool pierceEnabled = false;
         [SerializeField] private bool honeyEnabled = false;
         [SerializeField] private bool mosquitoEnabled = false;
+        [SerializeField] private bool returnNeedleEnabled = false;
+        [SerializeField] private bool acupunctureFormationEnabled = false;
 
         [Header("Poison Settings")]
         [SerializeField] private float poisonDuration = 3f;
@@ -37,7 +39,8 @@ namespace Vampire
         [SerializeField] private float homingLerpSpeed = 8f;
 
         [Header("Pierce Settings")]
-        [SerializeField] private int pierceCount = 1;
+        [Tooltip("관통침 기본 관통 횟수. 2라면 첫 적중 이후 추가로 2번 더 관통 가능.")]
+        [SerializeField] private int pierceCount = 2;
 
         [Header("Honey Needle Settings")]
         [Tooltip("꿀침 둔화 지속 시간")]
@@ -52,6 +55,37 @@ namespace Vampire
 
         [Tooltip("대상 이름/컴포넌트 이름에 Boss가 들어가면 회복량에 곱해지는 배율")]
         [SerializeField] private float mosquitoBossHealMultiplier = 2f;
+
+        [Header("Return Needle / 침귀환 Settings")]
+        [Tooltip("귀환 중 침 속도 배율")]
+        [SerializeField] private float returnNeedleSpeedMultiplier = 1.25f;
+
+        [Tooltip("귀환 경로에서 주는 피해 배율. 0.7이면 현재 침 데미지의 70%")]
+        [SerializeField] private float returnNeedleDamageMultiplier = 0.7f;
+
+        [Tooltip("플레이어와 이 거리 이하로 가까워지면 귀환 완료로 판단하고 사라집니다.")]
+        [SerializeField] private float returnNeedleArriveDistance = 0.45f;
+
+        [Tooltip("귀환 상태로 유지될 수 있는 최대 시간")]
+        [SerializeField] private float returnNeedleMaxDuration = 2.5f;
+
+        [Header("Acupuncture Formation / 침술진 Settings")]
+        [Tooltip("침술진 획득 시 추가되는 대쉬 횟수")]
+        [SerializeField] private int acupunctureFormationBonusDashCharges = 1;
+
+        [Tooltip("대쉬 시작 위치에 생성되는 분신 지속 시간")]
+        [SerializeField] private float acupunctureFormationLifetime = 0.35f;
+
+        [Tooltip("분신이 360도로 발사하는 침 개수")]
+        [SerializeField] private int acupunctureFormationNeedleCount = 12;
+
+        [Tooltip("분신이 발사하는 침의 데미지 배율. 0.55면 현재 침 데미지의 55%")]
+        [SerializeField] private float acupunctureFormationDamageMultiplier = 0.55f;
+
+        [Tooltip("분신 시각 크기")]
+        [SerializeField] private float acupunctureFormationVisualScale = 1f;
+
+        private AcupunctureFormationController acupunctureFormationController;
 
         [Header("Legendary - Life Burn / HP 1")]
         [SerializeField] private bool lifeBurnEnabled = false;
@@ -210,16 +244,25 @@ namespace Vampire
                 return;
             }
 
-            // 이기어침이 없고 대물침만 있으면 기존 대물침 차지샷으로 작동한다.
+            // 대물침만 보유한 상태:
+            // - 평소에는 기존 기본 자동 공격 유지
+            // - 우클릭을 누르거나 차징 중일 때만 기본 공격을 멈추고 대물침 차지 처리
             if (heavySnipeEnabled)
             {
-                HandleHeavySnipeUpdate();
+                bool commandHeld = IsHeavySnipeCommandHeld();
+
+                if (commandHeld || isHeavyCharging)
+                {
+                    HandleHeavySnipeUpdate();
+                    return;
+                }
+
+                base.Update();
                 return;
             }
 
             base.Update();
         }
-
         protected override void Attack()
         {
             StartCoroutine(LaunchSyringes());
@@ -342,8 +385,10 @@ namespace Vampire
             bool commandHeld = IsHeavySnipeCommandHeld();
             float effectiveCooldown = GetEffectiveCooldown();
 
+            // 아직 차징 중이 아닐 때
             if (!isHeavyCharging)
             {
+                // 우클릭을 누르고 있고, 공격 쿨타임이 준비됐을 때만 차징 시작
                 if (commandHeld && timeSinceLastAttack >= effectiveCooldown)
                 {
                     isHeavyCharging = true;
@@ -351,18 +396,23 @@ namespace Vampire
 
                     if (debugHeavySnipe)
                     {
-                        Debug.Log("[대물침] 차지 시작");
+                        Debug.Log("[대물침] 차지 시작 - 기본 공격 정지");
                     }
                 }
 
+                // 우클릭을 누르고 있지만 쿨타임이 아직이면 기본 공격도 하지 않고 대기
+                // 우클릭을 안 누른 상태는 Update()에서 base.Update()로 빠지므로 여기로 오지 않음
                 return;
             }
 
+            // 차징 중
             heavyChargeTimer += Time.deltaTime;
 
             float chargeRatio = Mathf.Clamp01(heavyChargeTimer / Mathf.Max(0.01f, heavyMaxChargeTime));
+
             bool reachedFullCharge = heavyChargeTimer >= heavyMaxChargeTime;
 
+            // 우클릭을 떼거나 풀차지가 되면 발사
             if (!commandHeld || reachedFullCharge)
             {
                 float finalChargeRatio = reachedFullCharge ? 1f : chargeRatio;
@@ -372,9 +422,15 @@ namespace Vampire
                 timeSinceLastAttack = 0f;
                 isHeavyCharging = false;
                 heavyChargeTimer = 0f;
+
+                if (debugHeavySnipe)
+                {
+                    Debug.Log(
+                        $"[대물침] 발사 완료 | 차지 {finalChargeRatio * 100f:0}% - 기본 공격 재개"
+                    );
+                }
             }
         }
-
         private bool IsHeavySnipeCommandHeld()
         {
             if (Mouse.current != null)
@@ -406,6 +462,9 @@ namespace Vampire
             Vector2 aimDirection = GetAimDirectionFromMouseOrLookDirection();
 
             SyringeSpecialRuntime runtime = BuildSpecialRuntime();
+
+            // 대물침은 침귀환과 무관하게 기존 차지샷으로 작동해야 하므로 귀환 효과를 강제로 끈다.
+            runtime.returnNeedleEnabled = false;
 
             runtime.pierceEnabled = true;
             runtime.pierceCount = stats.unlimitedPierce ? int.MaxValue : stats.pierceCount;
@@ -606,6 +665,12 @@ namespace Vampire
                 mosquitoHealPerHit = mosquitoHealPerHit,
                 mosquitoBossHealMultiplier = mosquitoBossHealMultiplier,
 
+                returnNeedleEnabled = returnNeedleEnabled,
+                returnNeedleSpeedMultiplier = returnNeedleSpeedMultiplier,
+                returnNeedleDamageMultiplier = returnNeedleDamageMultiplier,
+                returnNeedleArriveDistance = returnNeedleArriveDistance,
+                returnNeedleMaxDuration = returnNeedleMaxDuration,
+
                 // HP 1 전설 증강이 켜져 있으면 모기침 회복을 막는다.
                 healingBlocked = lifeBurnEnabled,
 
@@ -724,6 +789,8 @@ namespace Vampire
             if (pierceEnabled) count++;
             if (honeyEnabled) count++;
             if (mosquitoEnabled) count++;
+            if (returnNeedleEnabled) count++;
+            if (acupunctureFormationEnabled) count++;
 
             return count;
         }
@@ -798,18 +865,69 @@ namespace Vampire
         public void EnablePoisonAugment() => poisonEnabled = true;
         public void EnableExplosionAugment() => explosionEnabled = true;
         public void EnableHomingAugment() => homingEnabled = true;
-        public void EnablePierceAugment() => pierceEnabled = true;
+
+        public void EnablePierceAugment()
+        {
+            pierceEnabled = true;
+            pierceCount = Mathf.Max(2, pierceCount);
+        }
 
         public void EnableHoneyAugment() => honeyEnabled = true;
         public void EnableMosquitoAugment() => mosquitoEnabled = true;
+        public void EnableReturnNeedleAugment() => returnNeedleEnabled = true;
+
+        public void EnableAcupunctureFormationAugment()
+        {
+            if (acupunctureFormationEnabled)
+            {
+                return;
+            }
+
+            acupunctureFormationEnabled = true;
+
+            if (playerCharacter != null)
+            {
+                playerCharacter.AddDashCharge(acupunctureFormationBonusDashCharges);
+            }
+
+            if (playerCharacter == null || entityManager == null)
+            {
+                Debug.LogWarning("[침술진] playerCharacter 또는 entityManager가 없어 침술진 컨트롤러를 생성하지 못했습니다.");
+                return;
+            }
+
+            acupunctureFormationController = AcupunctureFormationController.Create(
+                playerCharacter,
+                entityManager,
+                this,
+                acupunctureFormationLifetime,
+                acupunctureFormationNeedleCount,
+                acupunctureFormationDamageMultiplier,
+                acupunctureFormationVisualScale
+            );
+
+            Debug.Log("[침술진] 특수 증강 활성화. 대쉬 횟수 +1, 대쉬 시작 위치에 침술진을 생성합니다.");
+        }
+
+        public void AddPierceCount(int amount)
+        {
+            pierceCount += amount;
+            pierceCount = Mathf.Max(0, pierceCount);
+
+            if (pierceCount > 0)
+            {
+                pierceEnabled = true;
+            }
+        }
 
         public bool HasPoisonAugment() => poisonEnabled;
         public bool HasExplosionAugment() => explosionEnabled;
         public bool HasHomingAugment() => homingEnabled;
         public bool HasPierceAugment() => pierceEnabled;
-
         public bool HasHoneyAugment() => honeyEnabled;
         public bool HasMosquitoAugment() => mosquitoEnabled;
+        public bool HasReturnNeedleAugment() => returnNeedleEnabled;
+        public bool HasAcupunctureFormationAugment() => acupunctureFormationEnabled;
 
         public void EnableLifeBurnLegendary() => lifeBurnEnabled = true;
         public bool HasLifeBurnLegendary() => lifeBurnEnabled;

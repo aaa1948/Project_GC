@@ -22,6 +22,8 @@ namespace Vampire
         public float homingLerpSpeed;
 
         // Pierce
+        // pierceCount는 "추가로 관통 가능한 횟수"입니다.
+        // 예: pierceCount = 2라면 첫 적중 후 추가로 2번 더 관통 가능.
         public bool pierceEnabled;
         public int pierceCount;
 
@@ -36,6 +38,14 @@ namespace Vampire
         public bool mosquitoEnabled;
         public float mosquitoHealPerHit;
         public float mosquitoBossHealMultiplier;
+
+        // Return Needle / 침귀환
+        // 침이 적중한 뒤 플레이어에게 되돌아오며, 귀환 경로의 적에게 피해를 준다.
+        public bool returnNeedleEnabled;
+        public float returnNeedleSpeedMultiplier;
+        public float returnNeedleDamageMultiplier;
+        public float returnNeedleArriveDistance;
+        public float returnNeedleMaxDuration;
 
         // Healing Block
         // HP 1 전설 증강처럼 회복이 금지되는 상태일 때 true.

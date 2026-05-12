@@ -13,7 +13,13 @@ namespace Vampire
 
             // 신규 특수 증강
             Honey,
-            Mosquito
+            Mosquito,
+
+            // 신규 특수 증강 - 침귀환
+            ReturnNeedle,
+
+            // 신규 특수 증강 - 침술진
+            AcupunctureFormation
         }
 
         [Header("Special Augment")]
@@ -70,6 +76,14 @@ namespace Vampire
                 case SpecialAugmentType.Mosquito:
                     syringeDartAbility.EnableMosquitoAugment();
                     break;
+
+                case SpecialAugmentType.ReturnNeedle:
+                    syringeDartAbility.EnableReturnNeedleAugment();
+                    break;
+
+                case SpecialAugmentType.AcupunctureFormation:
+                    syringeDartAbility.EnableAcupunctureFormationAugment();
+                    break;
             }
         }
 
@@ -99,6 +113,12 @@ namespace Vampire
 
                 case SpecialAugmentType.Mosquito:
                     return !syringeDartAbility.HasMosquitoAugment() && base.RequirementsMet();
+
+                case SpecialAugmentType.ReturnNeedle:
+                    return !syringeDartAbility.HasReturnNeedleAugment() && base.RequirementsMet();
+
+                case SpecialAugmentType.AcupunctureFormation:
+                    return !syringeDartAbility.HasAcupunctureFormationAugment() && base.RequirementsMet();
 
                 default:
                     return false;

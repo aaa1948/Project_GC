@@ -15,6 +15,10 @@ namespace Vampire
         // 풀링으로 재사용될 때 maxDistance가 계속 누적되는 것을 막기 위한 원본 사거리 저장
         private float baseMaxDistance;
 
+        // 침귀환 상태
+        private bool isReturningToPlayer = false;
+        private float returnTimer = 0f;
+
         // 플레이어 회복 메서드를 못 찾았을 때 경고가 너무 많이 뜨는 것을 막기 위한 플래그
         private static bool hasWarnedHealMethodMissing = false;
 
@@ -32,6 +36,9 @@ namespace Vampire
             specials = default;
             remainingPierces = 0;
             hitTargetIds.Clear();
+
+            isReturningToPlayer = false;
+            returnTimer = 0f;
 
             // 투사체 풀링 시 이전 발사에서 적용된 사거리 배율이 남지 않도록 초기화
             maxDistance = baseMaxDistance;
@@ -54,11 +61,53 @@ namespace Vampire
         public override IEnumerator Move()
         {
             float distanceTravelled = 0;
-            float timeOffScreen = 0;
             float effectiveMaxDistance = maxDistance + specials.rangeBonus;
 
-            while (distanceTravelled < effectiveMaxDistance && timeOffScreen < despawnTime && speed > 0)
+            while (speed > 0 && !isDespawning)
             {
+                if (isReturningToPlayer)
+                {
+                    if (playerCharacter == null || playerCharacter.CenterTransform == null)
+                    {
+                        HitNothing();
+                        yield break;
+                    }
+
+                    returnTimer += Time.deltaTime;
+
+                    if (returnTimer >= Mathf.Max(0.1f, specials.returnNeedleMaxDuration))
+                    {
+                        HitNothing();
+                        yield break;
+                    }
+
+                    Vector2 currentPosition = transform.position;
+                    Vector2 targetPosition = playerCharacter.CenterTransform.position;
+                    Vector2 toPlayer = targetPosition - currentPosition;
+
+                    if (toPlayer.magnitude <= Mathf.Max(0.05f, specials.returnNeedleArriveDistance))
+                    {
+                        DestroyProjectile();
+                        yield break;
+                    }
+
+                    direction = toPlayer.normalized;
+
+                    float returnStep = speed * Mathf.Max(0.01f, specials.returnNeedleSpeedMultiplier) * Time.deltaTime;
+                    transform.position += returnStep * (Vector3)direction;
+
+                    transform.RotateAround(transform.position, Vector3.back, Time.deltaTime * 100 * rotationSpeed);
+
+                    yield return null;
+                    continue;
+                }
+
+                if (distanceTravelled >= effectiveMaxDistance)
+                {
+                    HitNothing();
+                    yield break;
+                }
+
                 if (specials.homingEnabled)
                 {
                     UpdateHomingDirection();
@@ -150,7 +199,11 @@ namespace Vampire
 
             if (damageable == null || damageableComponent == null)
             {
-                HitNothing();
+                if (!isReturningToPlayer)
+                {
+                    HitNothing();
+                }
+
                 return;
             }
 
@@ -163,8 +216,47 @@ namespace Vampire
 
             hitTargetIds.Add(targetId);
 
-            damageable.TakeDamage(damage, knockback * direction);
-            OnHitDamageable?.Invoke(damage);
+            float finalDamage = isReturningToPlayer
+                ? damage * Mathf.Max(0.01f, specials.returnNeedleDamageMultiplier)
+                : damage;
+
+            DamageTarget(damageable, damageableComponent, finalDamage);
+
+            // 귀환 중에는 적을 맞혀도 멈추지 않고 계속 플레이어에게 돌아간다.
+            if (isReturningToPlayer)
+            {
+                return;
+            }
+
+            // 침귀환은 관통침과 충돌하지 않도록 첫 적중 후 바로 귀환 상태로 전환한다.
+            // 즉, 침귀환이 켜져 있으면 일반 관통 로직보다 침귀환이 우선한다.
+            if (specials.returnNeedleEnabled)
+            {
+                BeginReturnToPlayer();
+                return;
+            }
+
+            bool canPierce = specials.pierceEnabled && remainingPierces > 0;
+
+            if (canPierce)
+            {
+                remainingPierces--;
+
+                if (col != null)
+                {
+                    StartCoroutine(ReenableColliderNextFrame());
+                }
+
+                return;
+            }
+
+            DestroyProjectile();
+        }
+
+        private void DamageTarget(IDamageable damageable, Component damageableComponent, float finalDamage)
+        {
+            damageable.TakeDamage(finalDamage, knockback * direction);
+            OnHitDamageable?.Invoke(finalDamage);
 
             if (specials.poisonEnabled)
             {
@@ -185,22 +277,23 @@ namespace Vampire
             {
                 ApplyExplosion(damageableComponent.gameObject);
             }
+        }
 
-            bool canPierce = specials.pierceEnabled && remainingPierces > 0;
-
-            if (canPierce)
+        private void BeginReturnToPlayer()
+        {
+            if (playerCharacter == null || playerCharacter.CenterTransform == null)
             {
-                remainingPierces--;
-
-                if (col != null)
-                {
-                    StartCoroutine(ReenableColliderNextFrame());
-                }
-
+                DestroyProjectile();
                 return;
             }
 
-            DestroyProjectile();
+            isReturningToPlayer = true;
+            returnTimer = 0f;
+
+            if (col != null)
+            {
+                StartCoroutine(ReenableColliderNextFrame());
+            }
         }
 
         private IEnumerator ReenableColliderNextFrame()
