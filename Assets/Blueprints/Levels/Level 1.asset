@@ -28,6 +28,8 @@ MonoBehaviour:
   - {fileID: 7378740072262091319, guid: 228f48811db777343bb38c3419605e4a, type: 3}
   - {fileID: 7378740072262091319, guid: a0daf2ec26e3f4a45a029d24d08235ef, type: 3}
   - {fileID: 7378740072262091319, guid: 079b3b7ffe8e24b4a98135dc2f88acf7, type: 3}
+  - {fileID: 7378740072262091319, guid: d559d8ad76e7e4646b8d57b68f47e392, type: 3}
+  - {fileID: 7378740072262091319, guid: fc9486cd06fa0534e830e3b0792ae540, type: 3}
   monsters:
   - monstersPrefab: {fileID: 8960830493049914446, guid: 12adb3a92ed404612906d2c1fe4b586e, type: 3}
     monsterBlueprints:

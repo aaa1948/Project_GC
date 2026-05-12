@@ -256,16 +256,16 @@ namespace Vampire
                 return;
             }
 
-            // 침귀환은 관통침과 충돌하지 않도록 첫 적중 후 바로 귀환 상태로 전환한다.
-            // 즉, 침귀환이 켜져 있으면 일반 관통 로직보다 침귀환이 우선한다.
-            if (specials.returnNeedleEnabled)
-            {
-                BeginReturnToPlayer();
-                return;
-            }
-
             bool canPierce = specials.pierceEnabled && remainingPierces > 0;
 
+            // 핵심 수정:
+            // 관통침 + 침귀환을 같이 가지고 있을 때,
+            // 침귀환보다 관통 횟수 소모를 먼저 처리한다.
+            //
+            // 예: pierceCount = 2
+            // 1번째 적중 → 관통, remainingPierces 1
+            // 2번째 적중 → 관통, remainingPierces 0
+            // 3번째 적중 → 더 이상 관통 불가 → 침귀환 발동
             if (canPierce)
             {
                 remainingPierces--;
@@ -275,6 +275,13 @@ namespace Vampire
                     StartCoroutine(ReenableColliderNextFrame());
                 }
 
+                return;
+            }
+
+            // 관통 횟수를 모두 사용했거나, 관통침이 없을 때 침귀환이 켜져 있으면 귀환한다.
+            if (specials.returnNeedleEnabled)
+            {
+                BeginReturnToPlayer();
                 return;
             }
 

@@ -8,6 +8,7 @@ namespace Vampire
         private Character sourceCharacter;
         private EntityManager entityManager;
         private SyringeDartAbility sourceSyringeAbility;
+        private PlayerGeneralStatRuntime statRuntime;
 
         private SpriteRenderer spriteRenderer;
         private Rigidbody2D rb;
@@ -15,14 +16,9 @@ namespace Vampire
 
         private int projectilePoolIndex;
         private float fireTimer = 0f;
-        private float fireCooldown = 1f;
-        private float damage;
-        private float knockback;
-        private float projectileSpeed;
-        private int projectileCount;
+
         private LayerMask monsterLayer;
         private GameObject projectilePrefab;
-        private SyringeSpecialRuntime specialSnapshot;
 
         [SerializeField] private float followOffsetDistance = 1.2f;
         [SerializeField] private float followLerpSpeed = 12f;
@@ -30,13 +26,16 @@ namespace Vampire
 
         private float spawnInvincibleTimer = 0f;
 
-        public static SyringeCloneController Create(Character sourceCharacter, EntityManager entityManager, SyringeDartAbility sourceSyringeAbility)
+        public static SyringeCloneController Create(
+            Character sourceCharacter,
+            EntityManager entityManager,
+            SyringeDartAbility sourceSyringeAbility)
         {
             GameObject cloneObject = new GameObject("Syringe Clone");
 
             SpriteRenderer sourceRenderer = sourceCharacter.GetComponentInChildren<SpriteRenderer>();
-
             SpriteRenderer cloneRenderer = cloneObject.AddComponent<SpriteRenderer>();
+
             if (sourceRenderer != null)
             {
                 cloneRenderer.sprite = sourceRenderer.sprite;
@@ -57,7 +56,15 @@ namespace Vampire
             cloneCollider.radius = 0.3f;
 
             SyringeCloneController controller = cloneObject.AddComponent<SyringeCloneController>();
-            controller.Init(sourceCharacter, entityManager, sourceSyringeAbility, cloneRenderer, cloneRb, cloneCollider);
+
+            controller.Init(
+                sourceCharacter,
+                entityManager,
+                sourceSyringeAbility,
+                cloneRenderer,
+                cloneRb,
+                cloneCollider
+            );
 
             return controller;
         }
@@ -77,15 +84,10 @@ namespace Vampire
             this.rb = rb;
             this.hitCollider = hitCollider;
 
+            statRuntime = PlayerGeneralStatRuntime.GetOrCreate(sourceCharacter);
+
             projectilePrefab = sourceSyringeAbility.ProjectilePrefab;
             monsterLayer = sourceSyringeAbility.MonsterLayer;
-            damage = sourceSyringeAbility.GetCloneDamage();
-            knockback = sourceSyringeAbility.GetCloneKnockback();
-            projectileSpeed = sourceSyringeAbility.GetCloneSpeed();
-            fireCooldown = sourceSyringeAbility.GetCloneCooldown();
-            projectileCount = sourceSyringeAbility.GetCloneProjectileCount();
-            specialSnapshot = sourceSyringeAbility.GetCurrentSpecialRuntime();
-
             projectilePoolIndex = entityManager.AddPoolForProjectile(projectilePrefab);
 
             transform.position = sourceCharacter.transform.position + Vector3.right * followOffsetDistance;
@@ -96,10 +98,15 @@ namespace Vampire
 
         private void Update()
         {
-            if (sourceCharacter == null)
+            if (sourceCharacter == null || sourceSyringeAbility == null)
             {
                 Destroy(gameObject);
                 return;
+            }
+
+            if (statRuntime == null)
+            {
+                statRuntime = PlayerGeneralStatRuntime.GetOrCreate(sourceCharacter);
             }
 
             if (spawnInvincibleTimer > 0f)
@@ -122,19 +129,26 @@ namespace Vampire
                 sideDirection = Vector2.right;
             }
 
-            Vector3 targetPosition = sourceCharacter.transform.position + (Vector3)(sideDirection.normalized * followOffsetDistance);
-            transform.position = Vector3.Lerp(transform.position, targetPosition, followLerpSpeed * Time.deltaTime);
+            Vector3 targetPosition =
+                sourceCharacter.transform.position +
+                (Vector3)(sideDirection.normalized * followOffsetDistance);
+
+            transform.position = Vector3.Lerp(
+                transform.position,
+                targetPosition,
+                followLerpSpeed * Time.deltaTime
+            );
         }
 
         private void UpdateVisual()
         {
             SpriteRenderer sourceRenderer = sourceCharacter.GetComponentInChildren<SpriteRenderer>();
+
             if (sourceRenderer != null && spriteRenderer != null)
             {
                 spriteRenderer.sprite = sourceRenderer.sprite;
                 spriteRenderer.flipX = sourceRenderer.flipX;
 
-                // 생성 직후 무적 상태일 때 약간 더 투명하게 표시
                 if (spawnInvincibleTimer > 0f)
                 {
                     spriteRenderer.color = new Color(1f, 1f, 1f, 0.45f);
@@ -148,11 +162,21 @@ namespace Vampire
 
         private void UpdateAttack()
         {
+            float cloneAttackSpeedMultiplier = statRuntime != null
+                ? statRuntime.CloneAttackSpeedMultiplier
+                : 1f;
+
+            float effectiveCooldown =
+                sourceSyringeAbility.GetCloneCooldown() /
+                Mathf.Max(0.1f, cloneAttackSpeedMultiplier);
+
+            effectiveCooldown = Mathf.Max(0.05f, effectiveCooldown);
+
             fireTimer += Time.deltaTime;
 
-            if (fireTimer >= fireCooldown)
+            if (fireTimer >= effectiveCooldown)
             {
-                fireTimer = Mathf.Repeat(fireTimer, fireCooldown);
+                fireTimer = Mathf.Repeat(fireTimer, effectiveCooldown);
                 StartCoroutine(FireRoutine());
             }
         }
@@ -160,14 +184,31 @@ namespace Vampire
         private IEnumerator FireRoutine()
         {
             Vector2 baseDirection = sourceCharacter.LookDirection;
+
             if (baseDirection == Vector2.zero)
             {
                 baseDirection = Vector2.right;
             }
 
+            int projectileCount = sourceSyringeAbility.GetCloneProjectileCount();
+
+            float cloneDamageMultiplier = statRuntime != null
+                ? statRuntime.CloneDamageMultiplier
+                : 1f;
+
+            float damage = sourceSyringeAbility.GetCloneDamage() * cloneDamageMultiplier;
+            float knockback = sourceSyringeAbility.GetCloneKnockback();
+            float projectileSpeed = sourceSyringeAbility.GetCloneSpeed();
+
+            SyringeSpecialRuntime currentRuntime = sourceSyringeAbility.GetCurrentSpecialRuntime();
+
             for (int i = 0; i < projectileCount; i++)
             {
-                Vector2 spreadDirection = sourceSyringeAbility.GetSpreadDirection(baseDirection, i, projectileCount);
+                Vector2 spreadDirection = sourceSyringeAbility.GetSpreadDirection(
+                    baseDirection,
+                    i,
+                    projectileCount
+                );
 
                 Projectile projectile = entityManager.SpawnProjectile(
                     projectilePoolIndex,
@@ -180,7 +221,7 @@ namespace Vampire
 
                 if (projectile is SyringeProjectile syringeProjectile)
                 {
-                    syringeProjectile.ConfigureSpecials(specialSnapshot);
+                    syringeProjectile.ConfigureSpecials(currentRuntime);
                 }
 
                 projectile.OnHitDamageable.AddListener(sourceCharacter.OnDealDamage.Invoke);
@@ -208,6 +249,14 @@ namespace Vampire
             if (gameObject != null)
             {
                 Destroy(gameObject);
+            }
+        }
+
+        private void OnDestroy()
+        {
+            if (sourceCharacter != null && sourceCharacter.OnDeath != null)
+            {
+                sourceCharacter.OnDeath.RemoveListener(DestroySelf);
             }
         }
     }
