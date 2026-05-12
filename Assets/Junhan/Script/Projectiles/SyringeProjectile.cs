@@ -19,6 +19,22 @@ namespace Vampire
         private bool isReturningToPlayer = false;
         private float returnTimer = 0f;
 
+        [Header("Stuck Needle Visual / 꽂힌 침 연출")]
+        [Tooltip("체력이 남은 몬스터에게 일반 침이 적중했을 때, 맞은 위치에 침 시각 오브젝트를 남깁니다.")]
+        [SerializeField] private bool enableStuckNeedleVisual = true;
+
+        [Tooltip("몬스터 몸에 꽂힌 침이 유지되는 시간입니다.")]
+        [SerializeField] private float stuckNeedleLifetime = 2.5f;
+
+        [Tooltip("꽂힌 침의 크기 배율입니다.")]
+        [SerializeField] private float stuckNeedleScaleMultiplier = 0.85f;
+
+        [Tooltip("꽂힌 침의 투명도입니다.")]
+        [SerializeField, Range(0f, 1f)] private float stuckNeedleAlpha = 0.9f;
+
+        [Tooltip("꽂힌 침이 원래 침보다 위에 보이도록 Sorting Order에 더할 값입니다.")]
+        [SerializeField] private int stuckNeedleSortingOrderBonus = 1;
+
         // 플레이어 회복 메서드를 못 찾았을 때 경고가 너무 많이 뜨는 것을 막기 위한 플래그
         private static bool hasWarnedHealMethodMissing = false;
 
@@ -220,7 +236,19 @@ namespace Vampire
                 ? damage * Mathf.Max(0.01f, specials.returnNeedleDamageMultiplier)
                 : damage;
 
+            Vector3 hitPosition = transform.position;
+            Quaternion hitRotation = transform.rotation;
+            Vector3 hitScale = transform.lossyScale;
+
             DamageTarget(damageable, damageableComponent, finalDamage);
+
+            // 일반 상태의 침이 살아있는 몬스터에게 박혔을 때만 시각적으로 침을 남긴다.
+            TryCreateStuckNeedleVisual(
+                damageableComponent,
+                hitPosition,
+                hitRotation,
+                hitScale
+            );
 
             // 귀환 중에는 적을 맞혀도 멈추지 않고 계속 플레이어에게 돌아간다.
             if (isReturningToPlayer)
@@ -277,6 +305,87 @@ namespace Vampire
             {
                 ApplyExplosion(damageableComponent.gameObject);
             }
+        }
+
+        private void TryCreateStuckNeedleVisual(
+            Component damageableComponent,
+            Vector3 hitPosition,
+            Quaternion hitRotation,
+            Vector3 hitScale)
+        {
+            if (!enableStuckNeedleVisual)
+            {
+                return;
+            }
+
+            // 귀환 중인 침은 플레이어에게 돌아가야 하므로 남기지 않는다.
+            if (isReturningToPlayer)
+            {
+                return;
+            }
+
+            // 침귀환 증강이 있으면 침이 돌아가야 하므로 남기지 않는다.
+            if (specials.returnNeedleEnabled)
+            {
+                return;
+            }
+
+            // 관통침이 있으면 침이 뚫고 지나가야 하므로 남기지 않는다.
+            // 대물침도 내부적으로 pierceEnabled를 사용하므로 여기서 자연스럽게 제외된다.
+            if (specials.pierceEnabled)
+            {
+                return;
+            }
+
+            if (damageableComponent == null)
+            {
+                return;
+            }
+
+            Monster monster = damageableComponent.GetComponent<Monster>() ??
+                              damageableComponent.GetComponentInParent<Monster>();
+
+            // 몬스터가 아니면 침 박힘 연출을 만들지 않는다.
+            if (monster == null)
+            {
+                return;
+            }
+
+            // 데미지 적용 후에도 살아있는 몬스터에게만 침을 남긴다.
+            if (monster.HP <= 0f)
+            {
+                return;
+            }
+
+            if (projectileSpriteRenderer == null || projectileSpriteRenderer.sprite == null)
+            {
+                return;
+            }
+
+            GameObject stuckNeedleObject = new GameObject("Stuck Needle Visual");
+            Transform stuckTransform = stuckNeedleObject.transform;
+
+            stuckTransform.position = hitPosition;
+            stuckTransform.rotation = hitRotation;
+            stuckTransform.localScale = hitScale * stuckNeedleScaleMultiplier;
+
+            // 월드 위치를 유지한 채 몬스터에 붙인다.
+            // 이렇게 하면 몬스터가 움직일 때 꽂힌 침도 같이 따라간다.
+            stuckTransform.SetParent(monster.transform, true);
+
+            SpriteRenderer renderer = stuckNeedleObject.AddComponent<SpriteRenderer>();
+            renderer.sprite = projectileSpriteRenderer.sprite;
+            renderer.flipX = projectileSpriteRenderer.flipX;
+            renderer.flipY = projectileSpriteRenderer.flipY;
+            renderer.sortingLayerID = projectileSpriteRenderer.sortingLayerID;
+            renderer.sortingOrder = projectileSpriteRenderer.sortingOrder + stuckNeedleSortingOrderBonus;
+
+            Color baseColor = projectileSpriteRenderer.color;
+            baseColor.a = stuckNeedleAlpha;
+            renderer.color = baseColor;
+
+            StuckNeedleVisual stuckVisual = stuckNeedleObject.AddComponent<StuckNeedleVisual>();
+            stuckVisual.Init(monster, stuckNeedleLifetime);
         }
 
         private void BeginReturnToPlayer()
@@ -494,6 +603,54 @@ namespace Vampire
                 damagedIds.Add(splashId);
 
                 splashDamageable.TakeDamage(specials.explosionDamage, Vector2.zero);
+            }
+        }
+    }
+
+    // 몬스터 몸에 꽂힌 침 시각 오브젝트.
+    // 일정 시간이 지나면 사라지고, 몬스터가 먼저 죽으면 같이 사라진다.
+    public class StuckNeedleVisual : MonoBehaviour
+    {
+        private Monster ownerMonster;
+        private float lifetime = 2.5f;
+        private Coroutine lifetimeCoroutine;
+
+        public void Init(Monster ownerMonster, float lifetime)
+        {
+            this.ownerMonster = ownerMonster;
+            this.lifetime = Mathf.Max(0.05f, lifetime);
+
+            if (this.ownerMonster != null)
+            {
+                this.ownerMonster.OnKilled.AddListener(OnOwnerKilled);
+            }
+
+            lifetimeCoroutine = StartCoroutine(LifetimeRoutine());
+        }
+
+        private IEnumerator LifetimeRoutine()
+        {
+            yield return new WaitForSeconds(lifetime);
+
+            Destroy(gameObject);
+        }
+
+        private void OnOwnerKilled(Monster killedMonster)
+        {
+            Destroy(gameObject);
+        }
+
+        private void OnDestroy()
+        {
+            if (lifetimeCoroutine != null)
+            {
+                StopCoroutine(lifetimeCoroutine);
+                lifetimeCoroutine = null;
+            }
+
+            if (ownerMonster != null)
+            {
+                ownerMonster.OnKilled.RemoveListener(OnOwnerKilled);
             }
         }
     }
