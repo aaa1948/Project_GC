@@ -21240,14 +21240,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 54556bae77bd67a4d8de7a7bc8e02049, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  levelManager: {fileID: 0}
   playerCharacter: {fileID: 0}
-  bossPrefab: {fileID: 592601914724115230, guid: 94a504447975fed4b97efe7a06227d26, type: 3}
   spawnAfterSeconds: 10
   spawnOnlyOnce: 1
   useRealtimeForDebug: 1
   spawnRelativeToPlayer: 1
   useRandomDirectionAroundPlayer: 1
-  spawnDistanceFromPlayer: 1
+  spawnDistanceFromPlayer: 5
   spawnOffsetFromPlayer: {x: 1.5, y: 1.5}
   useFixedSpawnPoint: 0
   fixedSpawnPoint: {fileID: 0}

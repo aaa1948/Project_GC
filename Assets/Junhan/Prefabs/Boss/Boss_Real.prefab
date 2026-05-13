@@ -5175,7 +5175,7 @@ SpriteRenderer:
   m_SortingLayerID: -96099825
   m_SortingLayer: 2
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 4bc4c5c7519a54fd79d587c6e1f5c5e4, type: 3}
+  m_Sprite: {fileID: 941236917, guid: a1934d8b81b1b463789e100d3936db4f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -5212,7 +5212,7 @@ MonoBehaviour:
   contactDamage: 10
   contactDamageCooldown: 0.6
   enableBasicAttack: 1
-  basicAttackBulletPrefab: {fileID: 0}
+  basicAttackBulletPrefab: {fileID: 2434312293593349568, guid: 76661a6e6373fae4e9bcd9a73322111f, type: 3}
   basicAttackCooldown: 1.6
   basicAttackDamage: 5
   basicAttackBulletSpeed: 4.5
@@ -5224,10 +5224,10 @@ MonoBehaviour:
   minPlayerVelocityForPrediction: 0.1
   forceBasicBulletSortingOrder: 1
   basicBulletSortingOrder: 500
-  enableMovement: 0
+  enableMovement: 1
   moveSpeedPhase1: 0.8
   moveSpeedPhase2: 1.2
-  stopDistanceFromPlayer: 3
+  stopDistanceFromPlayer: 1.5
   moveWhileUsingPattern: 1
   patternMoveSpeedMultiplier: 0.35
   movementSmoothTime: 0.18
@@ -5265,7 +5265,7 @@ MonoBehaviour:
   nearWeightPhase2: 10
   midWeightPhase2: 10
   farWeightPhase2: 10
-  warningCirclePrefab: {fileID: 0}
+  warningCirclePrefab: {fileID: 6326675434172693389, guid: f5088ef85aadd1c4eb438815cf7627c4, type: 3}
   warningDuration: 1
   explosionRadius: 2
   explosionDamage: 20
@@ -5292,7 +5292,7 @@ MonoBehaviour:
   nearWeightPhase2: 10
   midWeightPhase2: 10
   farWeightPhase2: 10
-  warningLinePrefab: {fileID: 0}
+  warningLinePrefab: {fileID: 3500323201647957297, guid: 39ffc1f9dd07a9248bd4bda7a75c0bae, type: 3}
   warningTime: 0.9
   warningWidth: 1.5
   warningColor: {r: 0.4, g: 0.85, b: 1, a: 0.45}
@@ -5329,7 +5329,7 @@ MonoBehaviour:
   nearWeightPhase2: 10
   midWeightPhase2: 10
   farWeightPhase2: 10
-  bulletPrefab: {fileID: 0}
+  bulletPrefab: {fileID: 2434312293593349568, guid: 76661a6e6373fae4e9bcd9a73322111f, type: 3}
   bulletSpeed: 8
   bulletDamage: 10
   bulletCountPhase1: 7
@@ -5362,7 +5362,7 @@ MonoBehaviour:
   nearWeightPhase2: 10
   midWeightPhase2: 10
   farWeightPhase2: 10
-  bulletPrefab: {fileID: 0}
+  bulletPrefab: {fileID: 2434312293593349568, guid: 76661a6e6373fae4e9bcd9a73322111f, type: 3}
   bulletSpeed: 6
   bulletDamage: 8
   bulletCountPhase1: 12

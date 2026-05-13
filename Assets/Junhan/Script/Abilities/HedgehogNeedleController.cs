@@ -4,9 +4,17 @@ using UnityEngine;
 namespace Vampire
 {
     // 전설 증강: 고슴도침
-    // 수정 버전:
-    // 시간이 지나면 자동으로 발사하지 않는다.
-    // 적이 플레이어 주변의 침 실드 범위에 닿았을 때만 해당 적 방향으로 반격 침을 발사한다.
+    //
+    // 역할:
+    // - 플레이어 주변에 회전하는 침 결계를 만든다.
+    // - 시간이 지나면 자동 발사하지 않는다.
+    // - 적이 실드 범위에 닿았을 때만 해당 적 방향으로 반격 침을 발사한다.
+    //
+    // 수정 내용:
+    // - 기존 monsterLayer 기반 검색을 제거하고 Monster 컴포넌트 기준으로 감지한다.
+    // - 보스가 Monster Full / Monster Legs 레이어 밖에 있어도 Monster 계열이면 감지 가능하다.
+    // - 휴면 상태 TrapMonster는 감지하지 않는다.
+    // - 활성화 상태 TrapMonster는 감지한다.
     public class HedgehogNeedleController : MonoBehaviour
     {
         private Character sourceCharacter;
@@ -26,8 +34,11 @@ namespace Vampire
         private Transform visualRoot;
         private readonly List<Transform> orbitNeedleVisuals = new List<Transform>();
 
-        // 같은 적에게 매 프레임 침이 발사되는 것을 막기 위한 대상별 쿨타임
+        // 같은 대상에게 매 프레임 반격 침이 발사되는 것을 막기 위한 대상별 쿨타임
         private readonly Dictionary<int, float> nextFireAllowedTimeByTarget = new Dictionary<int, float>();
+
+        [Header("Debug")]
+        [SerializeField] private bool debugLog = false;
 
         public static HedgehogNeedleController Create(
             Character sourceCharacter,
@@ -78,16 +89,20 @@ namespace Vampire
 
             projectilePrefab = sourceNeedleAbility.ProjectilePrefab;
             monsterLayer = sourceNeedleAbility.MonsterLayer;
-
             projectilePoolIndex = entityManager.AddPoolForProjectile(projectilePrefab);
 
-            transform.position = sourceCharacter.CenterTransform.position;
+            transform.position = GetSourceCenterPosition();
 
             CreateOrbitVisuals();
 
-            if (sourceCharacter.OnDeath != null)
+            if (sourceCharacter != null && sourceCharacter.OnDeath != null)
             {
                 sourceCharacter.OnDeath.AddListener(DestroySelf);
+            }
+
+            if (debugLog)
+            {
+                Debug.Log("[고슴도침] HedgehogNeedleController 생성 완료");
             }
         }
 
@@ -99,7 +114,7 @@ namespace Vampire
                 return;
             }
 
-            transform.position = sourceCharacter.CenterTransform.position;
+            transform.position = GetSourceCenterPosition();
 
             if (visualRoot != null)
             {
@@ -107,6 +122,21 @@ namespace Vampire
             }
 
             DetectEnemiesTouchingShield();
+        }
+
+        private Vector2 GetSourceCenterPosition()
+        {
+            if (sourceCharacter == null)
+            {
+                return transform.position;
+            }
+
+            if (sourceCharacter.CenterTransform != null)
+            {
+                return sourceCharacter.CenterTransform.position;
+            }
+
+            return sourceCharacter.transform.position;
         }
 
         private void CreateOrbitVisuals()
@@ -139,7 +169,7 @@ namespace Vampire
                 {
                     visualRenderer.sprite = sourceRenderer.sprite;
                     visualRenderer.sortingLayerID = sourceRenderer.sortingLayerID;
-                    visualRenderer.sortingOrder = sourceRenderer.sortingOrder + 1;
+                    visualRenderer.sortingOrder = sourceRenderer.sortingOrder + 10;
                     visualRenderer.color = new Color(1f, 1f, 1f, 0.65f);
                     visualObject.transform.localScale = projectilePrefab.transform.localScale;
                 }
@@ -150,11 +180,12 @@ namespace Vampire
 
         private void DetectEnemiesTouchingShield()
         {
-            Collider2D[] hits = Physics2D.OverlapCircleAll(
-                sourceCharacter.CenterTransform.position,
-                orbitRadius,
-                monsterLayer
-            );
+            Vector2 centerPosition = GetSourceCenterPosition();
+
+            // 핵심 수정:
+            // 기존에는 monsterLayer만 검색해서 보스가 레이어 밖이면 감지하지 못했다.
+            // 이제는 주변 Collider 전체를 찾고, Monster 컴포넌트가 있는 대상만 필터링한다.
+            Collider2D[] hits = Physics2D.OverlapCircleAll(centerPosition, orbitRadius);
 
             if (hits == null || hits.Length == 0)
             {
@@ -165,22 +196,23 @@ namespace Vampire
 
             foreach (Collider2D hit in hits)
             {
-                if (hit == null)
+                Monster monster;
+
+                if (!TryGetValidMonsterTarget(hit, out monster))
                 {
                     continue;
                 }
 
-                IDamageable damageable = hit.GetComponentInParent<IDamageable>();
-                Component damageableComponent = damageable as Component;
+                IDamageable damageable = monster as IDamageable;
 
-                if (damageable == null || damageableComponent == null)
+                if (damageable == null)
                 {
                     continue;
                 }
 
-                int targetId = damageableComponent.gameObject.GetInstanceID();
+                int targetId = monster.gameObject.GetInstanceID();
 
-                // 같은 적이 여러 콜라이더를 가지고 있을 수 있으니 한 프레임에 한 번만 처리
+                // 같은 몬스터가 여러 Collider를 가지고 있을 수 있으므로 한 프레임에 한 번만 처리
                 if (checkedTargetsThisFrame.Contains(targetId))
                 {
                     continue;
@@ -193,9 +225,37 @@ namespace Vampire
                     continue;
                 }
 
-                FireCounterNeedleAtTarget(damageableComponent.transform);
+                FireCounterNeedleAtTarget(monster);
+
                 nextFireAllowedTimeByTarget[targetId] = Time.time + touchFireCooldown;
             }
+        }
+
+        private bool TryGetValidMonsterTarget(Collider2D collider, out Monster monster)
+        {
+            monster = null;
+
+            if (collider == null)
+            {
+                return false;
+            }
+
+            monster = collider.GetComponentInParent<Monster>();
+
+            if (monster == null)
+            {
+                return false;
+            }
+
+            // 휴면 상태 함정 몬스터는 고슴도침 대상에서 제외한다.
+            TrapMonster trapMonster = monster as TrapMonster;
+
+            if (trapMonster != null && !trapMonster.IsActive)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private bool CanFireAtTarget(int targetId)
@@ -208,15 +268,25 @@ namespace Vampire
             return Time.time >= nextAllowedTime;
         }
 
-        private void FireCounterNeedleAtTarget(Transform target)
+        private void FireCounterNeedleAtTarget(Monster targetMonster)
         {
-            if (target == null || sourceCharacter == null || entityManager == null || sourceNeedleAbility == null)
+            if (targetMonster == null || sourceCharacter == null || entityManager == null || sourceNeedleAbility == null)
             {
                 return;
             }
 
-            Vector2 centerPosition = sourceCharacter.CenterTransform.position;
-            Vector2 targetPosition = target.position;
+            Vector2 centerPosition = GetSourceCenterPosition();
+
+            Vector2 targetPosition;
+
+            if (targetMonster.CenterTransform != null)
+            {
+                targetPosition = targetMonster.CenterTransform.position;
+            }
+            else
+            {
+                targetPosition = targetMonster.transform.position;
+            }
 
             Vector2 direction = targetPosition - centerPosition;
 
@@ -258,6 +328,11 @@ namespace Vampire
 
             projectile.OnHitDamageable.AddListener(sourceCharacter.OnDealDamage.Invoke);
             projectile.Launch(direction);
+
+            if (debugLog)
+            {
+                Debug.Log($"[고슴도침] 반격 침 발사 대상: {targetMonster.name}");
+            }
         }
 
         private Vector2 AngleToVector(float angleDegrees)
@@ -288,7 +363,6 @@ namespace Vampire
 
         private void OnDrawGizmosSelected()
         {
-            // 씬 뷰에서 고슴도침 실드 범위를 확인하기 위한 디버그 표시
             Gizmos.DrawWireSphere(transform.position, orbitRadius);
         }
     }
