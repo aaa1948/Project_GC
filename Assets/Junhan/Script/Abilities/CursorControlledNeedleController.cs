@@ -202,7 +202,6 @@ namespace Vampire
 
             float lerpFactor = 1f - Mathf.Exp(-followSpeed * Time.deltaTime);
             Vector3 nextPosition = Vector3.Lerp(currentPosition, targetPosition, lerpFactor);
-
             Vector3 moveDirection = nextPosition - currentPosition;
 
             cursorNeedleTransform.position = nextPosition;
@@ -222,6 +221,7 @@ namespace Vampire
             }
 
             float heavySizeMultiplier = sourceNeedleAbility.GetCursorNeedleHeavySizeMultiplier();
+
             cursorNeedleTransform.localScale = Vector3.one * visualScale * heavySizeMultiplier;
 
             if (cursorNeedleRenderer != null)
@@ -272,6 +272,7 @@ namespace Vampire
             }
 
             lastDisplayedSpecialCount = specialCount;
+
             RebuildBackDisplay(specialCount);
         }
 
@@ -301,7 +302,6 @@ namespace Vampire
                 needleTransform.SetParent(backDisplayRoot);
 
                 float x = (i * backDisplaySpacing) - (totalWidth * 0.5f);
-
                 float normalized = specialCount <= 1
                     ? 0f
                     : Mathf.InverseLerp(0f, specialCount - 1, i) * 2f - 1f;
@@ -322,6 +322,51 @@ namespace Vampire
             }
         }
 
+        private bool TryGetValidMonsterTarget(Collider2D collider, out Monster monster)
+        {
+            monster = null;
+
+            if (collider == null)
+            {
+                return false;
+            }
+
+            monster = collider.GetComponentInParent<Monster>();
+
+            if (monster == null)
+            {
+                return false;
+            }
+
+            // 함정 몬스터는 활성화 상태일 때만 공격 대상이 된다.
+            // 휴면 상태에서는 이기어침도 무시한다.
+            TrapMonster trapMonster = monster as TrapMonster;
+
+            if (trapMonster != null && !trapMonster.IsActive)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool IsSameTarget(GameObject originalTarget, Monster monster)
+        {
+            if (originalTarget == null || monster == null)
+            {
+                return false;
+            }
+
+            if (originalTarget == monster.gameObject)
+            {
+                return true;
+            }
+
+            Monster originalMonster = originalTarget.GetComponentInParent<Monster>();
+
+            return originalMonster != null && originalMonster == monster;
+        }
+
         private void DetectAndDamageEnemies()
         {
             if (cursorNeedleTransform == null || sourceNeedleAbility == null)
@@ -332,7 +377,6 @@ namespace Vampire
             SyringeSpecialRuntime runtime = sourceNeedleAbility.GetCurrentSpecialRuntime();
 
             float heavySizeMultiplier = sourceNeedleAbility.GetCursorNeedleHeavySizeMultiplier();
-
             float effectiveHitRadius = hitRadius * heavySizeMultiplier;
 
             if (runtime.homingEnabled)
@@ -340,10 +384,10 @@ namespace Vampire
                 effectiveHitRadius += homingHitRadiusBonus;
             }
 
+            // 기존 monsterLayer 검색은 보스를 누락할 수 있으므로 전체 Collider 검색 후 Monster 기준 필터링.
             Collider2D[] hits = Physics2D.OverlapCircleAll(
                 cursorNeedleTransform.position,
-                effectiveHitRadius,
-                monsterLayer
+                effectiveHitRadius
             );
 
             if (hits == null || hits.Length == 0)
@@ -358,20 +402,22 @@ namespace Vampire
 
             foreach (Collider2D hit in hits)
             {
-                if (hit == null)
+                Monster monster;
+
+                if (!TryGetValidMonsterTarget(hit, out monster))
                 {
                     continue;
                 }
 
-                IDamageable damageable = hit.GetComponentInParent<IDamageable>();
-                Component damageableComponent = damageable as Component;
+                IDamageable damageable = monster as IDamageable;
+                Component damageableComponent = monster;
 
                 if (damageable == null || damageableComponent == null)
                 {
                     continue;
                 }
 
-                int targetId = damageableComponent.gameObject.GetInstanceID();
+                int targetId = monster.gameObject.GetInstanceID();
 
                 if (checkedTargetsThisFrame.Contains(targetId))
                 {
@@ -672,35 +718,42 @@ namespace Vampire
 
             Collider2D[] hits = Physics2D.OverlapCircleAll(
                 cursorNeedleTransform.position,
-                runtime.explosionRadius,
-                monsterLayer
+                runtime.explosionRadius
             );
 
             HashSet<int> damagedIds = new HashSet<int>();
 
             foreach (Collider2D hit in hits)
             {
-                IDamageable splashDamageable = hit.GetComponentInParent<IDamageable>();
-                Component splashComponent = splashDamageable as Component;
+                Monster monster;
 
-                if (splashDamageable == null || splashComponent == null)
+                if (!TryGetValidMonsterTarget(hit, out monster))
                 {
                     continue;
                 }
 
-                int splashId = splashComponent.gameObject.GetInstanceID();
-
-                if (originalTarget != null && splashId == originalTarget.GetInstanceID())
+                if (IsSameTarget(originalTarget, monster))
                 {
                     continue;
                 }
+
+                int splashId = monster.gameObject.GetInstanceID();
 
                 if (damagedIds.Contains(splashId))
                 {
                     continue;
                 }
 
+                IDamageable splashDamageable = monster as IDamageable;
+                Component splashComponent = monster;
+
+                if (splashDamageable == null || splashComponent == null)
+                {
+                    continue;
+                }
+
                 damagedIds.Add(splashId);
+
                 splashDamageable.TakeDamage(runtime.explosionDamage, Vector2.zero);
             }
         }

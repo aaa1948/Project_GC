@@ -203,6 +203,11 @@ MonoBehaviour:
   rotationSpeed: 4
   airResistance: 0
   destructionParticleSystem: {fileID: 1480910369272600104}
+  enableStuckNeedleVisual: 1
+  stuckNeedleLifetime: 2.5
+  stuckNeedleScaleMultiplier: 0.85
+  stuckNeedleAlpha: 0.9
+  stuckNeedleSortingOrderBonus: 1
 --- !u!212 &366095443042520401
 SpriteRenderer:
   m_ObjectHideFlags: 0
@@ -243,7 +248,7 @@ SpriteRenderer:
   m_LightmapParameters: {fileID: 0}
   m_SortingLayerID: 0
   m_SortingLayer: 0
-  m_SortingOrder: 0
+  m_SortingOrder: 50
   m_Sprite: {fileID: 21300000, guid: 8aa8c4cb76e054949bb308e463d0f9c2, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0

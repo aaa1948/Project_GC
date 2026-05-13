@@ -47,3 +47,6 @@ TagManager:
   - name: Foreground
     uniqueID: 779922199
     locked: 0
+  - name: Monster Full
+    uniqueID: 4198867471
+    locked: 0

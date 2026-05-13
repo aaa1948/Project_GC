@@ -33,13 +33,13 @@ namespace Vampire
 
         [Header("Spawn Position")]
         [Tooltip("플레이어 기준 최소 스폰 거리입니다.")]
-        [SerializeField] private float minDistanceFromPlayer = 3f;
+        [SerializeField] private float minDistanceFromPlayer = 2f;
 
         [Tooltip("플레이어 기준 최대 스폰 거리입니다.")]
-        [SerializeField] private float maxDistanceFromPlayer = 8f;
+        [SerializeField] private float maxDistanceFromPlayer = 5f;
 
         [Tooltip("함정끼리 최소한 이 정도 거리를 두고 배치합니다.")]
-        [SerializeField] private float minDistanceBetweenTraps = 2.5f;
+        [SerializeField] private float minDistanceBetweenTraps = 1.5f;
 
         [Tooltip("적절한 위치를 찾기 위해 몇 번까지 재시도할지 설정합니다.")]
         [SerializeField] private int spawnPositionTryCount = 20;
@@ -55,13 +55,36 @@ namespace Vampire
 
         private MethodInfo spawnMonsterMethod;
 
-        private void Start()
+        private IEnumerator Start()
         {
             ResolveReferences();
+
+            // LevelManager.Start()가 EntityManager 풀을 초기화하기 전에
+            // TrapMonsterFieldSpawner.Start()가 먼저 실행될 수 있으므로 2프레임 대기.
+            yield return null;
+            yield return null;
+
+            ResolveReferences();
+
+            if (debugLog)
+            {
+                Debug.Log(
+                    $"[TrapMonsterFieldSpawner] 시작 준비 완료 | " +
+                    $"SpawnOnStart: {spawnOnStart} | " +
+                    $"MaxActiveTraps: {maxActiveTraps} | " +
+                    $"PoolIndex: {trapMonsterPoolIndex} | " +
+                    $"Blueprint: {(trapMonsterBlueprint != null ? trapMonsterBlueprint.name : "NULL")}",
+                    this
+                );
+            }
 
             if (spawnOnStart)
             {
                 SpawnInitialTraps();
+            }
+            else if (debugLog)
+            {
+                Debug.LogWarning("[TrapMonsterFieldSpawner] Spawn On Start가 꺼져 있어서 시작 시 함정을 스폰하지 않습니다.", this);
             }
         }
 
@@ -111,12 +134,24 @@ namespace Vampire
 
         private void SpawnInitialTraps()
         {
+            if (debugLog)
+            {
+                Debug.Log("[TrapMonsterFieldSpawner] 초기 함정 스폰 시작", this);
+            }
+
             if (!CanSpawn())
             {
+                Debug.LogError("[TrapMonsterFieldSpawner] CanSpawn 실패로 초기 함정 스폰 중단", this);
                 return;
             }
 
             int targetCount = Mathf.Max(0, maxActiveTraps);
+
+            if (targetCount <= 0)
+            {
+                Debug.LogWarning("[TrapMonsterFieldSpawner] Max Active Traps가 0 이하라서 함정을 스폰하지 않습니다.", this);
+                return;
+            }
 
             for (int i = 0; i < targetCount; i++)
             {
@@ -126,7 +161,7 @@ namespace Vampire
 
         private bool CanSpawn()
         {
-            if (entityManager == null || spawnMonsterMethod == null)
+            if (entityManager == null || spawnMonsterMethod == null || playerCharacter == null)
             {
                 ResolveReferences();
             }
@@ -151,13 +186,14 @@ namespace Vampire
 
             if (playerCharacter == null)
             {
-                playerCharacter = FindPlayerCharacter();
+                Debug.LogError("[TrapMonsterFieldSpawner] Player Character를 찾지 못했습니다.", this);
+                return false;
+            }
 
-                if (playerCharacter == null)
-                {
-                    Debug.LogError("[TrapMonsterFieldSpawner] Player Character를 찾지 못했습니다.", this);
-                    return false;
-                }
+            if (trapMonsterPoolIndex < 0)
+            {
+                Debug.LogError("[TrapMonsterFieldSpawner] Trap Monster Pool Index가 0보다 작습니다.", this);
+                return false;
             }
 
             return true;
@@ -184,11 +220,24 @@ namespace Vampire
 
             Vector2 spawnPosition = GetRandomTrapSpawnPosition();
 
+            if (debugLog)
+            {
+                Debug.Log(
+                    $"[TrapMonsterFieldSpawner] 함정 스폰 시도 | " +
+                    $"PoolIndex: {trapMonsterPoolIndex} | Position: {spawnPosition}",
+                    this
+                );
+            }
+
             Monster spawnedMonster = SpawnTrapAtPosition(spawnPosition);
 
             if (spawnedMonster == null)
             {
-                Debug.LogWarning("[TrapMonsterFieldSpawner] 함정 스폰 실패", this);
+                Debug.LogError(
+                    "[TrapMonsterFieldSpawner] 함정 스폰 실패: SpawnMonster 결과가 NULL입니다. " +
+                    "Trap Monster Pool Index가 Level 1 Blueprint의 TrapMonster Element 번호와 맞는지 확인하세요.",
+                    this
+                );
                 return;
             }
 
@@ -199,9 +248,10 @@ namespace Vampire
             {
                 Debug.Log(
                     $"[TrapMonsterFieldSpawner] 함정 스폰 완료 | " +
+                    $"Monster: {spawnedMonster.name} | " +
                     $"현재 함정 수 {activeTraps.Count}/{maxActiveTraps} | " +
-                    $"위치 {spawnPosition}",
-                    this
+                    $"위치 {spawnedMonster.transform.position}",
+                    spawnedMonster
                 );
             }
         }
@@ -213,18 +263,31 @@ namespace Vampire
                 return null;
             }
 
-            object result = spawnMonsterMethod.Invoke(
-                entityManager,
-                new object[]
-                {
-                    trapMonsterPoolIndex,
-                    spawnPosition,
-                    trapMonsterBlueprint,
-                    0f
-                }
-            );
+            try
+            {
+                object result = spawnMonsterMethod.Invoke(
+                    entityManager,
+                    new object[]
+                    {
+                        trapMonsterPoolIndex,
+                        spawnPosition,
+                        trapMonsterBlueprint,
+                        0f
+                    }
+                );
 
-            return result as Monster;
+                return result as Monster;
+            }
+            catch (System.Exception exception)
+            {
+                Debug.LogError(
+                    "[TrapMonsterFieldSpawner] SpawnMonster 호출 중 예외 발생\n" +
+                    exception,
+                    this
+                );
+
+                return null;
+            }
         }
 
         private void OnTrapKilled(Monster killedTrap)
@@ -261,15 +324,6 @@ namespace Vampire
             {
                 SpawnOneTrap();
             }
-
-            // 완료된 코루틴 정리는 엄밀히 필요 없지만 리스트가 계속 커지는 것을 막기 위해 정리한다.
-            for (int i = respawnCoroutines.Count - 1; i >= 0; i--)
-            {
-                if (respawnCoroutines[i] == null)
-                {
-                    respawnCoroutines.RemoveAt(i);
-                }
-            }
         }
 
         private Vector2 GetRandomTrapSpawnPosition()
@@ -301,7 +355,6 @@ namespace Vampire
                 }
             }
 
-            // 완벽한 위치를 못 찾으면, 그나마 기존 함정과 가장 먼 위치를 사용한다.
             return bestPosition;
         }
 
