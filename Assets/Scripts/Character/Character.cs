@@ -48,7 +48,7 @@ namespace Vampire
         [Header("Utility Stat Pockets")]
         [SerializeField] protected float magnetRangeBonus = 0f;
         [SerializeField] protected float expMultiplier = 1.0f;
-        [SerializeField] protected float critChance = 0.05f;
+        [SerializeField] protected float critChance = 0.03f;
         [SerializeField] protected float luckMultiplier = 1.0f;
         [SerializeField] protected float lifeSteal = 0f;
         [SerializeField] protected float healOnKill = 0f;

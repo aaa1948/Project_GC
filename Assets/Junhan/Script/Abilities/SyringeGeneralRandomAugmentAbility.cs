@@ -52,6 +52,9 @@ namespace Vampire
             MoneySense,
             BossDamageTraining,
 
+            // 신규 항상 일반 증강
+            LuckyMeridian,
+
             // 조건부 일반 증강
             ExplosionRadiusControl,
             FragmentDiffusion,
@@ -138,11 +141,8 @@ namespace Vampire
                 return false;
             }
 
-            // 중요:
             // 이 Ability가 레벨업 선택지 후보로 다시 검사될 때마다
             // 이전에 보여줬지만 선택되지 않은 미리보기 결과를 초기화한다.
-            //
-            // 이후 UI가 Description을 읽는 순간 새 결과가 다시 뽑힌다.
             ClearPreview();
 
             return true;
@@ -303,7 +303,10 @@ namespace Vampire
                 GeneralAugmentType.GoldAbsorption,
                 GeneralAugmentType.CellActivation,
                 GeneralAugmentType.MoneySense,
-                GeneralAugmentType.BossDamageTraining
+                GeneralAugmentType.BossDamageTraining,
+
+                // 행운 증가 일반 증강
+                GeneralAugmentType.LuckyMeridian
             };
 
             RemoveMaxedCandidates(candidates);
@@ -479,6 +482,13 @@ namespace Vampire
                     statRuntime.AddBossDamageMultiplier(0.10f);
                     break;
 
+                case GeneralAugmentType.LuckyMeridian:
+                    // Character.Luck = characterBlueprint.luck * luckMultiplier 구조를 그대로 사용한다.
+                    // 기본 luck이 1이라면 AddLuck(1f) 후 Luck은 2가 되고,
+                    // AbilityManager의 기존 공식에 의해 일반 -3%, 특수 +2%, 전설 +1% 효과가 적용된다.
+                    playerCharacter.AddLuck(1f);
+                    break;
+
                 case GeneralAugmentType.ExplosionRadiusControl:
                     MultiplyPrivateFloat(syringeDartAbility, "explosionRadius", 1.08f);
                     break;
@@ -598,6 +608,9 @@ namespace Vampire
                 case GeneralAugmentType.BossDamageTraining:
                     return 10;
 
+                case GeneralAugmentType.LuckyMeridian:
+                    return 10;
+
                 default:
                     return 0;
             }
@@ -634,6 +647,7 @@ namespace Vampire
                 case GeneralAugmentType.CellActivation: return "세포 활성";
                 case GeneralAugmentType.MoneySense: return "금전 감각";
                 case GeneralAugmentType.BossDamageTraining: return "보스 해부";
+                case GeneralAugmentType.LuckyMeridian: return "행운의 맥";
                 case GeneralAugmentType.ExplosionRadiusControl: return "폭심 조절";
                 case GeneralAugmentType.FragmentDiffusion: return "파편 확산";
                 case GeneralAugmentType.ReturnMastery: return "회수 숙련";
@@ -675,6 +689,7 @@ namespace Vampire
                 case GeneralAugmentType.CellActivation: return "픽업 범위 +12%";
                 case GeneralAugmentType.MoneySense: return "골드 드롭 확률 +5%";
                 case GeneralAugmentType.BossDamageTraining: return "보스 피해 +10%";
+                case GeneralAugmentType.LuckyMeridian: return "행운 +1. 일반 -3%, 특수 +2%, 전설 +1%";
                 case GeneralAugmentType.ExplosionRadiusControl: return "폭발 반경 +8%";
                 case GeneralAugmentType.FragmentDiffusion: return "폭발 피해 +10%";
                 case GeneralAugmentType.ReturnMastery: return "귀환 피해 +10%";

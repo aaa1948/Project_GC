@@ -14,7 +14,9 @@ namespace Vampire
         [SerializeField] private float bossDamageMultiplier = 1f;
 
         [Header("Combat Runtime Stats")]
-        [SerializeField] private float critDamageMultiplier = 1f;
+        [Tooltip("기본 치명타 피해 배율입니다. 1.5 = 150%")]
+        [SerializeField] private float critDamageMultiplier = 1.5f;
+
         [SerializeField] private float knockbackMultiplier = 1f;
         [SerializeField] private float defensePierceBonus = 0f;
         [SerializeField] private float damageReductionBonus = 0f;
@@ -28,6 +30,9 @@ namespace Vampire
         [SerializeField] private float cloneDamageMultiplier = 1f;
         [SerializeField] private float cloneAttackSpeedMultiplier = 1f;
         [SerializeField] private int extraCloneCount = 0;
+
+        [Header("Debug")]
+        [SerializeField] private bool debugCriticalLog = false;
 
         private Character ownerCharacter;
         private Collider2D pickupCollider;
@@ -163,6 +168,42 @@ namespace Vampire
         {
             extraCloneCount += amount;
             extraCloneCount = Mathf.Max(0, extraCloneCount);
+        }
+
+        public float CalculateOffensiveDamage(
+            Character sourceCharacter,
+            Component targetComponent,
+            float baseDamage,
+            out bool isCritical)
+        {
+            isCritical = false;
+
+            float finalDamage = baseDamage;
+
+            if (targetComponent != null && bossDamageMultiplier > 1f && IsBossLikeTarget(targetComponent))
+            {
+                finalDamage *= bossDamageMultiplier;
+            }
+
+            float critChance = sourceCharacter != null
+                ? Mathf.Clamp01(sourceCharacter.CritChance)
+                : 0f;
+
+            if (Random.value < critChance)
+            {
+                finalDamage *= critDamageMultiplier;
+                isCritical = true;
+
+                if (debugCriticalLog)
+                {
+                    Debug.Log(
+                        $"[치명타] 발생 | 확률 {critChance * 100f:0.##}% | 배율 {critDamageMultiplier * 100f:0.##}% | 피해 {finalDamage:0.##}",
+                        this
+                    );
+                }
+            }
+
+            return finalDamage;
         }
 
         public float ApplyBossDamageBonus(Component targetComponent, float baseDamage)

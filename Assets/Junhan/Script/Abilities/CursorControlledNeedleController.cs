@@ -460,14 +460,36 @@ namespace Vampire
             float heavyDamageMultiplier = sourceNeedleAbility.GetCursorNeedleHeavyDamageMultiplier();
             float heavyKnockbackMultiplier = sourceNeedleAbility.GetCursorNeedleHeavyKnockbackMultiplier();
 
-            float damage = sourceNeedleAbility.GetEffectiveDamage() * damageMultiplier * heavyDamageMultiplier;
+            float rawDamage = sourceNeedleAbility.GetEffectiveDamage() * damageMultiplier * heavyDamageMultiplier;
             float knockback = sourceNeedleAbility.GetEffectiveKnockback() * heavyKnockbackMultiplier;
 
-            damageable.TakeDamage(damage, knockbackDirection * knockback);
+            PlayerGeneralStatRuntime statRuntime = PlayerGeneralStatRuntime.GetOrCreate(sourceCharacter);
+
+            bool isCritical = false;
+            float finalDamage = rawDamage;
+
+            if (statRuntime != null)
+            {
+                finalDamage = statRuntime.CalculateOffensiveDamage(
+                    sourceCharacter,
+                    damageableComponent,
+                    rawDamage,
+                    out isCritical
+                );
+
+                knockback *= statRuntime.KnockbackMultiplier;
+            }
+
+            damageable.TakeDamage(finalDamage, knockbackDirection * knockback);
 
             if (sourceCharacter != null && sourceCharacter.OnDealDamage != null)
             {
-                sourceCharacter.OnDealDamage.Invoke(damage);
+                sourceCharacter.OnDealDamage.Invoke(finalDamage);
+            }
+
+            if (isCritical)
+            {
+                Debug.Log($"[치명타] 이기어침 치명타 발생 | 피해 {finalDamage:0.##}");
             }
 
             if (runtime.poisonEnabled)

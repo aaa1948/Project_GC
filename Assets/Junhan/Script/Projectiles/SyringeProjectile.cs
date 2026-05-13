@@ -288,10 +288,37 @@ namespace Vampire
             DestroyProjectile();
         }
 
-        private void DamageTarget(IDamageable damageable, Component damageableComponent, float finalDamage)
+        private void DamageTarget(IDamageable damageable, Component damageableComponent, float rawDamage)
         {
-            damageable.TakeDamage(finalDamage, knockback * direction);
+            PlayerGeneralStatRuntime statRuntime = PlayerGeneralStatRuntime.GetOrCreate(playerCharacter);
+
+            bool isCritical = false;
+            float finalDamage = rawDamage;
+
+            if (statRuntime != null)
+            {
+                finalDamage = statRuntime.CalculateOffensiveDamage(
+                    playerCharacter,
+                    damageableComponent,
+                    rawDamage,
+                    out isCritical
+                );
+            }
+
+            float finalKnockback = knockback;
+
+            if (statRuntime != null)
+            {
+                finalKnockback *= statRuntime.KnockbackMultiplier;
+            }
+
+            damageable.TakeDamage(finalDamage, finalKnockback * direction);
             OnHitDamageable?.Invoke(finalDamage);
+
+            if (isCritical)
+            {
+                Debug.Log($"[치명타] 침 공격 치명타 발생 | 피해 {finalDamage:0.##}");
+            }
 
             if (specials.poisonEnabled)
             {
@@ -313,7 +340,6 @@ namespace Vampire
                 ApplyExplosion(damageableComponent.gameObject);
             }
         }
-
         private void TryCreateStuckNeedleVisual(
             Component damageableComponent,
             Vector3 hitPosition,
@@ -585,6 +611,8 @@ namespace Vampire
 
             HashSet<int> damagedIds = new HashSet<int>();
 
+            PlayerGeneralStatRuntime statRuntime = PlayerGeneralStatRuntime.GetOrCreate(playerCharacter);
+
             foreach (Collider2D hit in hits)
             {
                 IDamageable splashDamageable = hit.GetComponentInParent<IDamageable>();
@@ -609,7 +637,25 @@ namespace Vampire
 
                 damagedIds.Add(splashId);
 
-                splashDamageable.TakeDamage(specials.explosionDamage, Vector2.zero);
+                float splashDamage = specials.explosionDamage;
+                bool isCritical = false;
+
+                if (statRuntime != null)
+                {
+                    splashDamage = statRuntime.CalculateOffensiveDamage(
+                        playerCharacter,
+                        splashComponent,
+                        splashDamage,
+                        out isCritical
+                    );
+                }
+
+                splashDamageable.TakeDamage(splashDamage, Vector2.zero);
+
+                if (isCritical)
+                {
+                    Debug.Log($"[치명타] 폭발침 치명타 발생 | 피해 {splashDamage:0.##}");
+                }
             }
         }
     }
