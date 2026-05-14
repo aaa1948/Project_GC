@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 9ce178c3a5708c940a0aab796ac24f0b
+guid: 1167a86bd2ce33b418cffdd4f67eab7f
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -72,7 +72,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 0
+    textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -97,7 +97,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: monster_slime_0
+      name: ice_0
       rect:
         serializedVersion: 2
         x: 0
@@ -111,14 +111,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 1860950b7fae1b742b9a3ad59b9d5191
-      internalID: -786925639
+      spriteID: 495e1958f333bc247a64d97e8925859e
+      internalID: 1663033056
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: monster_slime_1
+      name: ice_1
       rect:
         serializedVersion: 2
         x: 24
@@ -132,14 +132,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 5287dc2efefb71a4cb097d87e349e133
-      internalID: -1947450308
+      spriteID: debc7436f64db0b4aa2ce2624cbfb922
+      internalID: 890323440
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: monster_slime_2
+      name: ice_2
       rect:
         serializedVersion: 2
         x: 48
@@ -153,14 +153,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 79bfdb93ecea7b64fa4b60d6d462a70a
-      internalID: -1220118405
+      spriteID: af47697d7a5142340ad4a6515159478e
+      internalID: 1406456808
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: monster_slime_3
+      name: ice_3
       rect:
         serializedVersion: 2
         x: 72
@@ -174,8 +174,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 62457d88e131ce945855778e9597bc15
-      internalID: -2135664152
+      spriteID: ff95744c52df0fb4ab67387cdefb58d3
+      internalID: -944748935
       vertices: []
       indices: 
       edges: []
@@ -183,7 +183,7 @@ TextureImporter:
     outline: []
     physicsShape: []
     bones: []
-    spriteID: 3df706b3825303b48b98e9c57c24cf19
+    spriteID: 41e3b5952273e6144a960bc038e89d64
     internalID: 0
     vertices: []
     indices: 
@@ -191,10 +191,10 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      monster_slime_0: -786925639
-      monster_slime_1: -1947450308
-      monster_slime_2: -1220118405
-      monster_slime_3: -2135664152
+      ice_0: 1663033056
+      ice_1: 890323440
+      ice_2: 1406456808
+      ice_3: -944748935
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

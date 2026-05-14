@@ -1,5 +1,5 @@
 fileFormatVersion: 2
-guid: 9ce178c3a5708c940a0aab796ac24f0b
+guid: fac3ed988cdf1144ca4e2eb7dc1bac1c
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -72,7 +72,7 @@ TextureImporter:
     maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 0
+    textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -97,7 +97,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: monster_slime_0
+      name: fire_0
       rect:
         serializedVersion: 2
         x: 0
@@ -111,14 +111,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 1860950b7fae1b742b9a3ad59b9d5191
-      internalID: -786925639
+      spriteID: cb8a28db96550bc41a0c1b6e60fc8820
+      internalID: -1423903610
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: monster_slime_1
+      name: fire_1
       rect:
         serializedVersion: 2
         x: 24
@@ -132,14 +132,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 5287dc2efefb71a4cb097d87e349e133
-      internalID: -1947450308
+      spriteID: 35b100a37d38b684e879b7819be75f3c
+      internalID: -1988498641
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: monster_slime_2
+      name: fire_2
       rect:
         serializedVersion: 2
         x: 48
@@ -153,14 +153,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 79bfdb93ecea7b64fa4b60d6d462a70a
-      internalID: -1220118405
+      spriteID: d3f659322918ae944a2d1be102ac4edd
+      internalID: 36026895
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: monster_slime_3
+      name: fire_3
       rect:
         serializedVersion: 2
         x: 72
@@ -174,8 +174,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 62457d88e131ce945855778e9597bc15
-      internalID: -2135664152
+      spriteID: 413f63ebe26ddb0438f64b7c2e5508e7
+      internalID: 1866562127
       vertices: []
       indices: 
       edges: []
@@ -183,7 +183,7 @@ TextureImporter:
     outline: []
     physicsShape: []
     bones: []
-    spriteID: 3df706b3825303b48b98e9c57c24cf19
+    spriteID: 5e97eb03825dee720800000000000000
     internalID: 0
     vertices: []
     indices: 
@@ -191,10 +191,10 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     nameFileIdTable:
-      monster_slime_0: -786925639
-      monster_slime_1: -1947450308
-      monster_slime_2: -1220118405
-      monster_slime_3: -2135664152
+      fire_0: -1423903610
+      fire_1: -1988498641
+      fire_2: 36026895
+      fire_3: 1866562127
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
