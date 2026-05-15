@@ -11,6 +11,10 @@ namespace Vampire
         [SerializeField] protected UpgradeableProjectileCount projectileCount;
         [SerializeField] protected float syringeDelay = 0.08f;
 
+        [Header("Syringe Range")]
+        [Tooltip("기본 침 최대 사거리입니다. 이제 Shuriken.prefab의 Max Distance 대신 이 값을 기준으로 사용합니다.")]
+        [SerializeField] private float baseSyringeMaxDistance = 6f;
+
         [Header("Spread Settings")]
         [SerializeField] private float angleBetweenProjectiles = 8f;
         [SerializeField] private float maxTotalSpreadAngle = 120f;
@@ -263,6 +267,7 @@ namespace Vampire
 
             base.Update();
         }
+
         protected override void Attack()
         {
             StartCoroutine(LaunchSyringes());
@@ -304,7 +309,11 @@ namespace Vampire
             if (playerCharacter != null)
             {
                 projectile.transform.localScale = Vector3.one * GetPlayerProjectileSizeMultiplier();
-                projectile.maxDistance *= GetPlayerRangeMultiplier();
+
+                // 핵심 수정:
+                // Shuriken.prefab의 Max Distance를 곱해서 쓰지 않고,
+                // SyringeDartAbility의 baseSyringeMaxDistance를 기준으로 명확하게 세팅한다.
+                projectile.maxDistance = GetEffectiveSyringeMaxDistance();
             }
 
             if (projectile is SyringeProjectile syringeProjectile)
@@ -409,7 +418,6 @@ namespace Vampire
             heavyChargeTimer += Time.deltaTime;
 
             float chargeRatio = Mathf.Clamp01(heavyChargeTimer / Mathf.Max(0.01f, heavyMaxChargeTime));
-
             bool reachedFullCharge = heavyChargeTimer >= heavyMaxChargeTime;
 
             // 우클릭을 떼거나 풀차지가 되면 발사
@@ -431,6 +439,7 @@ namespace Vampire
                 }
             }
         }
+
         private bool IsHeavySnipeCommandHeld()
         {
             if (Mouse.current != null)
@@ -465,7 +474,6 @@ namespace Vampire
 
             // 대물침은 침귀환과 무관하게 기존 차지샷으로 작동해야 하므로 귀환 효과를 강제로 끈다.
             runtime.returnNeedleEnabled = false;
-
             runtime.pierceEnabled = true;
             runtime.pierceCount = stats.unlimitedPierce ? int.MaxValue : stats.pierceCount;
             runtime.rangeBonus += stats.rangeBonus;
@@ -484,7 +492,10 @@ namespace Vampire
                 projectile.transform.localScale =
                     Vector3.one * GetPlayerProjectileSizeMultiplier() * stats.sizeMultiplier;
 
-                projectile.maxDistance *= GetPlayerRangeMultiplier();
+                // 핵심 수정:
+                // 대물침도 기본 사거리는 SyringeDartAbility에서 관리하고,
+                // 차지 사거리 보너스는 runtime.rangeBonus로 SyringeProjectile에서 더해진다.
+                projectile.maxDistance = GetEffectiveSyringeMaxDistance();
             }
 
             if (projectile is SyringeProjectile syringeProjectile)
@@ -501,11 +512,12 @@ namespace Vampire
             if (Mouse.current != null && Camera.main != null && playerCharacter != null)
             {
                 Vector3 mouseScreenPosition = Mouse.current.position.ReadValue();
-
                 Vector3 mouseWorldPosition = Camera.main.ScreenToWorldPoint(mouseScreenPosition);
                 mouseWorldPosition.z = playerCharacter.CenterTransform.position.z;
 
-                Vector2 direction = (Vector2)mouseWorldPosition - (Vector2)playerCharacter.CenterTransform.position;
+                Vector2 direction =
+                    (Vector2)mouseWorldPosition -
+                    (Vector2)playerCharacter.CenterTransform.position;
 
                 if (direction.sqrMagnitude > 0.0001f)
                 {
@@ -568,6 +580,7 @@ namespace Vampire
             else
             {
                 stats.unlimitedPierce = false;
+
                 stats.pierceCount = EvaluateChargeInt(
                     chargeRatio,
                     heavyPierceAt0,
@@ -674,6 +687,7 @@ namespace Vampire
                 // HP 1 전설 증강이 켜져 있으면 모기침 회복을 막는다.
                 healingBlocked = lifeBurnEnabled,
 
+                // 전설/특수 사거리 보너스는 SyringeProjectile에서 maxDistance에 더해진다.
                 rangeBonus = lifeBurnEnabled ? lifeBurnBonusRange : 0f
             };
 
@@ -772,6 +786,11 @@ namespace Vampire
             }
 
             return Mathf.Max(1, totalCount);
+        }
+
+        public float GetEffectiveSyringeMaxDistance()
+        {
+            return Mathf.Max(0.1f, baseSyringeMaxDistance) * GetPlayerRangeMultiplier();
         }
 
         public SyringeSpecialRuntime GetCurrentSpecialRuntime()

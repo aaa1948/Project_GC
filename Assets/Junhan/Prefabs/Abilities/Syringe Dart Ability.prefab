@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db873aea2f1b3f846883a0cc077b9000, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  image: {fileID: 21300000, guid: 8aa8c4cb76e054949bb308e463d0f9c2, type: 3}
+  image: {fileID: 21300000, guid: 9b662b30a49435643b5e4645acb300ae, type: 3}
   localizedName:
     m_TableReference:
       m_TableCollectionName: GUID:7293f9ffd63774eb1b5120a3e14cb7f5
@@ -90,12 +90,17 @@ MonoBehaviour:
     upgrades: 01000000010000000100000001000000
     projectilesPer: 1
   syringeDelay: 0.08
+  baseSyringeMaxDistance: 5
   angleBetweenProjectiles: 10
   maxTotalSpreadAngle: 360
   poisonEnabled: 0
   explosionEnabled: 0
   homingEnabled: 0
   pierceEnabled: 0
+  honeyEnabled: 0
+  mosquitoEnabled: 0
+  returnNeedleEnabled: 0
+  acupunctureFormationEnabled: 0
   poisonDuration: 3
   poisonTickInterval: 0.5
   poisonTickDamage: 2
@@ -104,11 +109,67 @@ MonoBehaviour:
   homingRange: 6
   homingLerpSpeed: 8
   pierceCount: 1
+  honeyDuration: 2.5
+  honeySlowMultiplier: 0.6
+  mosquitoHealPerHit: 1
+  mosquitoBossHealMultiplier: 2
+  returnNeedleSpeedMultiplier: 1.25
+  returnNeedleDamageMultiplier: 0.7
+  returnNeedleArriveDistance: 0.45
+  returnNeedleMaxDuration: 2.5
+  acupunctureFormationBonusDashCharges: 1
+  acupunctureFormationLifetime: 0.35
+  acupunctureFormationNeedleCount: 12
+  acupunctureFormationDamageMultiplier: 0.55
+  acupunctureFormationVisualScale: 1
   lifeBurnEnabled: 0
   lifeBurnDamageMultiplier: 3
   lifeBurnBonusProjectiles: 10
   lifeBurnBonusRange: 3
   cloneLegendaryTaken: 0
+  hedgehogNeedleEnabled: 0
+  hedgehogNeedleCount: 8
+  hedgehogOrbitRadius: 1.25
+  hedgehogRotationSpeed: 180
+  hedgehogTouchFireCooldown: 0.35
+  hedgehogDamageMultiplier: 0.45
+  heavySnipeEnabled: 0
+  useRightMouseForHeavySnipe: 1
+  heavyMaxChargeTime: 1.5
+  heavyDamageAt0: 1
+  heavyDamageAt30: 1.3
+  heavyDamageAt50: 1.7
+  heavyDamageAt70: 2
+  heavyDamageAt100: 3
+  heavyPierceAt0: 0
+  heavyPierceAt30: 5
+  heavyPierceAt50: 10
+  heavyPierceAt70: 20
+  heavyPierceAt99: 40
+  heavySizeAt0: 1
+  heavySizeAt30: 1.25
+  heavySizeAt50: 1.55
+  heavySizeAt70: 1.85
+  heavySizeAt100: 2.4
+  heavyRangeBonusAt0: 0
+  heavyRangeBonusAt30: 1.5
+  heavyRangeBonusAt50: 3
+  heavyRangeBonusAt70: 5
+  heavyRangeBonusAt100: 8
+  heavyKnockbackMultiplierAt0: 1
+  heavyKnockbackMultiplierAt100: 2
+  debugHeavySnipe: 1
+  cursorControlEnabled: 0
+  cursorNeedleFollowSpeed: 8
+  cursorNeedleHitRadius: 0.45
+  cursorNeedleDamageMultiplier: 1
+  cursorNeedleDamageInterval: 0.25
+  cursorNeedleVisualScale: 1.2
+  cursorNeedleHomingHitRadiusBonus: 0.35
+  cursorNeedleBackDisplayOffset: {x: 0, y: 0.9}
+  cursorNeedleBackDisplaySpacing: 0.35
+  cursorNeedleBackDisplayArcHeight: 0.25
+  cursorNeedleBackDisplayScale: 0.8
   references:
     version: 2
     RefIds: []
