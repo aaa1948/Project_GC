@@ -3,11 +3,11 @@ using UnityEngine;
 namespace Vampire
 {
     [CreateAssetMenu(
-        fileName = "Elite Monster",
-        menuName = "Blueprints/Monsters/Elite Monster",
+        fileName = "Elite Melee Monster",
+        menuName = "Blueprints/Monsters/Elite Melee Monster",
         order = 2
     )]
-    public class EliteMonsterBlueprint : MonsterBlueprint
+    public class EliteMonsterBlueprint : MeleeMonsterBlueprint
     {
         [Header("Elite Settings")]
         [Tooltip("엘리트 몬스터 외형 크기 배율입니다. 2면 일반 몬스터의 2배 크기입니다.")]

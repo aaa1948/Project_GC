@@ -8961,7 +8961,7 @@ MonoBehaviour:
     minSpawnCount: 1
     maxSpawnCount: 1
     maxAliveInPhase: 3
-    eliteMonsterFlatIndices: 
+    eliteMonsterFlatIndices: 08000000
     avoidDuplicateSelectionInOneWave: 0
     additionalHpBuff: 0
   debugLog: 1

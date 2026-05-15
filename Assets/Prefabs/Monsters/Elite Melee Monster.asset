@@ -10,9 +10,9 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 652861d122f24d741823f114aa23b102, type: 3}
-  m_Name: Elite Ranged Monster
+  m_Name: Elite Melee Monster
   m_EditorClassIdentifier: 
-  name: Elite Ranged Monster
+  name: Elite Melee Monster
   hp: 50
   atk: 2
   recovery: 0
@@ -27,6 +27,9 @@ MonoBehaviour:
   walkSpriteSequence:
   - {fileID: 917104541, guid: daaedef1b578f44278f11eaff39582d7, type: 3}
   walkFrameTime: 0.2
+  meleeLayer:
+    serializedVersion: 2
+    m_Bits: 0
   scaleMultiplier: 2
   hpMultiplier: 4
   silverRewardCalls: 2
