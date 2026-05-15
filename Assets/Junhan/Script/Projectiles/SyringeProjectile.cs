@@ -18,6 +18,8 @@ namespace Vampire
         private SyringeSpecialRuntime specials;
         private int remainingPierces;
 
+        // 한 투사체가 이미 맞힌 대상 기록
+        // 관통/귀환 중 같은 몬스터에게 중복 피해가 들어가지 않게 막는다.
         private readonly HashSet<int> hitTargetIds = new HashSet<int>();
 
         // 풀링으로 재사용될 때 maxDistance가 계속 누적되는 것을 막기 위한 원본 사거리 저장
@@ -148,6 +150,15 @@ namespace Vampire
                     case NeedleFlightState.Normal:
                         if (distanceTravelled >= effectiveMaxDistance)
                         {
+                            // 핵심 수정:
+                            // 귀환침 보유 상태에서 적을 맞히지 못하고 사거리 끝에 도달해도
+                            // 그냥 사라지지 않고 플레이어에게 돌아오게 한다.
+                            if (specials.returnNeedleEnabled)
+                            {
+                                BeginReturnNeedleFromRangeEnd(direction);
+                                break;
+                            }
+
                             HitNothing();
                             yield break;
                         }
@@ -185,7 +196,40 @@ namespace Vampire
                 yield return null;
             }
 
-            HitNothing();
+            // 공기저항 등으로 속도가 0 이하가 되었을 때도 귀환침이면 돌아오게 한다.
+            if (!isDespawning && specials.returnNeedleEnabled && flightState == NeedleFlightState.Normal)
+            {
+                BeginReturnNeedleFromRangeEnd(direction);
+
+                while (!isDespawning &&
+                       flightState != NeedleFlightState.Normal &&
+                       speed > 0f)
+                {
+                    switch (flightState)
+                    {
+                        case NeedleFlightState.ReturnCurveToPlayer:
+                            MoveReturnCurveToPlayer();
+                            break;
+
+                        case NeedleFlightState.ReturnToPlayer:
+                            if (!MoveReturnToPlayer())
+                            {
+                                yield break;
+                            }
+                            break;
+
+                        case NeedleFlightState.ReturnForwardPass:
+                            MoveReturnForwardPass();
+                            break;
+                    }
+
+                    yield return null;
+                }
+            }
+            else
+            {
+                HitNothing();
+            }
         }
 
         private void UpdateHomingDirection()
@@ -372,6 +416,7 @@ namespace Vampire
                 return;
             }
 
+            // 한 침 투사체는 같은 대상에게 한 번만 데미지를 준다.
             if (hitTargetIds.Contains(targetId))
             {
                 return;
@@ -396,6 +441,7 @@ namespace Vampire
                 hitScale
             );
 
+            // 귀환 중에는 적을 맞혀도 멈추지 않고 계속 플레이어에게 돌아간다.
             if (IsReturnMode)
             {
                 return;
@@ -454,6 +500,8 @@ namespace Vampire
             return transform.lossyScale;
         }
 
+        // 적을 맞혔을 때의 귀환.
+        // 기존 컨셉 유지: 맞힌 뒤 앞으로 한 번 더 뚫고 지나간 다음 곡선으로 돌아온다.
         private void BeginReturnNeedleSequence(Monster hitMonster, Vector2 currentMoveDirection)
         {
             if (playerCharacter == null || playerCharacter.CenterTransform == null)
@@ -483,6 +531,34 @@ namespace Vampire
             {
                 StartCoroutine(ReenableColliderNextFrame());
             }
+        }
+
+        // 적을 못 맞히고 사거리 끝에 도달했을 때의 귀환.
+        // 추가 관통 없이 그 지점에서 바로 곡선으로 플레이어에게 돌아온다.
+        private void BeginReturnNeedleFromRangeEnd(Vector2 currentMoveDirection)
+        {
+            if (playerCharacter == null || playerCharacter.CenterTransform == null)
+            {
+                HitNothing();
+                return;
+            }
+
+            if (currentMoveDirection == Vector2.zero)
+            {
+                currentMoveDirection = direction;
+
+                if (currentMoveDirection == Vector2.zero)
+                {
+                    currentMoveDirection = Vector2.right;
+                }
+            }
+
+            returnForwardDirection = currentMoveDirection.normalized;
+            returnForwardTravelled = 0f;
+            returnTimer = 0f;
+            returnCurveTimer = 0f;
+
+            BeginReturnCurveToPlayer();
         }
 
         private void MoveReturnForwardPass()
@@ -544,7 +620,7 @@ namespace Vampire
             returnCurveStart = start;
 
             // 물방울 호 느낌:
-            // P0: 적을 관통한 지점
+            // P0: 적을 관통한 지점 또는 사거리 끝
             // P1: 기존 진행 방향으로 조금 더 뻗음
             // P2: 옆으로 둥글게 빠지면서 플레이어 방향으로 끌림
             // P3: 플레이어 근처

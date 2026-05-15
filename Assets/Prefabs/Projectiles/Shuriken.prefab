@@ -198,7 +198,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   projectileSpriteRenderer: {fileID: 9111367580527349101}
-  maxDistance: 10
+  maxDistance: 1
   rotationSpeed: 0
   airResistance: 0
   destructionParticleSystem: {fileID: 1480910369272600104}
