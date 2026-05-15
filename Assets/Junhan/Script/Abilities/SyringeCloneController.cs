@@ -20,8 +20,11 @@ namespace Vampire
         private LayerMask monsterLayer;
         private GameObject projectilePrefab;
 
+        [Header("Clone Follow")]
         [SerializeField] private float followOffsetDistance = 1.2f;
         [SerializeField] private float followLerpSpeed = 12f;
+
+        [Header("Clone Safety")]
         [SerializeField] private float spawnInvincibleDuration = 2f;
 
         private float spawnInvincibleTimer = 0f;
@@ -31,10 +34,15 @@ namespace Vampire
             EntityManager entityManager,
             SyringeDartAbility sourceSyringeAbility)
         {
+            if (sourceCharacter == null || entityManager == null || sourceSyringeAbility == null)
+            {
+                Debug.LogWarning("[분신] 생성 실패: sourceCharacter/entityManager/sourceSyringeAbility 중 하나가 없습니다.");
+                return null;
+            }
+
             GameObject cloneObject = new GameObject("Syringe Clone");
 
             SpriteRenderer sourceRenderer = sourceCharacter.GetComponentInChildren<SpriteRenderer>();
-
             SpriteRenderer cloneRenderer = cloneObject.AddComponent<SpriteRenderer>();
 
             if (sourceRenderer != null)
@@ -91,7 +99,7 @@ namespace Vampire
             monsterLayer = sourceSyringeAbility.MonsterLayer;
             projectilePoolIndex = entityManager.AddPoolForProjectile(projectilePrefab);
 
-            transform.position = sourceCharacter.transform.position + Vector3.right * followOffsetDistance;
+            transform.position = GetSourceCenterPosition() + Vector3.right * followOffsetDistance;
 
             spawnInvincibleTimer = spawnInvincibleDuration;
 
@@ -103,7 +111,7 @@ namespace Vampire
 
         private void Update()
         {
-            if (sourceCharacter == null || sourceSyringeAbility == null)
+            if (sourceCharacter == null || sourceSyringeAbility == null || entityManager == null)
             {
                 Destroy(gameObject);
                 return;
@@ -124,9 +132,29 @@ namespace Vampire
             UpdateAttack();
         }
 
+        private Vector3 GetSourceCenterPosition()
+        {
+            if (sourceCharacter == null)
+            {
+                return transform.position;
+            }
+
+            if (sourceCharacter.CenterTransform != null)
+            {
+                return sourceCharacter.CenterTransform.position;
+            }
+
+            return sourceCharacter.transform.position;
+        }
+
         private void UpdateFollowPosition()
         {
             Vector2 lookDirection = sourceCharacter.LookDirection;
+
+            if (lookDirection == Vector2.zero)
+            {
+                lookDirection = Vector2.right;
+            }
 
             Vector2 sideDirection = new Vector2(-lookDirection.y, lookDirection.x);
 
@@ -136,7 +164,7 @@ namespace Vampire
             }
 
             Vector3 targetPosition =
-                sourceCharacter.transform.position +
+                GetSourceCenterPosition() +
                 (Vector3)(sideDirection.normalized * followOffsetDistance);
 
             transform.position = Vector3.Lerp(
@@ -210,6 +238,9 @@ namespace Vampire
             float knockback = sourceSyringeAbility.GetCloneKnockback();
             float projectileSpeed = sourceSyringeAbility.GetCloneSpeed();
 
+            float projectileSizeMultiplier = sourceSyringeAbility.GetEffectiveProjectileSizeMultiplier();
+            float rangeMultiplier = sourceSyringeAbility.GetEffectiveRangeMultiplier();
+
             SyringeSpecialRuntime currentRuntime = sourceSyringeAbility.GetCurrentSpecialRuntime();
 
             for (int i = 0; i < projectileCount; i++)
@@ -234,9 +265,21 @@ namespace Vampire
                     continue;
                 }
 
+                // 핵심 수정:
+                // 풀링된 투사체가 이전 크기를 들고 나오지 않도록 분신도 매번 명시적으로 크기를 세팅한다.
+                projectile.transform.localScale = Vector3.one * projectileSizeMultiplier;
+                projectile.maxDistance *= rangeMultiplier;
+
                 if (projectile is SyringeProjectile syringeProjectile)
                 {
                     syringeProjectile.ConfigureSpecials(currentRuntime);
+                }
+                else
+                {
+                    Debug.LogWarning(
+                        $"[분신] Spawned projectile is '{projectile.GetType().Name}', not 'SyringeProjectile'. " +
+                        "Projectile Prefab 연결을 다시 확인하세요."
+                    );
                 }
 
                 projectile.OnHitDamageable.AddListener(sourceCharacter.OnDealDamage.Invoke);
@@ -248,9 +291,8 @@ namespace Vampire
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            // 기존에는 분신이 몬스터와 충돌하면 DestroySelf()로 사라졌다.
-            // 이제 분신은 피격/접촉으로 사라지지 않고 계속 유지된다.
-            // 플레이어 사망 시에만 DestroySelf()로 제거된다.
+            // 분신은 몬스터 접촉으로 사라지지 않는다.
+            // 플레이어 사망 시에만 제거된다.
         }
 
         private void DestroySelf()

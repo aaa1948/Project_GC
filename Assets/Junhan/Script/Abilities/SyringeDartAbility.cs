@@ -797,12 +797,14 @@ namespace Vampire
 
         public float GetCloneDamage()
         {
-            return GetEffectiveDamage() * 0.2f;
+            // 분신도 현재 플레이어와 같은 기본 침 데미지를 사용한다.
+            // 분신 피해 증가 일반 증강은 SyringeCloneController 쪽에서 별도로 곱해진다.
+            return GetEffectiveDamage();
         }
 
         public float GetCloneKnockback()
         {
-            return GetEffectiveKnockback() * 0.2f;
+            return GetEffectiveKnockback();
         }
 
         public float GetCloneSpeed()
@@ -817,7 +819,18 @@ namespace Vampire
 
         public int GetCloneProjectileCount()
         {
-            return Mathf.Max(1, Mathf.FloorToInt(GetEffectiveProjectileCount() * 0.2f));
+            // 분신도 현재 플레이어와 같은 발사체 개수를 사용한다.
+            return GetEffectiveProjectileCount();
+        }
+
+        public float GetEffectiveProjectileSizeMultiplier()
+        {
+            return GetPlayerProjectileSizeMultiplier();
+        }
+
+        public float GetEffectiveRangeMultiplier()
+        {
+            return GetPlayerRangeMultiplier();
         }
 
         private float GetPlayerProjectileSizeMultiplier()
