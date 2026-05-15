@@ -42,7 +42,7 @@ namespace Vampire
 
         private readonly Dictionary<int, float> nextFireAllowedTimeByTarget =
             new Dictionary<int, float>();
-
+        private readonly HashSet<int> touchingShieldTargetIds = new HashSet<int>();
         [Header("Debug")]
         [SerializeField] private bool debugLog = false;
 
@@ -287,8 +287,11 @@ namespace Vampire
 
             Collider2D[] hits = Physics2D.OverlapCircleAll(centerPosition, orbitRadius);
 
+            HashSet<int> touchingThisFrame = new HashSet<int>();
+
             if (hits == null || hits.Length == 0)
             {
+                touchingShieldTargetIds.Clear();
                 return;
             }
 
@@ -318,15 +321,33 @@ namespace Vampire
                 }
 
                 checkedTargetsThisFrame.Add(targetId);
+                touchingThisFrame.Add(targetId);
 
-                if (!CanFireAtTarget(targetId))
+                // 이미 결계와 접촉 중이면 반격 침 반복 발사 안 함
+                if (touchingShieldTargetIds.Contains(targetId))
                 {
                     continue;
                 }
 
                 FireCounterNeedleAtTarget(monster);
+                touchingShieldTargetIds.Add(targetId);
+            }
 
-                nextFireAllowedTimeByTarget[targetId] = Time.time + touchFireCooldown;
+            // 결계 밖으로 나간 대상은 기록 제거
+            // 다시 들어오면 다시 반격 침 1회 가능
+            List<int> removeTargets = new List<int>();
+
+            foreach (int targetId in touchingShieldTargetIds)
+            {
+                if (!touchingThisFrame.Contains(targetId))
+                {
+                    removeTargets.Add(targetId);
+                }
+            }
+
+            for (int i = 0; i < removeTargets.Count; i++)
+            {
+                touchingShieldTargetIds.Remove(removeTargets[i]);
             }
         }
 
