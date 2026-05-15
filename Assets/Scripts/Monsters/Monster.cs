@@ -35,7 +35,10 @@ namespace Vampire
         private Vector3 originalLocalScale = Vector3.one;
 
         public Transform CenterTransform { get => centerTransform; }
+
+        // 다른 코드에서 OnKilled.AddListener(OnEliteKilled(Monster)) 식으로 쓰고 있으므로 Monster 인자를 넘긴다.
         public UnityEvent<Monster> OnKilled { get; } = new UnityEvent<Monster>();
+
         public float HP => currentHealth;
         public Vector2 Position => transform.position;
         public Vector2 Size => monsterLegsCollider != null ? monsterLegsCollider.bounds.size : Vector2.one;
@@ -49,22 +52,67 @@ namespace Vampire
 
             rb = GetComponent<Rigidbody2D>();
             monsterLegsCollider = GetComponent<CircleCollider2D>();
-            monsterSpriteAnimator = GetComponentInChildren<SpriteAnimator>();
-            monsterSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
+            monsterSpriteAnimator = GetComponentInChildren<SpriteAnimator>(true);
+            monsterSpriteRenderer = FindMainSpriteRenderer();
 
-            zPositioner = gameObject.AddComponent<ZPositioner>();
+            zPositioner = GetComponent<ZPositioner>();
 
-            if (monsterSpriteRenderer != null)
+            if (zPositioner == null)
             {
-                monsterHitbox = monsterSpriteRenderer.gameObject.GetComponent<BoxCollider2D>();
+                zPositioner = gameObject.AddComponent<ZPositioner>();
+            }
 
-                if (monsterHitbox == null)
+            SetupHitboxReference();
+        }
+
+        private SpriteRenderer FindMainSpriteRenderer()
+        {
+            SpriteRenderer[] renderers = GetComponentsInChildren<SpriteRenderer>(true);
+
+            if (renderers == null || renderers.Length == 0)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                SpriteRenderer renderer = renderers[i];
+
+                if (renderer == null)
                 {
-                    monsterHitbox = monsterSpriteRenderer.gameObject.AddComponent<BoxCollider2D>();
+                    continue;
                 }
 
-                monsterHitbox.isTrigger = true;
+                string objectName = renderer.gameObject.name.ToLower();
+
+                // 그림자용 SpriteRenderer를 메인 몬스터 이미지로 잡지 않게 방지
+                if (objectName.Contains("shadow"))
+                {
+                    continue;
+                }
+
+                return renderer;
             }
+
+            return renderers[0];
+        }
+
+        private void SetupHitboxReference()
+        {
+            if (monsterSpriteRenderer == null)
+            {
+                monsterHitbox = null;
+                return;
+            }
+
+            monsterHitbox = monsterSpriteRenderer.gameObject.GetComponent<BoxCollider2D>();
+
+            if (monsterHitbox == null)
+            {
+                monsterHitbox = monsterSpriteRenderer.gameObject.AddComponent<BoxCollider2D>();
+            }
+
+            monsterHitbox.isTrigger = true;
         }
 
         public virtual void Init(
@@ -89,6 +137,31 @@ namespace Vampire
             this.monsterIndex = monsterIndex;
             this.monsterBlueprint = monsterBlueprint;
 
+            if (rb == null)
+            {
+                rb = GetComponent<Rigidbody2D>();
+            }
+
+            if (monsterLegsCollider == null)
+            {
+                monsterLegsCollider = GetComponent<CircleCollider2D>();
+            }
+
+            if (monsterSpriteAnimator == null)
+            {
+                monsterSpriteAnimator = GetComponentInChildren<SpriteAnimator>(true);
+            }
+
+            if (monsterSpriteRenderer == null)
+            {
+                monsterSpriteRenderer = FindMainSpriteRenderer();
+            }
+
+            if (monsterHitbox == null)
+            {
+                SetupHitboxReference();
+            }
+
             EliteMonsterBlueprint eliteBlueprint = monsterBlueprint as EliteMonsterBlueprint;
 
             float scaleMultiplier = 1f;
@@ -100,10 +173,22 @@ namespace Vampire
 
             transform.localScale = originalLocalScale * scaleMultiplier;
 
-            rb.position = position;
+            if (rb != null)
+            {
+                rb.position = position;
+                rb.velocity = Vector2.zero;
+            }
+
             transform.position = position;
 
-            float finalHp = monsterBlueprint.hp + hpBuff;
+            float baseHp = monsterBlueprint != null ? monsterBlueprint.hp : 1f;
+
+            if (eliteBlueprint != null)
+            {
+                baseHp = eliteBlueprint.GetEffectiveBaseHP();
+            }
+
+            float finalHp = baseHp + hpBuff;
 
             if (eliteBlueprint != null)
             {
@@ -113,19 +198,37 @@ namespace Vampire
             currentHealth = finalHp;
             alive = true;
 
-            entityManager.LivingMonsters.Add(this);
+            if (entityManager != null)
+            {
+                entityManager.LivingMonsters.Add(this);
+            }
+
+            Sprite[] walkSpriteSequence = monsterBlueprint != null ? monsterBlueprint.walkSpriteSequence : null;
+            float walkFrameTime = monsterBlueprint != null ? monsterBlueprint.walkFrameTime : 0.1f;
+
+            if (eliteBlueprint != null)
+            {
+                walkSpriteSequence = eliteBlueprint.GetEffectiveWalkSpriteSequence();
+                walkFrameTime = eliteBlueprint.GetEffectiveWalkFrameTime();
+            }
 
             if (monsterSpriteAnimator != null &&
-                monsterBlueprint.walkSpriteSequence != null &&
-                monsterBlueprint.walkSpriteSequence.Length > 0)
+                walkSpriteSequence != null &&
+                walkSpriteSequence.Length > 0)
             {
                 monsterSpriteAnimator.Init(
-                    monsterBlueprint.walkSpriteSequence,
-                    monsterBlueprint.walkFrameTime,
+                    walkSpriteSequence,
+                    walkFrameTime,
                     true
                 );
 
                 monsterSpriteAnimator.StartAnimating(true);
+            }
+            else if (monsterSpriteRenderer != null &&
+                     walkSpriteSequence != null &&
+                     walkSpriteSequence.Length > 0)
+            {
+                monsterSpriteRenderer.sprite = walkSpriteSequence[0];
             }
 
             if (monsterHitbox != null && monsterSpriteRenderer != null)
@@ -137,7 +240,7 @@ namespace Vampire
 
             if (monsterLegsCollider != null && monsterHitbox != null)
             {
-                monsterLegsCollider.radius = monsterHitbox.size.x / 2.5f;
+                monsterLegsCollider.radius = Mathf.Max(0.05f, monsterHitbox.size.x / 2.5f);
             }
 
             if (centerTransform == null)
@@ -156,16 +259,25 @@ namespace Vampire
                 centerTransform.position = transform.position;
             }
 
+            float moveSpeed = monsterBlueprint != null ? monsterBlueprint.movespeed : 1f;
+            float acceleration = monsterBlueprint != null ? monsterBlueprint.acceleration : 1f;
+
+            if (eliteBlueprint != null)
+            {
+                moveSpeed = eliteBlueprint.GetEffectiveMoveSpeed();
+                acceleration = eliteBlueprint.GetEffectiveAcceleration();
+            }
+
             float spd = Random.Range(
-                monsterBlueprint.movespeed - 0.1f,
-                monsterBlueprint.movespeed + 0.1f
+                moveSpeed - 0.1f,
+                moveSpeed + 0.1f
             );
 
             spd = Mathf.Max(0.05f, spd);
 
             if (rb != null)
             {
-                rb.drag = monsterBlueprint.acceleration / (spd * spd);
+                rb.drag = acceleration / (spd * spd);
                 rb.velocity = Vector2.zero;
             }
 
@@ -182,7 +294,7 @@ namespace Vampire
 
         protected virtual void Update()
         {
-            if (playerCharacter == null || monsterSpriteRenderer == null)
+            if (playerCharacter == null || monsterSpriteRenderer == null || rb == null)
             {
                 return;
             }
@@ -202,7 +314,7 @@ namespace Vampire
                 return;
             }
 
-            rb.velocity += knockback * Mathf.Sqrt(rb.drag);
+            rb.velocity += knockback * Mathf.Sqrt(Mathf.Max(0.01f, rb.drag));
         }
 
         public override void TakeDamage(
@@ -228,7 +340,7 @@ namespace Vampire
 
             if (knockback != default(Vector2) && rb != null)
             {
-                rb.velocity += knockback * Mathf.Sqrt(rb.drag);
+                rb.velocity += knockback * Mathf.Sqrt(Mathf.Max(0.01f, rb.drag));
                 knockedBack = true;
             }
 
@@ -303,7 +415,7 @@ namespace Vampire
                     shadow.SetActive(false);
                 }
 
-                yield return new WaitForSeconds(deathParticles.main.duration - 0.15f);
+                yield return new WaitForSeconds(Mathf.Max(0f, deathParticles.main.duration - 0.15f));
 
                 if (monsterSpriteRenderer != null)
                 {
@@ -351,25 +463,38 @@ namespace Vampire
 
         protected virtual void DropLoot()
         {
-            if (monsterBlueprint.gemLootTable != null &&
-                monsterBlueprint.gemLootTable.TryDropLoot(out GemType gemType))
+            MonsterBlueprint lootBlueprint = monsterBlueprint;
+
+            EliteMonsterBlueprint eliteBlueprint = monsterBlueprint as EliteMonsterBlueprint;
+
+            if (eliteBlueprint != null &&
+                eliteBlueprint.useSourceLootTables &&
+                eliteBlueprint.sourceNormalBlueprint != null)
+            {
+                lootBlueprint = eliteBlueprint.sourceNormalBlueprint;
+            }
+
+            if (lootBlueprint != null &&
+                lootBlueprint.gemLootTable != null &&
+                lootBlueprint.gemLootTable.TryDropLoot(out GemType gemType))
             {
                 entityManager.SpawnExpGem((Vector2)transform.position, gemType);
             }
 
-            TryDropCoinsWithStageEventModifier();
+            TryDropCoinsWithStageEventModifier(lootBlueprint);
             TryDropEliteExtraCoins();
         }
 
-        private void TryDropCoinsWithStageEventModifier()
+        private void TryDropCoinsWithStageEventModifier(MonsterBlueprint lootBlueprint)
         {
             int dropAttempts = StageEventRuntimeModifiers.GetCoinDropAttemptCount();
             int droppedCoinCount = 0;
 
             for (int i = 0; i < dropAttempts; i++)
             {
-                if (monsterBlueprint.coinLootTable != null &&
-                    monsterBlueprint.coinLootTable.TryDropLoot(out CoinType coinType))
+                if (lootBlueprint != null &&
+                    lootBlueprint.coinLootTable != null &&
+                    lootBlueprint.coinLootTable.TryDropLoot(out CoinType coinType))
                 {
                     entityManager.SpawnCoin((Vector2)transform.position, coinType);
                     droppedCoinCount++;

@@ -8956,16 +8956,30 @@ MonoBehaviour:
   - phaseName: "2\uBD84\uB300 \uC5D8\uB9AC\uD2B8 \uD14C\uC2A4\uD2B8"
     startTime: 5
     endTime: 60
+    selectionMode: 0
     spawnInterval: 10
     spawnImmediatelyOnPhaseStart: 1
     minSpawnCount: 1
     maxSpawnCount: 1
     maxAliveInPhase: 3
-    eliteMonsterFlatIndices: 08000000
-    avoidDuplicateSelectionInOneWave: 0
+    normalToEliteMappings:
+    - normalMonsterFlatIndex: 0
+      eliteMonsterFlatIndex: 8
+      enabled: 1
+    - normalMonsterFlatIndex: 1
+      eliteMonsterFlatIndex: 9
+      enabled: 1
+    - normalMonsterFlatIndex: 2
+      eliteMonsterFlatIndex: 10
+      enabled: 1
+    maxNormalTableSampleAttempts: 30
+    avoidDuplicateEliteInOneWave: 1
+    fallbackToManualPoolIfNoMappedElite: 0
+    eliteMonsterFlatIndices: 08000000090000000a0000000b000000
     additionalHpBuff: 0
   debugLog: 1
   logMonsterIndexTableOnStart: 1
+  debugFollowSelection: 1
 --- !u!1 &1207884297
 GameObject:
   m_ObjectHideFlags: 0

@@ -6,13 +6,35 @@ namespace Vampire
 {
     // 엘리트 몬스터 전용 스포너
     //
-    // 역할:
-    // - 일반 Monster Spawn Table과 분리해서 엘리트 몬스터만 별도 시간표로 스폰한다.
-    // - Level 1 Blueprint에 등록된 Monster Blueprints의 flat index를 사용한다.
-    // - 별도 프리팹/풀을 만들지 않고, 기존 LevelBlueprint의 몬스터 풀을 그대로 사용한다.
-    // - 시간대가 뒤로 갈수록 Spawn Count / Max Alive를 높여 엘리트 등장량을 늘릴 수 있다.
+    // 핵심 구조:
+    // 1. ManualFlatIndexPool 모드
+    //    - 기존 방식처럼 Elite Monster Flat Indices에서 랜덤으로 엘리트 선택
+    //
+    // 2. FollowNormalSpawnTable 모드
+    //    - 현재 Level 1의 일반 몬스터 스폰 테이블에서 먼저 일반 몬스터 flat index를 뽑음
+    //    - Normal To Elite Mappings에 등록된 대응 관계를 보고 엘리트 flat index로 변환
+    //    - 결과적으로 "현재 시간대에 많이 나오는 일반 몬스터의 엘리트"가 더 자주 등장함
     public class EliteMonsterSpawner : MonoBehaviour
     {
+        public enum EliteSelectionMode
+        {
+            FollowNormalSpawnTable,
+            ManualFlatIndexPool
+        }
+
+        [System.Serializable]
+        public class NormalToEliteMapping
+        {
+            [Tooltip("일반 몬스터 flat index입니다. 예: 初級小兵 = 0")]
+            public int normalMonsterFlatIndex;
+
+            [Tooltip("위 일반 몬스터에 대응하는 엘리트 몬스터 flat index입니다. 예: Elite 初級小兵 = 8")]
+            public int eliteMonsterFlatIndex;
+
+            [Tooltip("체크 해제하면 이 매핑은 무시됩니다.")]
+            public bool enabled = true;
+        }
+
         [System.Serializable]
         public class EliteSpawnPhase
         {
@@ -25,6 +47,10 @@ namespace Vampire
 
             [Tooltip("이 시간 이후에는 이 Phase가 작동하지 않습니다. 0 이하로 두면 종료 시간 없이 계속 작동합니다.")]
             public float endTime = 210f;
+
+            [Header("Selection Mode")]
+            [Tooltip("엘리트 선택 방식입니다. FollowNormalSpawnTable을 추천합니다.")]
+            public EliteSelectionMode selectionMode = EliteSelectionMode.FollowNormalSpawnTable;
 
             [Header("Spawn Timing")]
             [Tooltip("몇 초마다 엘리트를 스폰할지 설정합니다.")]
@@ -43,12 +69,22 @@ namespace Vampire
             [Tooltip("이 Phase 동안 필드에 동시에 존재할 수 있는 엘리트 최대 수입니다.")]
             public int maxAliveInPhase = 1;
 
-            [Header("Elite Pool")]
-            [Tooltip("Level 1 Blueprint의 MonsterIndexTable 기준 flat index입니다. 여기에 등록된 엘리트 중 랜덤으로 스폰합니다.")]
-            public int[] eliteMonsterFlatIndices;
+            [Header("Follow Normal Spawn Table Mode")]
+            [Tooltip("일반 몬스터 flat index -> 엘리트 몬스터 flat index 대응표입니다.")]
+            public NormalToEliteMapping[] normalToEliteMappings;
 
-            [Tooltip("한 번에 여러 마리 스폰할 때 가능한 한 같은 엘리트가 중복 선택되지 않게 합니다.")]
-            public bool avoidDuplicateSelectionInOneWave = true;
+            [Tooltip("일반 스폰 테이블에서 매핑 가능한 몬스터가 나올 때까지 몇 번까지 다시 뽑을지 설정합니다.")]
+            public int maxNormalTableSampleAttempts = 30;
+
+            [Tooltip("한 웨이브 안에서 같은 엘리트가 중복 선택되지 않도록 시도합니다.")]
+            public bool avoidDuplicateEliteInOneWave = true;
+
+            [Tooltip("현재 시간대 스폰 테이블에서 매핑 가능한 몬스터를 못 찾았을 때, Manual Pool을 예비 후보로 사용할지 여부입니다.")]
+            public bool fallbackToManualPoolIfNoMappedElite = false;
+
+            [Header("Manual Pool Mode / Fallback Pool")]
+            [Tooltip("ManualFlatIndexPool 모드에서 사용할 엘리트 flat index 목록입니다. Follow 모드에서는 fallback 용도로도 쓸 수 있습니다.")]
+            public int[] eliteMonsterFlatIndices;
 
             [Header("Extra HP Buff")]
             [Tooltip("추가 HP 보정입니다. 보통 0으로 두면 됩니다. 엘리트 체력 2배는 EliteMonsterBlueprint의 HP Multiplier에서 처리합니다.")]
@@ -61,6 +97,7 @@ namespace Vampire
             public int poolIndex;
             public int blueprintIndex;
             public MonsterBlueprint blueprint;
+            public GameObject prefab;
         }
 
         [Header("References")]
@@ -87,6 +124,9 @@ namespace Vampire
 
         [Tooltip("게임 시작 시 Level 1 Blueprint의 몬스터 flat index 목록을 Console에 출력합니다.")]
         [SerializeField] private bool logMonsterIndexTableOnStart = true;
+
+        [Tooltip("FollowNormalSpawnTable에서 어떤 일반 몬스터가 어떤 엘리트로 변환됐는지 로그를 출력합니다.")]
+        [SerializeField] private bool debugFollowSelection = true;
 
         private readonly List<Monster> activeElites = new List<Monster>();
 
@@ -193,7 +233,7 @@ namespace Vampire
                     {
                         Debug.Log(
                             $"[EliteMonsterSpawner] Phase 시작 | " +
-                            $"Phase: {phase.phaseName} | Time: {currentTime:0.##}",
+                            $"Phase: {phase.phaseName} | Time: {currentTime:0.##} | Mode: {phase.selectionMode}",
                             this
                         );
                     }
@@ -266,19 +306,6 @@ namespace Vampire
                 return;
             }
 
-            if (phase.eliteMonsterFlatIndices == null || phase.eliteMonsterFlatIndices.Length == 0)
-            {
-                if (debugLog)
-                {
-                    Debug.LogWarning(
-                        $"[EliteMonsterSpawner] {phase.phaseName}: eliteMonsterFlatIndices가 비어 있습니다.",
-                        this
-                    );
-                }
-
-                return;
-            }
-
             CleanupActiveElites();
 
             int currentAlive = activeElites.Count;
@@ -304,30 +331,39 @@ namespace Vampire
             int minCount = Mathf.Max(1, phase.minSpawnCount);
             int maxCount = Mathf.Max(minCount, phase.maxSpawnCount);
 
-            int spawnCount = Random.Range(minCount, maxCount + 1);
-            spawnCount = Mathf.Min(spawnCount, finalCapacity);
-
-            List<int> candidateIndices = new List<int>(phase.eliteMonsterFlatIndices);
+            int requestedSpawnCount = Random.Range(minCount, maxCount + 1);
+            int spawnCount = Mathf.Min(requestedSpawnCount, finalCapacity);
 
             int spawnedCount = 0;
+            HashSet<int> selectedEliteIndicesThisWave = new HashSet<int>();
 
             for (int i = 0; i < spawnCount; i++)
             {
-                if (candidateIndices.Count <= 0)
+                int selectedEliteFlatIndex;
+
+                bool selected = TrySelectEliteFlatIndex(
+                    phase,
+                    selectedEliteIndicesThisWave,
+                    out selectedEliteFlatIndex
+                );
+
+                if (!selected)
                 {
-                    candidateIndices.AddRange(phase.eliteMonsterFlatIndices);
+                    if (debugLog)
+                    {
+                        Debug.LogWarning(
+                            $"[EliteMonsterSpawner] 엘리트 선택 실패 | Phase: {phase.phaseName} | Mode: {phase.selectionMode}",
+                            this
+                        );
+                    }
+
+                    continue;
                 }
 
-                int selectedListIndex = Random.Range(0, candidateIndices.Count);
-                int selectedFlatIndex = candidateIndices[selectedListIndex];
-
-                if (phase.avoidDuplicateSelectionInOneWave)
-                {
-                    candidateIndices.RemoveAt(selectedListIndex);
-                }
+                selectedEliteIndicesThisWave.Add(selectedEliteFlatIndex);
 
                 Monster spawnedElite = TrySpawnEliteByFlatIndex(
-                    selectedFlatIndex,
+                    selectedEliteFlatIndex,
                     phase.additionalHpBuff
                 );
 
@@ -345,6 +381,206 @@ namespace Vampire
                     this
                 );
             }
+        }
+
+        private bool TrySelectEliteFlatIndex(
+            EliteSpawnPhase phase,
+            HashSet<int> selectedEliteIndicesThisWave,
+            out int eliteFlatIndex)
+        {
+            eliteFlatIndex = -1;
+
+            if (phase.selectionMode == EliteSelectionMode.ManualFlatIndexPool)
+            {
+                return TrySelectManualEliteFlatIndex(
+                    phase,
+                    selectedEliteIndicesThisWave,
+                    out eliteFlatIndex
+                );
+            }
+
+            bool selectedFromNormalTable = TrySelectMappedEliteFollowingNormalSpawnTable(
+                phase,
+                selectedEliteIndicesThisWave,
+                out eliteFlatIndex
+            );
+
+            if (selectedFromNormalTable)
+            {
+                return true;
+            }
+
+            if (phase.fallbackToManualPoolIfNoMappedElite)
+            {
+                return TrySelectManualEliteFlatIndex(
+                    phase,
+                    selectedEliteIndicesThisWave,
+                    out eliteFlatIndex
+                );
+            }
+
+            return false;
+        }
+
+        private bool TrySelectMappedEliteFollowingNormalSpawnTable(
+            EliteSpawnPhase phase,
+            HashSet<int> selectedEliteIndicesThisWave,
+            out int eliteFlatIndex)
+        {
+            eliteFlatIndex = -1;
+
+            if (levelManager == null ||
+                levelManager.CurrentLevelBlueprint == null ||
+                levelManager.CurrentLevelBlueprint.monsterSpawnTable == null)
+            {
+                return false;
+            }
+
+            if (phase.normalToEliteMappings == null ||
+                phase.normalToEliteMappings.Length == 0)
+            {
+                if (debugLog)
+                {
+                    Debug.LogWarning(
+                        $"[EliteMonsterSpawner] {phase.phaseName}: Normal To Elite Mappings가 비어 있습니다.",
+                        this
+                    );
+                }
+
+                return false;
+            }
+
+            float normalizedTime = levelManager.GetNormalizedLevelTime();
+            int attempts = Mathf.Max(1, phase.maxNormalTableSampleAttempts);
+
+            for (int attempt = 0; attempt < attempts; attempt++)
+            {
+                int normalFlatIndex =
+                    levelManager.CurrentLevelBlueprint.monsterSpawnTable.SelectMonster(normalizedTime);
+
+                if (normalFlatIndex < 0)
+                {
+                    continue;
+                }
+
+                int mappedEliteFlatIndex;
+
+                if (!TryGetMappedEliteFlatIndex(phase, normalFlatIndex, out mappedEliteFlatIndex))
+                {
+                    continue;
+                }
+
+                if (phase.avoidDuplicateEliteInOneWave &&
+                    selectedEliteIndicesThisWave != null &&
+                    selectedEliteIndicesThisWave.Contains(mappedEliteFlatIndex))
+                {
+                    continue;
+                }
+
+                eliteFlatIndex = mappedEliteFlatIndex;
+
+                if (debugFollowSelection)
+                {
+                    Debug.Log(
+                        $"[EliteMonsterSpawner] 일반 스폰 테이블 추종 선택 | " +
+                        $"normalFlatIndex={normalFlatIndex} -> eliteFlatIndex={eliteFlatIndex} | " +
+                        $"normalizedTime={normalizedTime:0.###}",
+                        this
+                    );
+                }
+
+                return true;
+            }
+
+            if (debugLog)
+            {
+                Debug.LogWarning(
+                    $"[EliteMonsterSpawner] 현재 일반 스폰 테이블에서 매핑 가능한 엘리트를 찾지 못했습니다. " +
+                    $"Phase={phase.phaseName} | Attempts={attempts}",
+                    this
+                );
+            }
+
+            return false;
+        }
+
+        private bool TryGetMappedEliteFlatIndex(
+            EliteSpawnPhase phase,
+            int normalFlatIndex,
+            out int eliteFlatIndex)
+        {
+            eliteFlatIndex = -1;
+
+            if (phase.normalToEliteMappings == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < phase.normalToEliteMappings.Length; i++)
+            {
+                NormalToEliteMapping mapping = phase.normalToEliteMappings[i];
+
+                if (mapping == null || !mapping.enabled)
+                {
+                    continue;
+                }
+
+                if (mapping.normalMonsterFlatIndex != normalFlatIndex)
+                {
+                    continue;
+                }
+
+                eliteFlatIndex = mapping.eliteMonsterFlatIndex;
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool TrySelectManualEliteFlatIndex(
+            EliteSpawnPhase phase,
+            HashSet<int> selectedEliteIndicesThisWave,
+            out int eliteFlatIndex)
+        {
+            eliteFlatIndex = -1;
+
+            if (phase.eliteMonsterFlatIndices == null ||
+                phase.eliteMonsterFlatIndices.Length == 0)
+            {
+                return false;
+            }
+
+            List<int> candidates = new List<int>();
+
+            for (int i = 0; i < phase.eliteMonsterFlatIndices.Length; i++)
+            {
+                int candidate = phase.eliteMonsterFlatIndices[i];
+
+                if (phase.avoidDuplicateEliteInOneWave &&
+                    selectedEliteIndicesThisWave != null &&
+                    selectedEliteIndicesThisWave.Contains(candidate))
+                {
+                    continue;
+                }
+
+                candidates.Add(candidate);
+            }
+
+            if (candidates.Count <= 0)
+            {
+                for (int i = 0; i < phase.eliteMonsterFlatIndices.Length; i++)
+                {
+                    candidates.Add(phase.eliteMonsterFlatIndices[i]);
+                }
+            }
+
+            if (candidates.Count <= 0)
+            {
+                return false;
+            }
+
+            eliteFlatIndex = candidates[Random.Range(0, candidates.Count)];
+            return true;
         }
 
         private Monster TrySpawnEliteByFlatIndex(int flatIndex, float additionalHpBuff)
@@ -374,6 +610,11 @@ namespace Vampire
                 return null;
             }
 
+            if (!ValidatePrefabAndBlueprintCompatibility(entry))
+            {
+                return null;
+            }
+
             Monster spawnedMonster = levelManager.EntityManager.SpawnMonsterRandomPosition(
                 entry.poolIndex,
                 entry.blueprint,
@@ -400,6 +641,58 @@ namespace Vampire
             }
 
             return spawnedMonster;
+        }
+
+        private bool ValidatePrefabAndBlueprintCompatibility(FlatMonsterEntry entry)
+        {
+            if (entry.prefab == null)
+            {
+                Debug.LogWarning(
+                    $"[EliteMonsterSpawner] flatIndex={entry.flatIndex}의 Monsters Prefab이 비어 있습니다.",
+                    this
+                );
+
+                return false;
+            }
+
+            Monster prefabMonster = entry.prefab.GetComponent<Monster>();
+
+            if (prefabMonster == null)
+            {
+                Debug.LogWarning(
+                    $"[EliteMonsterSpawner] flatIndex={entry.flatIndex}의 프리팹에 Monster 컴포넌트가 없습니다. " +
+                    $"Prefab={entry.prefab.name}",
+                    this
+                );
+
+                return false;
+            }
+
+            if (entry.blueprint is MeleeMonsterBlueprint && !(prefabMonster is MeleeMonster))
+            {
+                Debug.LogWarning(
+                    $"[EliteMonsterSpawner] 프리팹/블루프린트 타입이 맞지 않습니다. " +
+                    $"flatIndex={entry.flatIndex} | Prefab={entry.prefab.name}({prefabMonster.GetType().Name}) | " +
+                    $"Blueprint={entry.blueprint.name}({entry.blueprint.GetType().Name}) | " +
+                    $"MeleeMonsterBlueprint 계열은 MeleeMonster 프리팹에 넣어야 합니다.",
+                    this
+                );
+
+                return false;
+            }
+
+            if (prefabMonster is BossMonster)
+            {
+                Debug.LogWarning(
+                    $"[EliteMonsterSpawner] 보스 프리팹은 엘리트 몬스터 풀로 사용할 수 없습니다. " +
+                    $"flatIndex={entry.flatIndex} | Prefab={entry.prefab.name}",
+                    this
+                );
+
+                return false;
+            }
+
+            return true;
         }
 
         private bool TryGetFlatMonsterEntry(int targetFlatIndex, out FlatMonsterEntry result)
@@ -440,7 +733,8 @@ namespace Vampire
                             flatIndex = flatIndex,
                             poolIndex = poolIndex,
                             blueprintIndex = blueprintIndex,
-                            blueprint = blueprint
+                            blueprint = blueprint,
+                            prefab = container.monstersPrefab
                         };
 
                         return true;
@@ -522,6 +816,10 @@ namespace Vampire
                     continue;
                 }
 
+                string prefabName = container.monstersPrefab != null
+                    ? container.monstersPrefab.name
+                    : "NULL_PREFAB";
+
                 for (int blueprintIndex = 0; blueprintIndex < container.monsterBlueprints.Length; blueprintIndex++)
                 {
                     MonsterBlueprint blueprint = container.monsterBlueprints[blueprintIndex];
@@ -532,7 +830,8 @@ namespace Vampire
 
                     Debug.Log(
                         $"[EliteIndex] flatIndex={flatIndex} | poolIndex={poolIndex} | " +
-                        $"blueprintIndex={blueprintIndex} | name={blueprintName} | type={blueprintType} | elite={isElite}",
+                        $"blueprintIndex={blueprintIndex} | prefab={prefabName} | " +
+                        $"name={blueprintName} | type={blueprintType} | elite={isElite}",
                         this
                     );
 

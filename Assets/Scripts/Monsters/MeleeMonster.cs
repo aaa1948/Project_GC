@@ -5,6 +5,8 @@ namespace Vampire
     public class MeleeMonster : Monster
     {
         protected new MeleeMonsterBlueprint monsterBlueprint;
+        protected EliteMonsterBlueprint eliteMonsterBlueprint;
+
         protected float timeSinceLastAttack;
 
         public override void Setup(
@@ -16,6 +18,7 @@ namespace Vampire
             base.Setup(monsterIndex, position, monsterBlueprint, hpBuff);
 
             this.monsterBlueprint = monsterBlueprint as MeleeMonsterBlueprint;
+            this.eliteMonsterBlueprint = monsterBlueprint as EliteMonsterBlueprint;
 
             if (this.monsterBlueprint == null)
             {
@@ -47,7 +50,7 @@ namespace Vampire
                 return;
             }
 
-            if (playerCharacter == null || rb == null || monsterBlueprint == null || entityManager == null)
+            if (playerCharacter == null || rb == null || monsterBlueprint == null)
             {
                 return;
             }
@@ -55,9 +58,9 @@ namespace Vampire
             Vector2 moveDirection =
                 ((Vector2)playerCharacter.transform.position - (Vector2)transform.position).normalized;
 
-            rb.velocity += moveDirection * monsterBlueprint.acceleration * Time.fixedDeltaTime;
+            rb.velocity += moveDirection * GetEffectiveAcceleration() * Time.fixedDeltaTime;
 
-            if (entityManager.Grid != null)
+            if (entityManager != null && entityManager.Grid != null)
             {
                 entityManager.Grid.UpdateClient(this);
             }
@@ -86,22 +89,62 @@ namespace Vampire
             }
 
             bool isTargetLayer =
-                (monsterBlueprint.meleeLayer & (1 << col.collider.gameObject.layer)) != 0;
+                (GetEffectiveMeleeLayer() & (1 << col.collider.gameObject.layer)) != 0;
 
             if (!isTargetLayer)
             {
                 return;
             }
 
-            float attackDelay = 1.0f / Mathf.Max(0.01f, monsterBlueprint.atkspeed);
+            float attackDelay = 1.0f / Mathf.Max(0.01f, GetEffectiveAttackSpeed());
 
             if (timeSinceLastAttack < attackDelay)
             {
                 return;
             }
 
-            playerCharacter.TakeDamage(monsterBlueprint.atk);
+            playerCharacter.TakeDamage(GetEffectiveAttack());
             timeSinceLastAttack = Mathf.Repeat(timeSinceLastAttack, attackDelay);
+        }
+
+        private float GetEffectiveAcceleration()
+        {
+            if (eliteMonsterBlueprint != null)
+            {
+                return eliteMonsterBlueprint.GetEffectiveAcceleration();
+            }
+
+            return monsterBlueprint.acceleration;
+        }
+
+        private float GetEffectiveAttack()
+        {
+            if (eliteMonsterBlueprint != null)
+            {
+                return eliteMonsterBlueprint.GetEffectiveAttack();
+            }
+
+            return monsterBlueprint.atk;
+        }
+
+        private float GetEffectiveAttackSpeed()
+        {
+            if (eliteMonsterBlueprint != null)
+            {
+                return eliteMonsterBlueprint.GetEffectiveAttackSpeed();
+            }
+
+            return monsterBlueprint.atkspeed;
+        }
+
+        private LayerMask GetEffectiveMeleeLayer()
+        {
+            if (eliteMonsterBlueprint != null)
+            {
+                return eliteMonsterBlueprint.GetEffectiveMeleeLayer();
+            }
+
+            return monsterBlueprint.meleeLayer;
         }
     }
 }
