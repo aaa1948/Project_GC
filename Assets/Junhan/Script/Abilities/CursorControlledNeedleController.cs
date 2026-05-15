@@ -43,10 +43,9 @@ namespace Vampire
         private int lastDisplayedSpecialCount = -1;
 
         private readonly List<GameObject> backDisplayNeedles = new List<GameObject>();
-
         private readonly Dictionary<int, float> nextDamageAllowedTimeByTarget =
             new Dictionary<int, float>();
-        private readonly HashSet<int> touchingTargetIds = new HashSet<int>();
+
         private static bool hasWarnedHealMethodMissing = false;
 
         public static CursorControlledNeedleController Create(
@@ -441,11 +440,8 @@ namespace Vampire
                 effectiveHitRadius
             );
 
-            HashSet<int> touchingThisFrame = new HashSet<int>();
-
             if (hits == null || hits.Length == 0)
             {
-                touchingTargetIds.Clear();
                 return;
             }
 
@@ -479,40 +475,21 @@ namespace Vampire
                 }
 
                 checkedTargetsThisFrame.Add(targetId);
-                touchingThisFrame.Add(targetId);
 
-                // 이미 이기어침과 접촉 중인 대상이면 추가 피해 없음
-                if (touchingTargetIds.Contains(targetId))
+                if (!CanDamageTarget(targetId))
                 {
                     continue;
                 }
 
                 DamageTarget(damageable, damageableComponent, runtime);
-                touchingTargetIds.Add(targetId);
 
+                nextDamageAllowedTimeByTarget[targetId] = Time.time + damageInterval;
                 damagedTargetCount++;
 
                 if (damagedTargetCount >= maxTargetsThisTick)
                 {
                     break;
                 }
-            }
-
-            // 범위에서 벗어난 대상은 접촉 기록 제거
-            // 나중에 다시 들어오면 다시 1회 피해 가능
-            List<int> removeTargets = new List<int>();
-
-            foreach (int targetId in touchingTargetIds)
-            {
-                if (!touchingThisFrame.Contains(targetId))
-                {
-                    removeTargets.Add(targetId);
-                }
-            }
-
-            for (int i = 0; i < removeTargets.Count; i++)
-            {
-                touchingTargetIds.Remove(removeTargets[i]);
             }
         }
 

@@ -18,12 +18,7 @@ namespace Vampire
         private SyringeSpecialRuntime specials;
         private int remainingPierces;
 
-        // 유도침이 이미 맞힌 대상을 다시 추적하지 않게 하기 위한 기록
         private readonly HashSet<int> hitTargetIds = new HashSet<int>();
-
-        // 실제 데미지 중복 방지용 기록
-        // 하나의 침 투사체는 같은 몬스터에게 1번만 데미지를 준다.
-        private readonly HashSet<int> damagedTargetIds = new HashSet<int>();
 
         // 풀링으로 재사용될 때 maxDistance가 계속 누적되는 것을 막기 위한 원본 사거리 저장
         private float baseMaxDistance;
@@ -61,13 +56,6 @@ namespace Vampire
 
         [Tooltip("곡선이 플레이어 쪽으로 끌려오는 정도입니다.")]
         [SerializeField] private float returnNeedleCurveReturnPull = 0.7f;
-
-        [Header("Manual Hit Scan / 수동 적중 검사")]
-        [Tooltip("Trigger 이벤트가 누락되어도 침 이동 경로를 직접 검사해서 적중시키는 기능입니다.")]
-        [SerializeField] private bool useManualHitScan = true;
-
-        [Tooltip("침이 이동한 경로를 검사할 때 사용할 원형 반경입니다. 침이 너무 잘 안 맞으면 0.12~0.18 사이로 올려보세요.")]
-        [SerializeField] private float manualHitScanRadius = 0.12f;
 
         [Header("Stuck Needle Visual / 꽂힌 침 연출")]
         [Tooltip("체력이 남은 몬스터에게 일반 침이 적중했을 때, 맞은 위치에 침 시각 오브젝트를 남깁니다.")]
@@ -111,9 +99,7 @@ namespace Vampire
 
             specials = default;
             remainingPierces = 0;
-
             hitTargetIds.Clear();
-            damagedTargetIds.Clear();
 
             flightState = NeedleFlightState.Normal;
             returnTimer = 0f;
@@ -172,43 +158,20 @@ namespace Vampire
                         }
 
                         float normalStep = speed * Time.deltaTime;
+                        transform.position += normalStep * (Vector3)direction;
+                        distanceTravelled += normalStep;
 
-                        Vector2 normalPreviousPosition = transform.position;
-                        Vector2 normalNextPosition =
-                            normalPreviousPosition + direction * normalStep;
-
-                        NeedleFlightState normalStateBeforeMove = flightState;
-
-                        bool normalCanContinue =
-                            PerformManualHitScan(normalPreviousPosition, normalNextPosition);
-
-                        if (!normalCanContinue || isDespawning)
-                        {
-                            yield break;
-                        }
-
-                        if (flightState == normalStateBeforeMove)
-                        {
-                            transform.position = normalNextPosition;
-                            distanceTravelled += normalStep;
-                            ApplyVisualRotationToDirection(direction);
-                        }
+                        ApplyVisualRotationToDirection(direction);
 
                         speed -= airResistance * Time.deltaTime;
                         break;
 
                     case NeedleFlightState.ReturnForwardPass:
-                        if (!MoveReturnForwardPass())
-                        {
-                            yield break;
-                        }
+                        MoveReturnForwardPass();
                         break;
 
                     case NeedleFlightState.ReturnCurveToPlayer:
-                        if (!MoveReturnCurveToPlayer())
-                        {
-                            yield break;
-                        }
+                        MoveReturnCurveToPlayer();
                         break;
 
                     case NeedleFlightState.ReturnToPlayer:
@@ -271,8 +234,6 @@ namespace Vampire
                 return false;
             }
 
-            // 함정 몬스터는 활성화 상태일 때만 공격 대상이 된다.
-            // 휴면 상태에서는 유도 대상도 아니고, 적중 대상도 아니다.
             TrapMonster trapMonster = monster as TrapMonster;
 
             if (trapMonster != null && !trapMonster.IsActive)
@@ -348,155 +309,11 @@ namespace Vampire
             return closestTarget;
         }
 
-        private bool TryRegisterProjectileHit(int targetId)
+        protected override void OnTriggerEnter2D(Collider2D collider)
         {
-            if (targetId < 0)
+            if (isDespawning || !gameObject.activeInHierarchy)
             {
-                return false;
-            }
-
-            // 하나의 침 투사체는 같은 대상에게 절대 2번 이상 데미지를 주지 않는다.
-            if (damagedTargetIds.Contains(targetId))
-            {
-                return false;
-            }
-
-            damagedTargetIds.Add(targetId);
-
-            // 유도침이 이미 맞힌 대상은 다시 추적하지 않도록 같이 기록한다.
-            hitTargetIds.Add(targetId);
-
-            return true;
-        }
-
-        private bool PerformManualHitScan(Vector2 previousPosition, Vector2 nextPosition)
-        {
-            if (!useManualHitScan)
-            {
-                return true;
-            }
-
-            float radius = Mathf.Max(0.01f, manualHitScanRadius);
-
-            // 현재 위치에 이미 겹쳐 있는 대상 검사
-            if (!ProcessOverlapHits(previousPosition, radius))
-            {
-                return false;
-            }
-
-            Vector2 delta = nextPosition - previousPosition;
-            float distance = delta.magnitude;
-
-            if (distance <= 0.0001f)
-            {
-                return ProcessOverlapHits(nextPosition, radius);
-            }
-
-            Vector2 castDirection = delta / distance;
-
-            RaycastHit2D[] hits = Physics2D.CircleCastAll(
-                previousPosition,
-                radius,
-                castDirection,
-                distance
-            );
-
-            if (hits != null && hits.Length > 0)
-            {
-                System.Array.Sort(
-                    hits,
-                    (a, b) => a.distance.CompareTo(b.distance)
-                );
-
-                for (int i = 0; i < hits.Length; i++)
-                {
-                    Collider2D hitCollider = hits[i].collider;
-
-                    if (hitCollider == null)
-                    {
-                        continue;
-                    }
-
-                    Vector2 hitPosition = hits[i].point;
-
-                    if (hitPosition == Vector2.zero)
-                    {
-                        hitPosition = hitCollider.ClosestPoint(previousPosition);
-                    }
-
-                    transform.position = hitPosition;
-
-                    bool canContinue = ProcessHitCollider(hitCollider);
-
-                    if (!canContinue)
-                    {
-                        return false;
-                    }
-
-                    if (isDespawning)
-                    {
-                        return false;
-                    }
-
-                    // 적중으로 귀환 상태가 시작됐다면 이번 프레임의 직선 이동은 여기서 멈춘다.
-                    if (flightState == NeedleFlightState.ReturnForwardPass &&
-                        !IsReturnModeStartedByPreviousStateCheck())
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            // 최종 위치에서도 한 번 더 검사
-            return ProcessOverlapHits(nextPosition, radius);
-        }
-
-        // 현재 구조에서는 위 함수명이 의미상 어색하지만,
-        // 실질적으로는 "상태 변경 후 현재 이동 루프를 계속해도 되는지"를 보조하는 용도다.
-        private bool IsReturnModeStartedByPreviousStateCheck()
-        {
-            return false;
-        }
-
-        private bool ProcessOverlapHits(Vector2 position, float radius)
-        {
-            Collider2D[] overlaps = Physics2D.OverlapCircleAll(position, radius);
-
-            if (overlaps == null || overlaps.Length == 0)
-            {
-                return true;
-            }
-
-            for (int i = 0; i < overlaps.Length; i++)
-            {
-                Collider2D overlap = overlaps[i];
-
-                if (overlap == null)
-                {
-                    continue;
-                }
-
-                bool canContinue = ProcessHitCollider(overlap);
-
-                if (!canContinue)
-                {
-                    return false;
-                }
-
-                if (isDespawning)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        private bool ProcessHitCollider(Collider2D collider)
-        {
-            if (collider == null || isDespawning || !gameObject.activeInHierarchy)
-            {
-                return true;
+                return;
             }
 
             bool isInTargetLayer = (targetLayer & (1 << collider.gameObject.layer)) != 0;
@@ -504,17 +321,16 @@ namespace Vampire
             Monster monsterTarget;
             bool isValidMonsterTarget = TryGetValidMonsterTarget(collider, out monsterTarget);
 
-            // 휴면 상태 TrapMonster처럼 Monster이지만 유효하지 않은 대상은 그냥 통과시킨다.
             if (!isValidMonsterTarget)
             {
                 if (monsterTarget != null)
                 {
-                    return true;
+                    return;
                 }
 
                 if (!isInTargetLayer)
                 {
-                    return true;
+                    return;
                 }
             }
 
@@ -538,10 +354,9 @@ namespace Vampire
                     if (!IsReturnMode)
                     {
                         HitNothing();
-                        return false;
                     }
 
-                    return true;
+                    return;
                 }
 
                 targetId = damageableComponent.gameObject.GetInstanceID();
@@ -552,19 +367,17 @@ namespace Vampire
                 if (!IsReturnMode)
                 {
                     HitNothing();
-                    return false;
                 }
 
-                return true;
+                return;
             }
 
-            // 핵심:
-            // 기존의 타겟 판정은 유지하고,
-            // 같은 침이 같은 몬스터를 여러 번 때리는 것만 여기서 차단한다.
-            if (!TryRegisterProjectileHit(targetId))
+            if (hitTargetIds.Contains(targetId))
             {
-                return true;
+                return;
             }
+
+            hitTargetIds.Add(targetId);
 
             float rawDamage = IsReturnMode
                 ? damage * Mathf.Max(0.01f, specials.returnNeedleDamageMultiplier)
@@ -583,40 +396,32 @@ namespace Vampire
                 hitScale
             );
 
-            // 귀환 중에는 적을 맞혀도 멈추지 않고 계속 플레이어에게 돌아간다.
             if (IsReturnMode)
             {
-                return true;
+                return;
             }
 
             bool canPierce = specials.pierceEnabled && remainingPierces > 0;
 
-            // 관통침 + 침귀환 조합:
-            // 관통 횟수를 먼저 소모하고, 관통이 끝난 다음 귀환한다.
             if (canPierce)
             {
                 remainingPierces--;
-                return true;
+
+                if (col != null)
+                {
+                    StartCoroutine(ReenableColliderNextFrame());
+                }
+
+                return;
             }
 
             if (specials.returnNeedleEnabled)
             {
                 BeginReturnNeedleSequence(monsterTarget, direction);
-                return true;
+                return;
             }
 
             DestroyProjectile();
-            return false;
-        }
-
-        protected override void OnTriggerEnter2D(Collider2D collider)
-        {
-            ProcessHitCollider(collider);
-        }
-
-        private void OnTriggerStay2D(Collider2D collider)
-        {
-            ProcessHitCollider(collider);
         }
 
         private Vector3 GetProjectileVisualWorldPosition()
@@ -673,48 +478,35 @@ namespace Vampire
             returnCurveTimer = 0f;
 
             flightState = NeedleFlightState.ReturnForwardPass;
+
+            if (col != null)
+            {
+                StartCoroutine(ReenableColliderNextFrame());
+            }
         }
 
-        private bool MoveReturnForwardPass()
+        private void MoveReturnForwardPass()
         {
             returnTimer += Time.deltaTime;
 
             if (returnTimer >= Mathf.Max(0.1f, specials.returnNeedleMaxDuration))
             {
                 HitNothing();
-                return false;
+                return;
             }
 
             float step = speed * Time.deltaTime;
 
-            Vector2 previousPosition = transform.position;
-            Vector2 nextPosition =
-                previousPosition + returnForwardDirection * step;
+            transform.position += step * (Vector3)returnForwardDirection;
+            returnForwardTravelled += step;
 
-            NeedleFlightState stateBeforeMove = flightState;
+            direction = returnForwardDirection;
+            ApplyVisualRotationToDirection(direction);
 
-            bool canContinue = PerformManualHitScan(previousPosition, nextPosition);
-
-            if (!canContinue || isDespawning)
+            if (returnForwardTravelled >= Mathf.Max(0f, returnNeedleForwardPassDistance))
             {
-                return false;
+                BeginReturnCurveToPlayer();
             }
-
-            if (flightState == stateBeforeMove)
-            {
-                transform.position = nextPosition;
-                returnForwardTravelled += step;
-
-                direction = returnForwardDirection;
-                ApplyVisualRotationToDirection(direction);
-
-                if (returnForwardTravelled >= Mathf.Max(0f, returnNeedleForwardPassDistance))
-                {
-                    BeginReturnCurveToPlayer();
-                }
-            }
-
-            return true;
         }
 
         private void BeginReturnCurveToPlayer()
@@ -764,12 +556,12 @@ namespace Vampire
             flightState = NeedleFlightState.ReturnCurveToPlayer;
         }
 
-        private bool MoveReturnCurveToPlayer()
+        private void MoveReturnCurveToPlayer()
         {
             if (playerCharacter == null || playerCharacter.CenterTransform == null)
             {
                 HitNothing();
-                return false;
+                return;
             }
 
             returnTimer += Time.deltaTime;
@@ -777,7 +569,7 @@ namespace Vampire
             if (returnTimer >= Mathf.Max(0.1f, specials.returnNeedleMaxDuration))
             {
                 HitNothing();
-                return false;
+                return;
             }
 
             float duration = Mathf.Max(0.05f, returnNeedleCurveDuration);
@@ -795,34 +587,25 @@ namespace Vampire
                 easedT
             );
 
-            NeedleFlightState stateBeforeMove = flightState;
+            transform.position = nextPosition;
 
-            bool canContinue = PerformManualHitScan(previousPosition, nextPosition);
+            Vector2 moveDirection = nextPosition - previousPosition;
 
-            if (!canContinue || isDespawning)
+            if (moveDirection.sqrMagnitude > 0.0001f)
             {
-                return false;
+                direction = moveDirection.normalized;
+                ApplyVisualRotationToDirection(direction);
             }
 
-            if (flightState == stateBeforeMove)
+            if (t >= 1f)
             {
-                transform.position = nextPosition;
+                flightState = NeedleFlightState.ReturnToPlayer;
 
-                Vector2 moveDirection = nextPosition - previousPosition;
-
-                if (moveDirection.sqrMagnitude > 0.0001f)
+                if (col != null)
                 {
-                    direction = moveDirection.normalized;
-                    ApplyVisualRotationToDirection(direction);
-                }
-
-                if (t >= 1f)
-                {
-                    flightState = NeedleFlightState.ReturnToPlayer;
+                    StartCoroutine(ReenableColliderNextFrame());
                 }
             }
-
-            return true;
         }
 
         private Vector2 CubicBezier(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, float t)
@@ -869,22 +652,8 @@ namespace Vampire
                 Mathf.Max(0.01f, specials.returnNeedleSpeedMultiplier) *
                 Time.deltaTime;
 
-            Vector2 nextPosition = currentPosition + direction * returnStep;
-
-            NeedleFlightState stateBeforeMove = flightState;
-
-            bool canContinue = PerformManualHitScan(currentPosition, nextPosition);
-
-            if (!canContinue || isDespawning)
-            {
-                return false;
-            }
-
-            if (flightState == stateBeforeMove)
-            {
-                transform.position = nextPosition;
-                ApplyVisualRotationToDirection(direction);
-            }
+            transform.position += returnStep * (Vector3)direction;
+            ApplyVisualRotationToDirection(direction);
 
             return true;
         }
@@ -1035,6 +804,23 @@ namespace Vampire
 
             StuckNeedleVisual stuckVisual = stuckNeedleObject.AddComponent<StuckNeedleVisual>();
             stuckVisual.Init(monster, stuckNeedleLifetime);
+        }
+
+        private IEnumerator ReenableColliderNextFrame()
+        {
+            if (col == null)
+            {
+                yield break;
+            }
+
+            col.enabled = false;
+
+            yield return null;
+
+            if (!isDespawning && gameObject.activeInHierarchy)
+            {
+                col.enabled = true;
+            }
         }
 
         private void ApplyPoison(Component damageableComponent)
