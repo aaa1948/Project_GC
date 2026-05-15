@@ -10,8 +10,8 @@ GameObject:
   m_Component:
   - component: {fileID: 1961317459387710786}
   - component: {fileID: 1876110707025596369}
-  - component: {fileID: 7822634639757199850}
   - component: {fileID: 4915996707842535573}
+  - component: {fileID: 2071620681470906353}
   m_Layer: 0
   m_Name: Shuriken
   m_TagString: Untagged
@@ -26,6 +26,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7669521032070789568}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -35,7 +36,6 @@ Transform:
   - {fileID: 468192669396228874}
   - {fileID: 8567523300863618426}
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!58 &1876110707025596369
 CircleCollider2D:
@@ -47,32 +47,34 @@ CircleCollider2D:
   m_Enabled: 1
   m_Density: 1
   m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_ForceSendLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ForceReceiveLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_ContactCaptureLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_CallbackLayers:
+    serializedVersion: 2
+    m_Bits: 4294967295
   m_IsTrigger: 1
   m_UsedByEffector: 0
   m_UsedByComposite: 0
   m_Offset: {x: 0, y: 0}
   serializedVersion: 2
   m_Radius: 0.2
---- !u!114 &7822634639757199850
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7669521032070789568}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ed3433aa194444a658c9ce2afbf52af0, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  projectileSpriteRenderer: {fileID: 9111367580527349101}
-  maxDistance: 10
-  rotationSpeed: 4
-  airResistance: 0
-  destructionParticleSystem: {fileID: 1480910369272600104}
 --- !u!96 &4915996707842535573
 TrailRenderer:
-  serializedVersion: 2
+  serializedVersion: 3
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -113,6 +115,7 @@ TrailRenderer:
   m_SortingLayer: 0
   m_SortingOrder: -1
   m_Time: 0.2
+  m_PreviewTimeScale: 1
   m_Parameters:
     serializedVersion: 3
     widthMultiplier: 0.15
@@ -167,17 +170,49 @@ TrailRenderer:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 2
       m_NumAlphaKeys: 2
     numCornerVertices: 0
     numCapVertices: 0
     alignment: 0
     textureMode: 0
+    textureScale: {x: 1, y: 1}
     shadowBias: 0.5
     generateLightingData: 0
   m_MinVertexDistance: 0.02
+  m_MaskInteraction: 0
   m_Autodestruct: 0
   m_Emitting: 1
+  m_ApplyActiveColorSpace: 0
+--- !u!114 &2071620681470906353
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7669521032070789568}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 26a126cdbf17e73419f79c35ff196f54, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  projectileSpriteRenderer: {fileID: 9111367580527349101}
+  maxDistance: 10
+  rotationSpeed: 0
+  airResistance: 0
+  destructionParticleSystem: {fileID: 1480910369272600104}
+  visualForwardAngleOffset: 135
+  returnNeedleForwardPassDistance: 0.65
+  returnNeedleCurveDuration: 0.35
+  returnNeedleCurveForwardHandle: 0.9
+  returnNeedleCurveSideOffset: 1.2
+  returnNeedleCurveReturnPull: 0.7
+  enableStuckNeedleVisual: 1
+  stuckNeedleLifetime: 2.5
+  stuckNeedleScaleMultiplier: 0.85
+  stuckNeedleAlpha: 0.9
+  stuckNeedleSortingOrderBonus: 5
 --- !u!1 &7721683133008659187
 GameObject:
   m_ObjectHideFlags: 0
@@ -202,13 +237,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7721683133008659187}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.75, y: 0.75, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1961317459387710786}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &9111367580527349101
 SpriteRenderer:
@@ -251,7 +286,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 8aa8c4cb76e054949bb308e463d0f9c2, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 9b662b30a49435643b5e4645acb300ae, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -267,6 +302,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 1961317459387710786}
     m_Modifications:
     - target: {fileID: 3537598907756425012, guid: 0a98548d6b4ef46b192956e806b2b98b, type: 3}
@@ -410,6 +446,9 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 2100000, guid: fb2568447a6ab48e9bc99d5ae6ee7cea, type: 2}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 0a98548d6b4ef46b192956e806b2b98b, type: 3}
 --- !u!198 &1480910369272600104 stripped
 ParticleSystem:
@@ -426,6 +465,7 @@ PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Modification:
+    serializedVersion: 3
     m_TransformParent: {fileID: 1961317459387710786}
     m_Modifications:
     - target: {fileID: 5426989559345144941, guid: 986e0855f67544e30a2505485e2d6655, type: 3}
@@ -481,6 +521,9 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 986e0855f67544e30a2505485e2d6655, type: 3}
 --- !u!4 &468192669396228874 stripped
 Transform:
