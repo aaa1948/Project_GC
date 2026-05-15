@@ -14,86 +14,170 @@ namespace Vampire
 
         protected BoxCollider2D monsterHitbox;
         protected CircleCollider2D monsterLegsCollider;
+
         protected int monsterIndex;
         protected MonsterBlueprint monsterBlueprint;
         protected SpriteAnimator monsterSpriteAnimator;
         protected SpriteRenderer monsterSpriteRenderer;
         protected ZPositioner zPositioner;
+
         protected float currentHealth;
         protected EntityManager entityManager;
         protected Character playerCharacter;
         protected Rigidbody2D rb;
+
         protected int currWalkSequenceFrame = 0;
         protected bool knockedBack = false;
         protected Coroutine hitAnimationCoroutine = null;
         protected bool alive = true;
         protected Transform centerTransform;
 
+        private Vector3 originalLocalScale = Vector3.one;
+
         public Transform CenterTransform { get => centerTransform; }
-
         public UnityEvent<Monster> OnKilled { get; } = new UnityEvent<Monster>();
-
         public float HP => currentHealth;
-
         public Vector2 Position => transform.position;
-        public Vector2 Size => monsterLegsCollider.bounds.size;
+        public Vector2 Size => monsterLegsCollider != null ? monsterLegsCollider.bounds.size : Vector2.one;
+
         public Dictionary<int, int> ListIndexByCellIndex { get; set; }
         public int QueryID { get; set; } = -1;
 
         protected virtual void Awake()
         {
+            originalLocalScale = transform.localScale;
+
             rb = GetComponent<Rigidbody2D>();
             monsterLegsCollider = GetComponent<CircleCollider2D>();
             monsterSpriteAnimator = GetComponentInChildren<SpriteAnimator>();
             monsterSpriteRenderer = GetComponentInChildren<SpriteRenderer>();
+
             zPositioner = gameObject.AddComponent<ZPositioner>();
 
             if (monsterSpriteRenderer != null)
             {
-                monsterHitbox = monsterSpriteRenderer.gameObject.AddComponent<BoxCollider2D>();
+                monsterHitbox = monsterSpriteRenderer.gameObject.GetComponent<BoxCollider2D>();
+
+                if (monsterHitbox == null)
+                {
+                    monsterHitbox = monsterSpriteRenderer.gameObject.AddComponent<BoxCollider2D>();
+                }
+
                 monsterHitbox.isTrigger = true;
             }
         }
 
-        public virtual void Init(EntityManager entityManager, Character playerCharacter)
+        public virtual void Init(
+            EntityManager entityManager,
+            Character playerCharacter)
         {
             this.entityManager = entityManager;
             this.playerCharacter = playerCharacter;
-            zPositioner.Init(playerCharacter.transform);
+
+            if (zPositioner != null && playerCharacter != null)
+            {
+                zPositioner.Init(playerCharacter.transform);
+            }
         }
 
-        public virtual void Setup(int monsterIndex, Vector2 position, MonsterBlueprint monsterBlueprint, float hpBuff = 0)
+        public virtual void Setup(
+            int monsterIndex,
+            Vector2 position,
+            MonsterBlueprint monsterBlueprint,
+            float hpBuff = 0)
         {
             this.monsterIndex = monsterIndex;
             this.monsterBlueprint = monsterBlueprint;
 
+            EliteMonsterBlueprint eliteBlueprint = monsterBlueprint as EliteMonsterBlueprint;
+
+            float scaleMultiplier = 1f;
+
+            if (eliteBlueprint != null)
+            {
+                scaleMultiplier = Mathf.Max(0.1f, eliteBlueprint.scaleMultiplier);
+            }
+
+            transform.localScale = originalLocalScale * scaleMultiplier;
+
             rb.position = position;
             transform.position = position;
 
-            currentHealth = monsterBlueprint.hp + hpBuff;
+            float finalHp = monsterBlueprint.hp + hpBuff;
+
+            if (eliteBlueprint != null)
+            {
+                finalHp *= Mathf.Max(0.01f, eliteBlueprint.hpMultiplier);
+            }
+
+            currentHealth = finalHp;
             alive = true;
 
             entityManager.LivingMonsters.Add(this);
 
-            monsterSpriteAnimator.Init(monsterBlueprint.walkSpriteSequence, monsterBlueprint.walkFrameTime, true);
-            monsterSpriteAnimator.StartAnimating(true);
+            if (monsterSpriteAnimator != null &&
+                monsterBlueprint.walkSpriteSequence != null &&
+                monsterBlueprint.walkSpriteSequence.Length > 0)
+            {
+                monsterSpriteAnimator.Init(
+                    monsterBlueprint.walkSpriteSequence,
+                    monsterBlueprint.walkFrameTime,
+                    true
+                );
 
-            monsterHitbox.enabled = true;
-            monsterHitbox.size = monsterSpriteRenderer.bounds.size;
-            monsterHitbox.offset = Vector2.up * monsterHitbox.size.y / 2f;
+                monsterSpriteAnimator.StartAnimating(true);
+            }
 
-            monsterLegsCollider.radius = monsterHitbox.size.x / 2.5f;
+            if (monsterHitbox != null && monsterSpriteRenderer != null)
+            {
+                monsterHitbox.enabled = true;
+                monsterHitbox.size = monsterSpriteRenderer.bounds.size;
+                monsterHitbox.offset = Vector2.up * monsterHitbox.size.y / 2f;
+            }
 
-            centerTransform = (new GameObject("Center Transform")).transform;
-            centerTransform.SetParent(transform);
-            centerTransform.position = transform.position + (Vector3)monsterHitbox.offset;
+            if (monsterLegsCollider != null && monsterHitbox != null)
+            {
+                monsterLegsCollider.radius = monsterHitbox.size.x / 2.5f;
+            }
 
-            float spd = Random.Range(monsterBlueprint.movespeed - 0.1f, monsterBlueprint.movespeed + 0.1f);
-            rb.drag = monsterBlueprint.acceleration / (spd * spd);
+            if (centerTransform == null)
+            {
+                centerTransform = new GameObject("Center Transform").transform;
+                centerTransform.SetParent(transform);
+            }
 
-            rb.velocity = Vector2.zero;
+            if (monsterHitbox != null)
+            {
+                centerTransform.position =
+                    transform.position + (Vector3)monsterHitbox.offset;
+            }
+            else
+            {
+                centerTransform.position = transform.position;
+            }
+
+            float spd = Random.Range(
+                monsterBlueprint.movespeed - 0.1f,
+                monsterBlueprint.movespeed + 0.1f
+            );
+
+            spd = Mathf.Max(0.05f, spd);
+
+            if (rb != null)
+            {
+                rb.drag = monsterBlueprint.acceleration / (spd * spd);
+                rb.velocity = Vector2.zero;
+            }
 
             StopAllCoroutines();
+
+            if (eliteBlueprint != null && eliteBlueprint.debugLog)
+            {
+                Debug.Log(
+                    $"[EliteMonster] Spawned | name={monsterBlueprint.name} | " +
+                    $"scale={scaleMultiplier} | hp={currentHealth:0.##}"
+                );
+            }
         }
 
         protected virtual void Update()
@@ -103,7 +187,8 @@ namespace Vampire
                 return;
             }
 
-            monsterSpriteRenderer.flipX = ((playerCharacter.transform.position.x - rb.position.x) < 0);
+            monsterSpriteRenderer.flipX =
+                ((playerCharacter.transform.position.x - rb.position.x) < 0);
         }
 
         protected virtual void FixedUpdate()
@@ -112,17 +197,27 @@ namespace Vampire
 
         public override void Knockback(Vector2 knockback)
         {
+            if (rb == null)
+            {
+                return;
+            }
+
             rb.velocity += knockback * Mathf.Sqrt(rb.drag);
         }
 
-        public override void TakeDamage(float damage, Vector2 knockback = default(Vector2))
+        public override void TakeDamage(
+            float damage,
+            Vector2 knockback = default(Vector2))
         {
             if (!alive)
             {
                 return;
             }
 
-            entityManager.SpawnDamageText(monsterHitbox.transform.position, damage);
+            if (entityManager != null && monsterHitbox != null)
+            {
+                entityManager.SpawnDamageText(monsterHitbox.transform.position, damage);
+            }
 
             currentHealth -= damage;
 
@@ -131,7 +226,7 @@ namespace Vampire
                 StopCoroutine(hitAnimationCoroutine);
             }
 
-            if (knockback != default(Vector2))
+            if (knockback != default(Vector2) && rb != null)
             {
                 rb.velocity += knockback * Mathf.Sqrt(rb.drag);
                 knockedBack = true;
@@ -149,20 +244,34 @@ namespace Vampire
 
         protected IEnumerator HitAnimation()
         {
-            monsterSpriteRenderer.sharedMaterial = whiteMaterial;
+            if (monsterSpriteRenderer != null && whiteMaterial != null)
+            {
+                monsterSpriteRenderer.sharedMaterial = whiteMaterial;
+            }
 
             yield return new WaitForSeconds(0.15f);
 
-            monsterSpriteRenderer.sharedMaterial = defaultMaterial;
+            if (monsterSpriteRenderer != null && defaultMaterial != null)
+            {
+                monsterSpriteRenderer.sharedMaterial = defaultMaterial;
+            }
+
             knockedBack = false;
         }
 
         public virtual IEnumerator Killed(bool killedByPlayer = true)
         {
             alive = false;
-            monsterHitbox.enabled = false;
 
-            entityManager.LivingMonsters.Remove(this);
+            if (monsterHitbox != null)
+            {
+                monsterHitbox.enabled = false;
+            }
+
+            if (entityManager != null)
+            {
+                entityManager.LivingMonsters.Remove(this);
+            }
 
             if (killedByPlayer)
             {
@@ -171,7 +280,7 @@ namespace Vampire
                     playerCharacter.GainHealth(playerCharacter.HealOnKill);
                 }
 
-                SilverRunRewarder.RewardMonsterKill(monsterBlueprint);
+                RewardSilver();
                 DropLoot();
             }
 
@@ -184,29 +293,72 @@ namespace Vampire
 
             if (deathParticles != null)
             {
-                monsterSpriteRenderer.enabled = false;
-                shadow.SetActive(false);
+                if (monsterSpriteRenderer != null)
+                {
+                    monsterSpriteRenderer.enabled = false;
+                }
+
+                if (shadow != null)
+                {
+                    shadow.SetActive(false);
+                }
 
                 yield return new WaitForSeconds(deathParticles.main.duration - 0.15f);
 
-                monsterSpriteRenderer.enabled = true;
-                shadow.SetActive(true);
+                if (monsterSpriteRenderer != null)
+                {
+                    monsterSpriteRenderer.enabled = true;
+                }
+
+                if (shadow != null)
+                {
+                    shadow.SetActive(true);
+                }
             }
 
             OnKilled.Invoke(this);
             OnKilled.RemoveAllListeners();
 
-            entityManager.DespawnMonster(monsterIndex, this, true);
+            if (entityManager != null)
+            {
+                entityManager.DespawnMonster(monsterIndex, this, true);
+            }
+        }
+
+        protected virtual void RewardSilver()
+        {
+            EliteMonsterBlueprint eliteBlueprint = monsterBlueprint as EliteMonsterBlueprint;
+
+            int rewardCalls = 1;
+
+            if (eliteBlueprint != null)
+            {
+                rewardCalls = Mathf.Max(1, eliteBlueprint.silverRewardCalls);
+            }
+
+            for (int i = 0; i < rewardCalls; i++)
+            {
+                SilverRunRewarder.RewardMonsterKill(monsterBlueprint);
+            }
+
+            if (eliteBlueprint != null && eliteBlueprint.debugLog)
+            {
+                Debug.Log(
+                    $"[EliteMonster] Silver reward calls={rewardCalls} | name={monsterBlueprint.name}"
+                );
+            }
         }
 
         protected virtual void DropLoot()
         {
-            if (monsterBlueprint.gemLootTable.TryDropLoot(out GemType gemType))
+            if (monsterBlueprint.gemLootTable != null &&
+                monsterBlueprint.gemLootTable.TryDropLoot(out GemType gemType))
             {
                 entityManager.SpawnExpGem((Vector2)transform.position, gemType);
             }
 
             TryDropCoinsWithStageEventModifier();
+            TryDropEliteExtraCoins();
         }
 
         private void TryDropCoinsWithStageEventModifier()
@@ -216,7 +368,8 @@ namespace Vampire
 
             for (int i = 0; i < dropAttempts; i++)
             {
-                if (monsterBlueprint.coinLootTable.TryDropLoot(out CoinType coinType))
+                if (monsterBlueprint.coinLootTable != null &&
+                    monsterBlueprint.coinLootTable.TryDropLoot(out CoinType coinType))
                 {
                     entityManager.SpawnCoin((Vector2)transform.position, coinType);
                     droppedCoinCount++;
@@ -227,7 +380,11 @@ namespace Vampire
             {
                 for (int i = 0; i < StageEventRuntimeModifiers.AdditionalCoinDropCount; i++)
                 {
-                    entityManager.SpawnCoin((Vector2)transform.position, StageEventRuntimeModifiers.AdditionalCoinType);
+                    entityManager.SpawnCoin(
+                        (Vector2)transform.position,
+                        StageEventRuntimeModifiers.AdditionalCoinType
+                    );
+
                     droppedCoinCount++;
                 }
             }
@@ -235,6 +392,44 @@ namespace Vampire
             if (StageEventRuntimeModifiers.DebugGoldRush && droppedCoinCount > 0)
             {
                 Debug.Log($"[GoldRush] Coin dropped | count={droppedCoinCount}");
+            }
+        }
+
+        private void TryDropEliteExtraCoins()
+        {
+            EliteMonsterBlueprint eliteBlueprint = monsterBlueprint as EliteMonsterBlueprint;
+
+            if (eliteBlueprint == null)
+            {
+                return;
+            }
+
+            int extraCoinCount = Mathf.Max(0, eliteBlueprint.guaranteedExtraCoinCount);
+
+            if (extraCoinCount <= 0)
+            {
+                return;
+            }
+
+            float scatterRadius = Mathf.Max(0f, eliteBlueprint.extraCoinScatterRadius);
+
+            for (int i = 0; i < extraCoinCount; i++)
+            {
+                Vector2 randomOffset = Random.insideUnitCircle * scatterRadius;
+                Vector2 spawnPosition = (Vector2)transform.position + randomOffset;
+
+                entityManager.SpawnCoin(
+                    spawnPosition,
+                    eliteBlueprint.guaranteedExtraCoinType
+                );
+            }
+
+            if (eliteBlueprint.debugLog)
+            {
+                Debug.Log(
+                    $"[EliteMonster] Extra coins dropped | count={extraCoinCount} | " +
+                    $"type={eliteBlueprint.guaranteedExtraCoinType}"
+                );
             }
         }
     }

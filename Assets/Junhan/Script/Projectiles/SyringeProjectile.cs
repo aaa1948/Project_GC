@@ -11,7 +11,7 @@ namespace Vampire
         {
             Normal,
             ReturnForwardPass,
-            ReturnArcAroundTarget,
+            ReturnCurveToPlayer,
             ReturnToPlayer
         }
 
@@ -27,30 +27,35 @@ namespace Vampire
         private NeedleFlightState flightState = NeedleFlightState.Normal;
         private float returnTimer = 0f;
 
+        // 침귀환: 적중 후 1회 관통
         private Vector2 returnForwardDirection;
         private float returnForwardTravelled = 0f;
 
-        private Vector2 returnArcCenter;
-        private float returnArcRadius = 1.1f;
-        private float returnArcStartAngle;
-        private float returnArcEndAngle;
-        private float returnArcTimer = 0f;
+        // 침귀환: 물방울 호 형태 곡선 복귀
+        private float returnCurveTimer = 0f;
+        private Vector2 returnCurveStart;
+        private Vector2 returnCurveControl1;
+        private Vector2 returnCurveControl2;
+        private Vector2 returnCurveEnd;
 
         [Header("Needle Flight / 침 비행")]
-        [Tooltip("침 이미지의 날 부분이 이동 방향을 향하도록 보정하는 각도입니다. 현재 이미지 기준으로 135가 기본입니다. 반대로 날아가면 값을 조절하세요.")]
+        [Tooltip("침 이미지의 날 부분이 이동 방향을 향하도록 보정하는 각도입니다. 방향이 반대면 135, -45, 45, -135 중 하나로 테스트하세요.")]
         [SerializeField] private float visualForwardAngleOffset = 135f;
 
         [Tooltip("침귀환 발동 시, 적을 맞힌 뒤 앞으로 한 번 뚫고 지나가는 거리입니다.")]
         [SerializeField] private float returnNeedleForwardPassDistance = 0.65f;
 
-        [Tooltip("침귀환이 적 중심을 기준으로 반원을 그릴 때 사용할 최소 반지름입니다. 몬스터 한 마리 정도 여유 공간을 의미합니다.")]
-        [SerializeField] private float returnNeedleArcRadius = 1.1f;
+        [Tooltip("침귀환이 물방울 호처럼 휘어지는 데 걸리는 시간입니다.")]
+        [SerializeField] private float returnNeedleCurveDuration = 0.35f;
 
-        [Tooltip("침귀환이 반원을 도는 데 걸리는 시간입니다.")]
-        [SerializeField] private float returnNeedleArcDuration = 0.28f;
+        [Tooltip("적중 후 앞으로 더 뻗어나가는 곡선 핸들 길이입니다.")]
+        [SerializeField] private float returnNeedleCurveForwardHandle = 0.9f;
 
-        [Tooltip("침귀환이 최소한 이 정도 각도는 돌아가도록 보정합니다.")]
-        [SerializeField] private float returnNeedleMinArcAngle = 130f;
+        [Tooltip("몬스터 중심 기준 옆으로 벌어지는 곡선 폭입니다. 몬스터 한 마리 정도 여유를 주려면 1~1.4 정도가 적당합니다.")]
+        [SerializeField] private float returnNeedleCurveSideOffset = 1.2f;
+
+        [Tooltip("곡선이 플레이어 쪽으로 끌려오는 정도입니다.")]
+        [SerializeField] private float returnNeedleCurveReturnPull = 0.7f;
 
         [Header("Stuck Needle Visual / 꽂힌 침 연출")]
         [Tooltip("체력이 남은 몬스터에게 일반 침이 적중했을 때, 맞은 위치에 침 시각 오브젝트를 남깁니다.")]
@@ -73,13 +78,12 @@ namespace Vampire
 
         private bool IsReturnMode =>
             flightState == NeedleFlightState.ReturnForwardPass ||
-            flightState == NeedleFlightState.ReturnArcAroundTarget ||
+            flightState == NeedleFlightState.ReturnCurveToPlayer ||
             flightState == NeedleFlightState.ReturnToPlayer;
 
         protected override void Awake()
         {
             base.Awake();
-
             baseMaxDistance = maxDistance;
         }
 
@@ -100,9 +104,8 @@ namespace Vampire
             flightState = NeedleFlightState.Normal;
             returnTimer = 0f;
             returnForwardTravelled = 0f;
-            returnArcTimer = 0f;
+            returnCurveTimer = 0f;
 
-            // 투사체 풀링 시 이전 발사에서 적용된 사거리 배율이 남지 않도록 초기화
             maxDistance = baseMaxDistance;
         }
 
@@ -167,8 +170,8 @@ namespace Vampire
                         MoveReturnForwardPass();
                         break;
 
-                    case NeedleFlightState.ReturnArcAroundTarget:
-                        MoveReturnArcAroundTarget();
+                    case NeedleFlightState.ReturnCurveToPlayer:
+                        MoveReturnCurveToPlayer();
                         break;
 
                     case NeedleFlightState.ReturnToPlayer:
@@ -212,10 +215,6 @@ namespace Vampire
             }
 
             float angle = Mathf.Atan2(moveDirection.y, moveDirection.x) * Mathf.Rad2Deg;
-
-            // visualForwardAngleOffset:
-            // 현재 침 이미지가 기본 상태에서 날 부분이 좌하단을 향하고 있으므로,
-            // 이동 방향과 날 방향을 맞추기 위한 보정값.
             transform.rotation = Quaternion.Euler(0f, 0f, angle + visualForwardAngleOffset);
         }
 
@@ -235,8 +234,6 @@ namespace Vampire
                 return false;
             }
 
-            // 함정 몬스터는 활성화 상태일 때만 공격 대상이 된다.
-            // 휴면 상태에서는 유도 대상도 아니고, 적중 대상도 아니다.
             TrapMonster trapMonster = monster as TrapMonster;
 
             if (trapMonster != null && !trapMonster.IsActive)
@@ -266,8 +263,6 @@ namespace Vampire
 
         private Transform FindClosestTarget()
         {
-            // 보스가 일반 Monster Layer가 아닐 수 있으므로,
-            // LayerMask로 먼저 거르지 않고 주변 Collider 전체를 찾은 뒤 Monster 컴포넌트 기준으로 필터링한다.
             Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, specials.homingRange);
 
             float closestDistance = float.MaxValue;
@@ -326,7 +321,6 @@ namespace Vampire
             Monster monsterTarget;
             bool isValidMonsterTarget = TryGetValidMonsterTarget(collider, out monsterTarget);
 
-            // 휴면 상태 TrapMonster처럼 Monster이지만 유효하지 않은 대상은 그냥 통과시킨다.
             if (!isValidMonsterTarget)
             {
                 if (monsterTarget != null)
@@ -389,7 +383,6 @@ namespace Vampire
                 ? damage * Mathf.Max(0.01f, specials.returnNeedleDamageMultiplier)
                 : damage;
 
-            // 실제 보이는 Visual_Needle SpriteRenderer의 월드 위치/회전/스케일 기준.
             Vector3 hitPosition = GetProjectileVisualWorldPosition();
             Quaternion hitRotation = GetProjectileVisualWorldRotation();
             Vector3 hitScale = GetProjectileVisualWorldScale();
@@ -403,7 +396,6 @@ namespace Vampire
                 hitScale
             );
 
-            // 귀환 중에는 적을 맞혀도 멈추지 않고 계속 플레이어에게 돌아간다.
             if (IsReturnMode)
             {
                 return;
@@ -411,8 +403,6 @@ namespace Vampire
 
             bool canPierce = specials.pierceEnabled && remainingPierces > 0;
 
-            // 관통침 + 침귀환 조합:
-            // 관통 횟수를 먼저 소모하고, 관통이 끝난 다음 귀환한다.
             if (canPierce)
             {
                 remainingPierces--;
@@ -485,17 +475,7 @@ namespace Vampire
             returnForwardDirection = currentMoveDirection.normalized;
             returnForwardTravelled = 0f;
             returnTimer = 0f;
-
-            if (hitMonster != null)
-            {
-                returnArcCenter = hitMonster.CenterTransform != null
-                    ? (Vector2)hitMonster.CenterTransform.position
-                    : (Vector2)hitMonster.transform.position;
-            }
-            else
-            {
-                returnArcCenter = transform.position;
-            }
+            returnCurveTimer = 0f;
 
             flightState = NeedleFlightState.ReturnForwardPass;
 
@@ -516,6 +496,7 @@ namespace Vampire
             }
 
             float step = speed * Time.deltaTime;
+
             transform.position += step * (Vector3)returnForwardDirection;
             returnForwardTravelled += step;
 
@@ -524,61 +505,65 @@ namespace Vampire
 
             if (returnForwardTravelled >= Mathf.Max(0f, returnNeedleForwardPassDistance))
             {
-                BeginReturnArcAroundTarget();
+                BeginReturnCurveToPlayer();
             }
         }
 
-        private void BeginReturnArcAroundTarget()
+        private void BeginReturnCurveToPlayer()
         {
-            Vector2 currentPosition = transform.position;
-            Vector2 fromCenter = currentPosition - returnArcCenter;
-
-            if (fromCenter.sqrMagnitude <= 0.0001f)
+            if (playerCharacter == null || playerCharacter.CenterTransform == null)
             {
-                fromCenter = returnForwardDirection;
-
-                if (fromCenter == Vector2.zero)
-                {
-                    fromCenter = Vector2.right;
-                }
+                HitNothing();
+                return;
             }
 
-            float currentDistance = fromCenter.magnitude;
-            returnArcRadius = Mathf.Max(returnNeedleArcRadius, currentDistance);
+            Vector2 start = transform.position;
+            Vector2 playerPosition = playerCharacter.CenterTransform.position;
 
-            returnArcStartAngle = Mathf.Atan2(fromCenter.y, fromCenter.x) * Mathf.Rad2Deg;
-
-            Vector2 toPlayer =
-                (Vector2)playerCharacter.CenterTransform.position - returnArcCenter;
+            Vector2 toPlayer = playerPosition - start;
 
             if (toPlayer.sqrMagnitude <= 0.0001f)
             {
                 toPlayer = -returnForwardDirection;
             }
 
-            float desiredEndAngle = Mathf.Atan2(toPlayer.y, toPlayer.x) * Mathf.Rad2Deg;
-            float signedDelta = Mathf.DeltaAngle(returnArcStartAngle, desiredEndAngle);
+            Vector2 toPlayerDirection = toPlayer.normalized;
 
-            if (Mathf.Abs(signedDelta) < Mathf.Max(10f, returnNeedleMinArcAngle))
-            {
-                float sign = Mathf.Sign(signedDelta);
+            Vector2 sideA = new Vector2(-returnForwardDirection.y, returnForwardDirection.x).normalized;
+            Vector2 sideB = -sideA;
 
-                if (Mathf.Approximately(sign, 0f))
-                {
-                    Vector3 cross = Vector3.Cross(returnForwardDirection, toPlayer.normalized);
-                    sign = cross.z >= 0f ? 1f : -1f;
-                }
+            // 플레이어 방향과 더 잘 이어지는 쪽으로 호를 휘게 한다.
+            Vector2 chosenSide = Vector2.Dot(sideA, toPlayerDirection) >= Vector2.Dot(sideB, toPlayerDirection)
+                ? sideA
+                : sideB;
 
-                signedDelta = sign * Mathf.Max(10f, returnNeedleMinArcAngle);
-            }
+            float sideOffset = Mathf.Max(0.1f, returnNeedleCurveSideOffset);
+            float forwardHandle = Mathf.Max(0.05f, returnNeedleCurveForwardHandle);
+            float returnPull = Mathf.Max(0.05f, returnNeedleCurveReturnPull);
 
-            returnArcEndAngle = returnArcStartAngle + signedDelta;
-            returnArcTimer = 0f;
-            flightState = NeedleFlightState.ReturnArcAroundTarget;
+            returnCurveStart = start;
+
+            // 물방울 호 느낌:
+            // P0: 적을 관통한 지점
+            // P1: 기존 진행 방향으로 조금 더 뻗음
+            // P2: 옆으로 둥글게 빠지면서 플레이어 방향으로 끌림
+            // P3: 플레이어 근처
+            returnCurveControl1 = start + returnForwardDirection * forwardHandle;
+            returnCurveControl2 = start + chosenSide * sideOffset + toPlayerDirection * returnPull;
+            returnCurveEnd = playerPosition;
+
+            returnCurveTimer = 0f;
+            flightState = NeedleFlightState.ReturnCurveToPlayer;
         }
 
-        private void MoveReturnArcAroundTarget()
+        private void MoveReturnCurveToPlayer()
         {
+            if (playerCharacter == null || playerCharacter.CenterTransform == null)
+            {
+                HitNothing();
+                return;
+            }
+
             returnTimer += Time.deltaTime;
 
             if (returnTimer >= Mathf.Max(0.1f, specials.returnNeedleMaxDuration))
@@ -587,21 +572,20 @@ namespace Vampire
                 return;
             }
 
-            float duration = Mathf.Max(0.05f, returnNeedleArcDuration);
-            returnArcTimer += Time.deltaTime;
+            float duration = Mathf.Max(0.05f, returnNeedleCurveDuration);
+            returnCurveTimer += Time.deltaTime;
 
-            float t = Mathf.Clamp01(returnArcTimer / duration);
+            float t = Mathf.Clamp01(returnCurveTimer / duration);
             float easedT = Mathf.SmoothStep(0f, 1f, t);
 
-            float angle = Mathf.Lerp(returnArcStartAngle, returnArcEndAngle, easedT);
-            float rad = angle * Mathf.Deg2Rad;
-
             Vector2 previousPosition = transform.position;
-
-            Vector2 nextPosition = returnArcCenter + new Vector2(
-                Mathf.Cos(rad),
-                Mathf.Sin(rad)
-            ) * returnArcRadius;
+            Vector2 nextPosition = CubicBezier(
+                returnCurveStart,
+                returnCurveControl1,
+                returnCurveControl2,
+                returnCurveEnd,
+                easedT
+            );
 
             transform.position = nextPosition;
 
@@ -622,6 +606,17 @@ namespace Vampire
                     StartCoroutine(ReenableColliderNextFrame());
                 }
             }
+        }
+
+        private Vector2 CubicBezier(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, float t)
+        {
+            float oneMinusT = 1f - t;
+
+            return
+                oneMinusT * oneMinusT * oneMinusT * p0 +
+                3f * oneMinusT * oneMinusT * t * p1 +
+                3f * oneMinusT * t * t * p2 +
+                t * t * t * p3;
         }
 
         private bool MoveReturnToPlayer()
@@ -764,7 +759,6 @@ namespace Vampire
                 return;
             }
 
-            // 데미지를 준 뒤에도 살아있는 몬스터에게만 침을 남긴다.
             if (monster.HP <= 0f)
             {
                 return;
@@ -782,7 +776,6 @@ namespace Vampire
             stuckTransform.rotation = hitRotation;
             stuckTransform.localScale = hitScale * stuckNeedleScaleMultiplier;
 
-            // 월드 위치/회전/스케일을 유지한 채 몬스터에 붙인다.
             stuckTransform.SetParent(monster.transform, true);
 
             SpriteRenderer renderer = stuckNeedleObject.AddComponent<SpriteRenderer>();
@@ -881,7 +874,6 @@ namespace Vampire
 
         private void ApplyMosquitoHeal(Component damageableComponent)
         {
-            // HP 1 전설 증강이 켜져 있으면 모기침 회복은 무조건 막는다.
             if (specials.healingBlocked)
             {
                 return;
@@ -984,7 +976,6 @@ namespace Vampire
 
         private void ApplyExplosion(GameObject originalTarget)
         {
-            // 보스가 targetLayer에 없을 수 있으므로 전체 Collider 검색 후 Monster 기준으로 필터링한다.
             Collider2D[] hits =
                 Physics2D.OverlapCircleAll(transform.position, specials.explosionRadius);
 
@@ -1047,8 +1038,6 @@ namespace Vampire
         }
     }
 
-    // 몬스터 몸에 꽂힌 침 시각 오브젝트.
-    // 일정 시간이 지나면 사라지고, 몬스터가 먼저 죽으면 같이 사라진다.
     public class StuckNeedleVisual : MonoBehaviour
     {
         private Monster ownerMonster;

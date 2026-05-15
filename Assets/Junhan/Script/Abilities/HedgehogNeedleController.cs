@@ -3,13 +3,6 @@ using UnityEngine;
 
 namespace Vampire
 {
-    // 전설 증강: 고슴도침
-    //
-    // 수정 내용:
-    // - 회전 침 시각 오브젝트가 Visual_Needle의 실제 크기를 사용하도록 수정.
-    // - 반격 침 발사 시 넉백을 0으로 고정.
-    // - 보스/일반 몬스터는 Monster 컴포넌트 기준으로 감지.
-    // - 휴면 상태 TrapMonster는 감지하지 않음.
     public class HedgehogNeedleController : MonoBehaviour
     {
         private Character sourceCharacter;
@@ -20,7 +13,7 @@ namespace Vampire
         private LayerMask monsterLayer;
         private int projectilePoolIndex;
 
-        private int needleCount;
+        private int fallbackNeedleCount;
         private float orbitRadius;
         private float rotationSpeed;
         private float touchFireCooldown;
@@ -35,6 +28,8 @@ namespace Vampire
         private Vector3 projectileVisualBaseScale = Vector3.one;
         private Quaternion projectileVisualBaseRotation = Quaternion.identity;
 
+        private int currentOrbitNeedleCount = -1;
+
         [Header("Needle Visual")]
         [Tooltip("침 이미지의 날 부분이 바깥쪽을 향하도록 보정하는 각도입니다. 방향이 이상하면 135, -45, 45, -135 중 하나로 테스트하세요.")]
         [SerializeField] private float visualForwardAngleOffset = 135f;
@@ -42,7 +37,9 @@ namespace Vampire
         [Tooltip("고슴도침 회전 침 시각 크기 배율입니다. Visual_Needle의 실제 크기에 곱해집니다.")]
         [SerializeField] private float orbitVisualScaleMultiplier = 1f;
 
-        // 같은 대상에게 매 프레임 반격 침이 발사되는 것을 막기 위한 대상별 쿨타임
+        [Tooltip("고슴도침 회전 속도 배율입니다. 기존 속도가 너무 빠르므로 기본값은 0.35배입니다.")]
+        [SerializeField] private float rotationSpeedMultiplier = 0.35f;
+
         private readonly Dictionary<int, float> nextFireAllowedTimeByTarget =
             new Dictionary<int, float>();
 
@@ -91,7 +88,7 @@ namespace Vampire
             this.entityManager = entityManager;
             this.sourceNeedleAbility = sourceNeedleAbility;
 
-            this.needleCount = Mathf.Max(1, needleCount);
+            fallbackNeedleCount = Mathf.Max(1, needleCount);
             this.orbitRadius = Mathf.Max(0.1f, orbitRadius);
             this.rotationSpeed = rotationSpeed;
             this.touchFireCooldown = Mathf.Max(0.05f, touchFireCooldown);
@@ -105,7 +102,7 @@ namespace Vampire
 
             transform.position = GetSourceCenterPosition();
 
-            CreateOrbitVisuals();
+            RebuildOrbitVisuals(GetDesiredOrbitNeedleCount());
 
             if (sourceCharacter != null && sourceCharacter.OnDeath != null)
             {
@@ -128,12 +125,32 @@ namespace Vampire
 
             transform.position = GetSourceCenterPosition();
 
+            int desiredCount = GetDesiredOrbitNeedleCount();
+
+            if (desiredCount != currentOrbitNeedleCount)
+            {
+                RebuildOrbitVisuals(desiredCount);
+            }
+
             if (visualRoot != null)
             {
-                visualRoot.Rotate(Vector3.forward, rotationSpeed * Time.deltaTime);
+                visualRoot.Rotate(
+                    Vector3.forward,
+                    rotationSpeed * Mathf.Max(0f, rotationSpeedMultiplier) * Time.deltaTime
+                );
             }
 
             DetectEnemiesTouchingShield();
+        }
+
+        private int GetDesiredOrbitNeedleCount()
+        {
+            if (sourceNeedleAbility != null)
+            {
+                return Mathf.Max(1, sourceNeedleAbility.GetEffectiveProjectileCount());
+            }
+
+            return Mathf.Max(1, fallbackNeedleCount);
         }
 
         private void CacheProjectileVisualInfo()
@@ -212,18 +229,29 @@ namespace Vampire
             return sourceCharacter.transform.position;
         }
 
-        private void CreateOrbitVisuals()
+        private void RebuildOrbitVisuals(int needleCount)
         {
+            if (visualRoot != null)
+            {
+                Destroy(visualRoot.gameObject);
+            }
+
+            orbitNeedleVisuals.Clear();
+
+            currentOrbitNeedleCount = Mathf.Max(1, needleCount);
+
             visualRoot = new GameObject("Orbit Needle Visuals").transform;
             visualRoot.SetParent(transform);
             visualRoot.localPosition = Vector3.zero;
 
-            for (int i = 0; i < needleCount; i++)
+            for (int i = 0; i < currentOrbitNeedleCount; i++)
             {
                 GameObject visualObject = new GameObject($"Orbit Needle Visual {i + 1}");
                 visualObject.transform.SetParent(visualRoot);
 
-                float angle = i * 360f / needleCount;
+                // 항상 원점 기준 균등 배치:
+                // 2개 = 180도, 3개 = 120도, 4개 = 90도 ...
+                float angle = i * 360f / currentOrbitNeedleCount;
                 Vector2 direction = AngleToVector(angle);
 
                 visualObject.transform.localPosition = direction * orbitRadius;
@@ -245,6 +273,11 @@ namespace Vampire
                 }
 
                 orbitNeedleVisuals.Add(visualObject.transform);
+            }
+
+            if (debugLog)
+            {
+                Debug.Log($"[고슴도침] 회전 침 재배치 완료 | 개수 {currentOrbitNeedleCount}");
             }
         }
 

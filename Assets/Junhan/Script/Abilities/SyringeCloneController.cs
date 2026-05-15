@@ -34,6 +34,7 @@ namespace Vampire
             GameObject cloneObject = new GameObject("Syringe Clone");
 
             SpriteRenderer sourceRenderer = sourceCharacter.GetComponentInChildren<SpriteRenderer>();
+
             SpriteRenderer cloneRenderer = cloneObject.AddComponent<SpriteRenderer>();
 
             if (sourceRenderer != null)
@@ -91,9 +92,13 @@ namespace Vampire
             projectilePoolIndex = entityManager.AddPoolForProjectile(projectilePrefab);
 
             transform.position = sourceCharacter.transform.position + Vector3.right * followOffsetDistance;
+
             spawnInvincibleTimer = spawnInvincibleDuration;
 
-            sourceCharacter.OnDeath.AddListener(DestroySelf);
+            if (sourceCharacter.OnDeath != null)
+            {
+                sourceCharacter.OnDeath.AddListener(DestroySelf);
+            }
         }
 
         private void Update()
@@ -122,6 +127,7 @@ namespace Vampire
         private void UpdateFollowPosition()
         {
             Vector2 lookDirection = sourceCharacter.LookDirection;
+
             Vector2 sideDirection = new Vector2(-lookDirection.y, lookDirection.x);
 
             if (sideDirection == Vector2.zero)
@@ -138,6 +144,12 @@ namespace Vampire
                 targetPosition,
                 followLerpSpeed * Time.deltaTime
             );
+
+            if (rb != null)
+            {
+                rb.velocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+            }
         }
 
         private void UpdateVisual()
@@ -162,9 +174,8 @@ namespace Vampire
 
         private void UpdateAttack()
         {
-            float cloneAttackSpeedMultiplier = statRuntime != null
-                ? statRuntime.CloneAttackSpeedMultiplier
-                : 1f;
+            float cloneAttackSpeedMultiplier =
+                statRuntime != null ? statRuntime.CloneAttackSpeedMultiplier : 1f;
 
             float effectiveCooldown =
                 sourceSyringeAbility.GetCloneCooldown() /
@@ -192,9 +203,8 @@ namespace Vampire
 
             int projectileCount = sourceSyringeAbility.GetCloneProjectileCount();
 
-            float cloneDamageMultiplier = statRuntime != null
-                ? statRuntime.CloneDamageMultiplier
-                : 1f;
+            float cloneDamageMultiplier =
+                statRuntime != null ? statRuntime.CloneDamageMultiplier : 1f;
 
             float damage = sourceSyringeAbility.GetCloneDamage() * cloneDamageMultiplier;
             float knockback = sourceSyringeAbility.GetCloneKnockback();
@@ -219,6 +229,11 @@ namespace Vampire
                     monsterLayer
                 );
 
+                if (projectile == null)
+                {
+                    continue;
+                }
+
                 if (projectile is SyringeProjectile syringeProjectile)
                 {
                     syringeProjectile.ConfigureSpecials(currentRuntime);
@@ -233,15 +248,9 @@ namespace Vampire
 
         private void OnTriggerEnter2D(Collider2D other)
         {
-            if (spawnInvincibleTimer > 0f)
-            {
-                return;
-            }
-
-            if ((monsterLayer & (1 << other.gameObject.layer)) != 0)
-            {
-                DestroySelf();
-            }
+            // 기존에는 분신이 몬스터와 충돌하면 DestroySelf()로 사라졌다.
+            // 이제 분신은 피격/접촉으로 사라지지 않고 계속 유지된다.
+            // 플레이어 사망 시에만 DestroySelf()로 제거된다.
         }
 
         private void DestroySelf()
