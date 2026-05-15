@@ -5,16 +5,11 @@ namespace Vampire
 {
     // 전설 증강: 고슴도침
     //
-    // 역할:
-    // - 플레이어 주변에 회전하는 침 결계를 만든다.
-    // - 시간이 지나면 자동 발사하지 않는다.
-    // - 적이 실드 범위에 닿았을 때만 해당 적 방향으로 반격 침을 발사한다.
-    //
     // 수정 내용:
-    // - 기존 monsterLayer 기반 검색을 제거하고 Monster 컴포넌트 기준으로 감지한다.
-    // - 보스가 Monster Full / Monster Legs 레이어 밖에 있어도 Monster 계열이면 감지 가능하다.
-    // - 휴면 상태 TrapMonster는 감지하지 않는다.
-    // - 활성화 상태 TrapMonster는 감지한다.
+    // - 회전 침 시각 오브젝트가 Visual_Needle의 실제 크기를 사용하도록 수정.
+    // - 반격 침 발사 시 넉백을 0으로 고정.
+    // - 보스/일반 몬스터는 Monster 컴포넌트 기준으로 감지.
+    // - 휴면 상태 TrapMonster는 감지하지 않음.
     public class HedgehogNeedleController : MonoBehaviour
     {
         private Character sourceCharacter;
@@ -34,8 +29,22 @@ namespace Vampire
         private Transform visualRoot;
         private readonly List<Transform> orbitNeedleVisuals = new List<Transform>();
 
+        private Sprite projectileSprite;
+        private int projectileSortingLayerId;
+        private int projectileSortingOrder;
+        private Vector3 projectileVisualBaseScale = Vector3.one;
+        private Quaternion projectileVisualBaseRotation = Quaternion.identity;
+
+        [Header("Needle Visual")]
+        [Tooltip("침 이미지의 날 부분이 바깥쪽을 향하도록 보정하는 각도입니다. 방향이 이상하면 135, -45, 45, -135 중 하나로 테스트하세요.")]
+        [SerializeField] private float visualForwardAngleOffset = 135f;
+
+        [Tooltip("고슴도침 회전 침 시각 크기 배율입니다. Visual_Needle의 실제 크기에 곱해집니다.")]
+        [SerializeField] private float orbitVisualScaleMultiplier = 1f;
+
         // 같은 대상에게 매 프레임 반격 침이 발사되는 것을 막기 위한 대상별 쿨타임
-        private readonly Dictionary<int, float> nextFireAllowedTimeByTarget = new Dictionary<int, float>();
+        private readonly Dictionary<int, float> nextFireAllowedTimeByTarget =
+            new Dictionary<int, float>();
 
         [Header("Debug")]
         [SerializeField] private bool debugLog = false;
@@ -51,7 +60,8 @@ namespace Vampire
             float damageMultiplier)
         {
             GameObject controllerObject = new GameObject("Hedgehog Needle Barrier");
-            HedgehogNeedleController controller = controllerObject.AddComponent<HedgehogNeedleController>();
+            HedgehogNeedleController controller =
+                controllerObject.AddComponent<HedgehogNeedleController>();
 
             controller.Init(
                 sourceCharacter,
@@ -91,6 +101,8 @@ namespace Vampire
             monsterLayer = sourceNeedleAbility.MonsterLayer;
             projectilePoolIndex = entityManager.AddPoolForProjectile(projectilePrefab);
 
+            CacheProjectileVisualInfo();
+
             transform.position = GetSourceCenterPosition();
 
             CreateOrbitVisuals();
@@ -124,6 +136,67 @@ namespace Vampire
             DetectEnemiesTouchingShield();
         }
 
+        private void CacheProjectileVisualInfo()
+        {
+            SpriteRenderer sourceRenderer = FindPreferredProjectileSpriteRenderer();
+
+            if (sourceRenderer != null)
+            {
+                projectileSprite = sourceRenderer.sprite;
+                projectileSortingLayerId = sourceRenderer.sortingLayerID;
+                projectileSortingOrder = sourceRenderer.sortingOrder;
+                projectileVisualBaseScale = sourceRenderer.transform.localScale;
+                projectileVisualBaseRotation = sourceRenderer.transform.localRotation;
+            }
+            else
+            {
+                Debug.LogWarning("[고슴도침] 투사체 프리팹에서 SpriteRenderer를 찾지 못했습니다. 고슴도침 시각 오브젝트가 보이지 않을 수 있습니다.");
+                projectileVisualBaseScale = Vector3.one;
+                projectileVisualBaseRotation = Quaternion.identity;
+            }
+        }
+
+        private SpriteRenderer FindPreferredProjectileSpriteRenderer()
+        {
+            if (projectilePrefab == null)
+            {
+                return null;
+            }
+
+            SpriteRenderer[] renderers = projectilePrefab.GetComponentsInChildren<SpriteRenderer>(true);
+
+            SpriteRenderer firstEnabledRenderer = null;
+            SpriteRenderer firstRendererWithSprite = null;
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                SpriteRenderer renderer = renderers[i];
+
+                if (renderer == null || renderer.sprite == null)
+                {
+                    continue;
+                }
+
+                if (firstRendererWithSprite == null)
+                {
+                    firstRendererWithSprite = renderer;
+                }
+
+                if (renderer.enabled && firstEnabledRenderer == null)
+                {
+                    firstEnabledRenderer = renderer;
+                }
+
+                if (renderer.gameObject.name.IndexOf("Visual", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    renderer.gameObject.name.IndexOf("Needle", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    return renderer;
+                }
+            }
+
+            return firstEnabledRenderer != null ? firstEnabledRenderer : firstRendererWithSprite;
+        }
+
         private Vector2 GetSourceCenterPosition()
         {
             if (sourceCharacter == null)
@@ -145,13 +218,6 @@ namespace Vampire
             visualRoot.SetParent(transform);
             visualRoot.localPosition = Vector3.zero;
 
-            SpriteRenderer sourceRenderer = null;
-
-            if (projectilePrefab != null)
-            {
-                sourceRenderer = projectilePrefab.GetComponentInChildren<SpriteRenderer>();
-            }
-
             for (int i = 0; i < needleCount; i++)
             {
                 GameObject visualObject = new GameObject($"Orbit Needle Visual {i + 1}");
@@ -161,17 +227,21 @@ namespace Vampire
                 Vector2 direction = AngleToVector(angle);
 
                 visualObject.transform.localPosition = direction * orbitRadius;
-                visualObject.transform.localRotation = Quaternion.Euler(0f, 0f, angle);
+                visualObject.transform.localRotation =
+                    Quaternion.Euler(0f, 0f, angle + visualForwardAngleOffset) *
+                    projectileVisualBaseRotation;
 
                 SpriteRenderer visualRenderer = visualObject.AddComponent<SpriteRenderer>();
 
-                if (sourceRenderer != null)
+                if (projectileSprite != null)
                 {
-                    visualRenderer.sprite = sourceRenderer.sprite;
-                    visualRenderer.sortingLayerID = sourceRenderer.sortingLayerID;
-                    visualRenderer.sortingOrder = sourceRenderer.sortingOrder + 10;
+                    visualRenderer.sprite = projectileSprite;
+                    visualRenderer.sortingLayerID = projectileSortingLayerId;
+                    visualRenderer.sortingOrder = projectileSortingOrder + 10;
                     visualRenderer.color = new Color(1f, 1f, 1f, 0.65f);
-                    visualObject.transform.localScale = projectilePrefab.transform.localScale;
+
+                    visualObject.transform.localScale =
+                        projectileVisualBaseScale * orbitVisualScaleMultiplier;
                 }
 
                 orbitNeedleVisuals.Add(visualObject.transform);
@@ -182,9 +252,6 @@ namespace Vampire
         {
             Vector2 centerPosition = GetSourceCenterPosition();
 
-            // 핵심 수정:
-            // 기존에는 monsterLayer만 검색해서 보스가 레이어 밖이면 감지하지 못했다.
-            // 이제는 주변 Collider 전체를 찾고, Monster 컴포넌트가 있는 대상만 필터링한다.
             Collider2D[] hits = Physics2D.OverlapCircleAll(centerPosition, orbitRadius);
 
             if (hits == null || hits.Length == 0)
@@ -212,7 +279,6 @@ namespace Vampire
 
                 int targetId = monster.gameObject.GetInstanceID();
 
-                // 같은 몬스터가 여러 Collider를 가지고 있을 수 있으므로 한 프레임에 한 번만 처리
                 if (checkedTargetsThisFrame.Contains(targetId))
                 {
                     continue;
@@ -247,7 +313,6 @@ namespace Vampire
                 return false;
             }
 
-            // 휴면 상태 함정 몬스터는 고슴도침 대상에서 제외한다.
             TrapMonster trapMonster = monster as TrapMonster;
 
             if (trapMonster != null && !trapMonster.IsActive)
@@ -297,16 +362,16 @@ namespace Vampire
 
             direction.Normalize();
 
-            // 실드 가장자리에서 적 방향으로 침이 나가는 느낌
             Vector2 spawnPosition = centerPosition + direction * orbitRadius;
 
             SyringeSpecialRuntime runtime = sourceNeedleAbility.GetCurrentSpecialRuntime();
 
+            // 고슴도침 반격 침은 몬스터를 밀어내지 않도록 넉백을 0으로 고정한다.
             Projectile projectile = entityManager.SpawnProjectile(
                 projectilePoolIndex,
                 spawnPosition,
                 sourceNeedleAbility.GetEffectiveDamage() * damageMultiplier,
-                sourceNeedleAbility.GetEffectiveKnockback(),
+                0f,
                 sourceNeedleAbility.GetEffectiveSpeed(),
                 monsterLayer
             );
@@ -331,7 +396,7 @@ namespace Vampire
 
             if (debugLog)
             {
-                Debug.Log($"[고슴도침] 반격 침 발사 대상: {targetMonster.name}");
+                Debug.Log($"[고슴도침] 반격 침 발사 대상: {targetMonster.name} | 넉백 없음");
             }
         }
 

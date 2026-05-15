@@ -1,11 +1,13 @@
-using System.Collections;
 using UnityEngine;
 
 namespace Vampire
 {
     // 특수 증강: 침술진
-    // 대쉬 시작 시 대쉬 직전 위치에 분신을 생성하고,
-    // 분신이 360도로 침을 발사한다.
+    //
+    // 수정 내용:
+    // - 대쉬 시작 위치에 분신 이미지를 생성하지 않는다.
+    // - 대쉬 시작 위치에서 360도 원형으로 침만 발사한다.
+    // - 아이템/일반 증강/전설 증강으로 증가한 발사체 수를 침술진 발사 수에도 반영한다.
     public class AcupunctureFormationController : MonoBehaviour
     {
         private Character sourceCharacter;
@@ -16,17 +18,14 @@ namespace Vampire
         private LayerMask monsterLayer;
         private int projectilePoolIndex;
 
-        private float formationLifetime;
-        private int needleCount;
+        private int baseNeedleCount;
         private float damageMultiplier;
-        private float visualScale;
 
         private bool previousIsDashing = false;
         private Vector3 previousPlayerPosition;
 
-        private Sprite projectileSprite;
-        private int projectileSortingLayerId;
-        private int projectileSortingOrder;
+        [Header("Debug")]
+        [SerializeField] private bool debugLog = false;
 
         public static AcupunctureFormationController Create(
             Character sourceCharacter,
@@ -38,16 +37,15 @@ namespace Vampire
             float visualScale)
         {
             GameObject controllerObject = new GameObject("Acupuncture Formation Controller");
-            AcupunctureFormationController controller = controllerObject.AddComponent<AcupunctureFormationController>();
+            AcupunctureFormationController controller =
+                controllerObject.AddComponent<AcupunctureFormationController>();
 
             controller.Init(
                 sourceCharacter,
                 entityManager,
                 sourceNeedleAbility,
-                formationLifetime,
                 needleCount,
-                damageMultiplier,
-                visualScale
+                damageMultiplier
             );
 
             return controller;
@@ -57,25 +55,19 @@ namespace Vampire
             Character sourceCharacter,
             EntityManager entityManager,
             SyringeDartAbility sourceNeedleAbility,
-            float formationLifetime,
             int needleCount,
-            float damageMultiplier,
-            float visualScale)
+            float damageMultiplier)
         {
             this.sourceCharacter = sourceCharacter;
             this.entityManager = entityManager;
             this.sourceNeedleAbility = sourceNeedleAbility;
 
-            this.formationLifetime = Mathf.Max(0.05f, formationLifetime);
-            this.needleCount = Mathf.Max(1, needleCount);
+            baseNeedleCount = Mathf.Max(1, needleCount);
             this.damageMultiplier = Mathf.Max(0.01f, damageMultiplier);
-            this.visualScale = Mathf.Max(0.01f, visualScale);
 
             projectilePrefab = sourceNeedleAbility.ProjectilePrefab;
             monsterLayer = sourceNeedleAbility.MonsterLayer;
             projectilePoolIndex = entityManager.AddPoolForProjectile(projectilePrefab);
-
-            CacheProjectileVisualInfo();
 
             if (sourceCharacter != null)
             {
@@ -86,6 +78,11 @@ namespace Vampire
                 {
                     sourceCharacter.OnDeath.AddListener(DestroySelf);
                 }
+            }
+
+            if (debugLog)
+            {
+                Debug.Log("[침술진] 컨트롤러 생성 완료 - 분신 이미지 없이 원형 발사만 사용");
             }
         }
 
@@ -103,57 +100,27 @@ namespace Vampire
             // 이때 previousPlayerPosition은 대쉬 직전 플레이어 위치로 사용한다.
             if (!previousIsDashing && currentIsDashing)
             {
-                SpawnFormation(previousPlayerPosition);
+                FireRadialNeedles(previousPlayerPosition);
             }
 
             previousIsDashing = currentIsDashing;
             previousPlayerPosition = sourceCharacter.CenterTransform.position;
         }
 
-        private void CacheProjectileVisualInfo()
-        {
-            SpriteRenderer sourceRenderer = null;
-
-            if (projectilePrefab != null)
-            {
-                sourceRenderer = projectilePrefab.GetComponentInChildren<SpriteRenderer>();
-            }
-
-            if (sourceRenderer != null)
-            {
-                projectileSprite = sourceRenderer.sprite;
-                projectileSortingLayerId = sourceRenderer.sortingLayerID;
-                projectileSortingOrder = sourceRenderer.sortingOrder;
-            }
-        }
-
-        private void SpawnFormation(Vector3 spawnPosition)
-        {
-            GameObject formationObject = new GameObject("Acupuncture Formation Clone");
-            formationObject.transform.position = spawnPosition;
-            formationObject.transform.localScale = Vector3.one * visualScale;
-
-            SpriteRenderer renderer = formationObject.AddComponent<SpriteRenderer>();
-
-            if (projectileSprite != null)
-            {
-                renderer.sprite = projectileSprite;
-                renderer.sortingLayerID = projectileSortingLayerId;
-                renderer.sortingOrder = projectileSortingOrder + 6;
-                renderer.color = new Color(1f, 1f, 1f, 0.55f);
-            }
-
-            FireRadialNeedles(spawnPosition);
-            StartCoroutine(DestroyFormationAfterDelay(formationObject));
-        }
-
         private void FireRadialNeedles(Vector3 origin)
         {
             SyringeSpecialRuntime runtime = sourceNeedleAbility.GetCurrentSpecialRuntime();
 
-            for (int i = 0; i < needleCount; i++)
+            int finalNeedleCount = GetFinalNeedleCount();
+
+            if (debugLog)
             {
-                float angle = i * 360f / needleCount;
+                Debug.Log($"[침술진] 원형 침 발사 | 발사 수 {finalNeedleCount}");
+            }
+
+            for (int i = 0; i < finalNeedleCount; i++)
+            {
+                float angle = i * 360f / finalNeedleCount;
                 Vector2 direction = AngleToVector(angle);
 
                 Projectile projectile = entityManager.SpawnProjectile(
@@ -185,14 +152,19 @@ namespace Vampire
             }
         }
 
-        private IEnumerator DestroyFormationAfterDelay(GameObject formationObject)
+        private int GetFinalNeedleCount()
         {
-            yield return new WaitForSeconds(formationLifetime);
+            int finalCount = baseNeedleCount;
 
-            if (formationObject != null)
+            if (sourceNeedleAbility != null)
             {
-                Destroy(formationObject);
+                // 기본 발사체 수 1개는 침술진의 기본 needleCount에 이미 포함되어 있다고 보고,
+                // 추가 발사체 증가분만 침술진 발사 수에 더한다.
+                int projectileBonus = Mathf.Max(0, sourceNeedleAbility.GetEffectiveProjectileCount() - 1);
+                finalCount += projectileBonus;
             }
+
+            return Mathf.Max(1, finalCount);
         }
 
         private Vector2 AngleToVector(float angleDegrees)
