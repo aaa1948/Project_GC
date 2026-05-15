@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -5,13 +6,42 @@ namespace Vampire
 {
     public class HedgehogNeedleController : MonoBehaviour
     {
+        private struct NeedleTargetKey : IEquatable<NeedleTargetKey>
+        {
+            public int needleIndex;
+            public int targetId;
+
+            public NeedleTargetKey(int needleIndex, int targetId)
+            {
+                this.needleIndex = needleIndex;
+                this.targetId = targetId;
+            }
+
+            public bool Equals(NeedleTargetKey other)
+            {
+                return needleIndex == other.needleIndex && targetId == other.targetId;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is NeedleTargetKey other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    return (needleIndex * 397) ^ targetId;
+                }
+            }
+        }
+
         private Character sourceCharacter;
         private EntityManager entityManager;
         private SyringeDartAbility sourceNeedleAbility;
 
         private GameObject projectilePrefab;
         private LayerMask monsterLayer;
-        private int projectilePoolIndex;
 
         private int fallbackNeedleCount;
         private float orbitRadius;
@@ -40,11 +70,20 @@ namespace Vampire
         [Tooltip("고슴도침 회전 속도 배율입니다. 기존 속도가 너무 빠르므로 기본값은 0.35배입니다.")]
         [SerializeField] private float rotationSpeedMultiplier = 0.35f;
 
-        private readonly Dictionary<int, float> nextFireAllowedTimeByTarget =
-            new Dictionary<int, float>();
+        [Header("Needle Hit")]
+        [Tooltip("회전하는 침 하나하나의 피격 반경입니다.")]
+        [SerializeField] private float orbitNeedleHitRadius = 0.18f;
 
-        [Header("Debug")]
+        [Tooltip("같은 회전 침이 같은 적에게 다시 피해를 줄 수 있기까지의 시간입니다. 1번 침에게 맞은 적은 3초 동안 1번 침에게 다시 맞지 않습니다.")]
+        [SerializeField] private float sameNeedleSameTargetCooldown = 3f;
+
+        [Tooltip("고슴도침 데미지 로그를 출력합니다.")]
         [SerializeField] private bool debugLog = false;
+
+        private readonly Dictionary<NeedleTargetKey, float> nextDamageAllowedTimeByNeedleAndTarget =
+            new Dictionary<NeedleTargetKey, float>();
+
+        private readonly List<NeedleTargetKey> removeCooldownKeys = new List<NeedleTargetKey>();
 
         public static HedgehogNeedleController Create(
             Character sourceCharacter,
@@ -57,8 +96,7 @@ namespace Vampire
             float damageMultiplier)
         {
             GameObject controllerObject = new GameObject("Hedgehog Needle Barrier");
-            HedgehogNeedleController controller =
-                controllerObject.AddComponent<HedgehogNeedleController>();
+            HedgehogNeedleController controller = controllerObject.AddComponent<HedgehogNeedleController>();
 
             controller.Init(
                 sourceCharacter,
@@ -91,12 +129,15 @@ namespace Vampire
             fallbackNeedleCount = Mathf.Max(1, needleCount);
             this.orbitRadius = Mathf.Max(0.1f, orbitRadius);
             this.rotationSpeed = rotationSpeed;
+
+            // 기존 인스펙터 값도 살리되, 기본적으로는 3초 쿨타임을 사용한다.
             this.touchFireCooldown = Mathf.Max(0.05f, touchFireCooldown);
+            sameNeedleSameTargetCooldown = Mathf.Max(3f, sameNeedleSameTargetCooldown);
+
             this.damageMultiplier = Mathf.Max(0.01f, damageMultiplier);
 
             projectilePrefab = sourceNeedleAbility.ProjectilePrefab;
             monsterLayer = sourceNeedleAbility.MonsterLayer;
-            projectilePoolIndex = entityManager.AddPoolForProjectile(projectilePrefab);
 
             CacheProjectileVisualInfo();
 
@@ -111,7 +152,7 @@ namespace Vampire
 
             if (debugLog)
             {
-                Debug.Log("[고슴도침] HedgehogNeedleController 생성 완료");
+                Debug.Log("[고슴도침] HedgehogNeedleController 생성 완료 - 회전 침별 개별 피격 판정 사용");
             }
         }
 
@@ -132,6 +173,8 @@ namespace Vampire
                 RebuildOrbitVisuals(desiredCount);
             }
 
+            UpdateOrbitVisualScales();
+
             if (visualRoot != null)
             {
                 visualRoot.Rotate(
@@ -140,7 +183,8 @@ namespace Vampire
                 );
             }
 
-            DetectEnemiesTouchingShield();
+            DetectEnemiesTouchingOrbitNeedles();
+            CleanupExpiredCooldowns();
         }
 
         private int GetDesiredOrbitNeedleCount()
@@ -204,8 +248,8 @@ namespace Vampire
                     firstEnabledRenderer = renderer;
                 }
 
-                if (renderer.gameObject.name.IndexOf("Visual", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
-                    renderer.gameObject.name.IndexOf("Needle", System.StringComparison.OrdinalIgnoreCase) >= 0)
+                if (renderer.gameObject.name.IndexOf("Visual", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    renderer.gameObject.name.IndexOf("Needle", StringComparison.OrdinalIgnoreCase) >= 0)
                 {
                     return renderer;
                 }
@@ -250,7 +294,7 @@ namespace Vampire
                 visualObject.transform.SetParent(visualRoot);
 
                 // 항상 원점 기준 균등 배치:
-                // 2개 = 180도, 3개 = 120도, 4개 = 90도 ...
+                // 2개 = 180도, 3개 = 120도, 4개 = 90도
                 float angle = i * 360f / currentOrbitNeedleCount;
                 Vector2 direction = AngleToVector(angle);
 
@@ -267,13 +311,14 @@ namespace Vampire
                     visualRenderer.sortingLayerID = projectileSortingLayerId;
                     visualRenderer.sortingOrder = projectileSortingOrder + 10;
                     visualRenderer.color = new Color(1f, 1f, 1f, 0.65f);
-
-                    visualObject.transform.localScale =
-                        projectileVisualBaseScale * orbitVisualScaleMultiplier;
                 }
+
+                visualObject.transform.localScale = GetOrbitVisualScale();
 
                 orbitNeedleVisuals.Add(visualObject.transform);
             }
+
+            nextDamageAllowedTimeByNeedleAndTarget.Clear();
 
             if (debugLog)
             {
@@ -281,52 +326,109 @@ namespace Vampire
             }
         }
 
-        private void DetectEnemiesTouchingShield()
+        private void UpdateOrbitVisualScales()
         {
-            Vector2 centerPosition = GetSourceCenterPosition();
+            Vector3 visualScale = GetOrbitVisualScale();
 
-            Collider2D[] hits = Physics2D.OverlapCircleAll(centerPosition, orbitRadius);
+            for (int i = 0; i < orbitNeedleVisuals.Count; i++)
+            {
+                if (orbitNeedleVisuals[i] != null)
+                {
+                    orbitNeedleVisuals[i].localScale = visualScale;
+                }
+            }
+        }
 
-            if (hits == null || hits.Length == 0)
+        private Vector3 GetOrbitVisualScale()
+        {
+            float projectileSizeMultiplier = 1f;
+
+            if (sourceNeedleAbility != null)
+            {
+                projectileSizeMultiplier = sourceNeedleAbility.GetEffectiveProjectileSizeMultiplier();
+            }
+
+            return projectileVisualBaseScale * orbitVisualScaleMultiplier * projectileSizeMultiplier;
+        }
+
+        private float GetOrbitHitRadius()
+        {
+            float projectileSizeMultiplier = 1f;
+
+            if (sourceNeedleAbility != null)
+            {
+                projectileSizeMultiplier = sourceNeedleAbility.GetEffectiveProjectileSizeMultiplier();
+            }
+
+            return Mathf.Max(0.03f, orbitNeedleHitRadius * projectileSizeMultiplier);
+        }
+
+        private void DetectEnemiesTouchingOrbitNeedles()
+        {
+            if (orbitNeedleVisuals == null || orbitNeedleVisuals.Count == 0)
             {
                 return;
             }
 
-            HashSet<int> checkedTargetsThisFrame = new HashSet<int>();
+            float hitRadius = GetOrbitHitRadius();
 
-            foreach (Collider2D hit in hits)
+            for (int needleIndex = 0; needleIndex < orbitNeedleVisuals.Count; needleIndex++)
             {
-                Monster monster;
+                Transform needleTransform = orbitNeedleVisuals[needleIndex];
 
-                if (!TryGetValidMonsterTarget(hit, out monster))
+                if (needleTransform == null)
                 {
                     continue;
                 }
 
-                IDamageable damageable = monster as IDamageable;
+                Collider2D[] hits = Physics2D.OverlapCircleAll(needleTransform.position, hitRadius);
 
-                if (damageable == null)
+                if (hits == null || hits.Length == 0)
                 {
                     continue;
                 }
 
-                int targetId = monster.gameObject.GetInstanceID();
+                HashSet<int> checkedTargetsThisNeedle = new HashSet<int>();
 
-                if (checkedTargetsThisFrame.Contains(targetId))
+                for (int i = 0; i < hits.Length; i++)
                 {
-                    continue;
+                    Collider2D hit = hits[i];
+
+                    Monster monster;
+
+                    if (!TryGetValidMonsterTarget(hit, out monster))
+                    {
+                        continue;
+                    }
+
+                    IDamageable damageable = monster as IDamageable;
+
+                    if (damageable == null)
+                    {
+                        continue;
+                    }
+
+                    int targetId = monster.gameObject.GetInstanceID();
+
+                    if (checkedTargetsThisNeedle.Contains(targetId))
+                    {
+                        continue;
+                    }
+
+                    checkedTargetsThisNeedle.Add(targetId);
+
+                    NeedleTargetKey key = new NeedleTargetKey(needleIndex, targetId);
+
+                    if (!CanDamageWithNeedle(key))
+                    {
+                        continue;
+                    }
+
+                    DamageTargetWithOrbitNeedle(monster, needleIndex);
+
+                    nextDamageAllowedTimeByNeedleAndTarget[key] =
+                        Time.time + Mathf.Max(0.05f, sameNeedleSameTargetCooldown);
                 }
-
-                checkedTargetsThisFrame.Add(targetId);
-
-                if (!CanFireAtTarget(targetId))
-                {
-                    continue;
-                }
-
-                FireCounterNeedleAtTarget(monster);
-
-                nextFireAllowedTimeByTarget[targetId] = Time.time + touchFireCooldown;
             }
         }
 
@@ -356,9 +458,9 @@ namespace Vampire
             return true;
         }
 
-        private bool CanFireAtTarget(int targetId)
+        private bool CanDamageWithNeedle(NeedleTargetKey key)
         {
-            if (!nextFireAllowedTimeByTarget.TryGetValue(targetId, out float nextAllowedTime))
+            if (!nextDamageAllowedTimeByNeedleAndTarget.TryGetValue(key, out float nextAllowedTime))
             {
                 return true;
             }
@@ -366,70 +468,82 @@ namespace Vampire
             return Time.time >= nextAllowedTime;
         }
 
-        private void FireCounterNeedleAtTarget(Monster targetMonster)
+        private void DamageTargetWithOrbitNeedle(Monster targetMonster, int needleIndex)
         {
-            if (targetMonster == null || sourceCharacter == null || entityManager == null || sourceNeedleAbility == null)
+            if (targetMonster == null || sourceCharacter == null || sourceNeedleAbility == null)
             {
                 return;
             }
 
-            Vector2 centerPosition = GetSourceCenterPosition();
+            IDamageable damageable = targetMonster as IDamageable;
+            Component targetComponent = targetMonster;
 
-            Vector2 targetPosition;
-
-            if (targetMonster.CenterTransform != null)
-            {
-                targetPosition = targetMonster.CenterTransform.position;
-            }
-            else
-            {
-                targetPosition = targetMonster.transform.position;
-            }
-
-            Vector2 direction = targetPosition - centerPosition;
-
-            if (direction.sqrMagnitude <= 0.0001f)
-            {
-                direction = Vector2.right;
-            }
-
-            direction.Normalize();
-
-            Vector2 spawnPosition = centerPosition + direction * orbitRadius;
-
-            SyringeSpecialRuntime runtime = sourceNeedleAbility.GetCurrentSpecialRuntime();
-
-            // 고슴도침 반격 침은 몬스터를 밀어내지 않도록 넉백을 0으로 고정한다.
-            Projectile projectile = entityManager.SpawnProjectile(
-                projectilePoolIndex,
-                spawnPosition,
-                sourceNeedleAbility.GetEffectiveDamage() * damageMultiplier,
-                0f,
-                sourceNeedleAbility.GetEffectiveSpeed(),
-                monsterLayer
-            );
-
-            if (projectile == null)
+            if (damageable == null || targetComponent == null)
             {
                 return;
             }
 
-            projectile.transform.localScale =
-                Vector3.one * sourceCharacter.ProjectileSizeMultiplier * 0.8f;
+            float rawDamage = sourceNeedleAbility.GetEffectiveDamage() * damageMultiplier;
 
-            projectile.maxDistance *= sourceCharacter.RangeMultiplier;
+            PlayerGeneralStatRuntime statRuntime =
+                PlayerGeneralStatRuntime.GetOrCreate(sourceCharacter);
 
-            if (projectile is SyringeProjectile syringeProjectile)
+            bool isCritical = false;
+            float finalDamage = rawDamage;
+
+            if (statRuntime != null)
             {
-                syringeProjectile.ConfigureSpecials(runtime);
+                finalDamage = statRuntime.CalculateOffensiveDamage(
+                    sourceCharacter,
+                    targetComponent,
+                    rawDamage,
+                    out isCritical
+                );
             }
 
-            projectile.OnHitDamageable.AddListener(sourceCharacter.OnDealDamage.Invoke);
-            projectile.Launch(direction);
+            // 고슴도침은 넉백 없음.
+            damageable.TakeDamage(finalDamage, Vector2.zero);
+
+            if (sourceCharacter.OnDealDamage != null)
+            {
+                sourceCharacter.OnDealDamage.Invoke(finalDamage);
+            }
 
             if (debugLog)
             {
-                Debug.Log($"[고슴도침] 반격 침 발사 대상: {targetMonster.name} | 넉백 없음");
+                Debug.Log(
+                    $"[고슴도침] {needleIndex + 1}번 침 피격 | Target={targetMonster.name} | Damage={finalDamage:0.##}"
+                );
+            }
+
+            if (isCritical)
+            {
+                Debug.Log($"[치명타] 고슴도침 치명타 발생 | 피해 {finalDamage:0.##}");
+            }
+        }
+
+        private void CleanupExpiredCooldowns()
+        {
+            if (nextDamageAllowedTimeByNeedleAndTarget.Count == 0)
+            {
+                return;
+            }
+
+            removeCooldownKeys.Clear();
+
+            foreach (KeyValuePair<NeedleTargetKey, float> pair in nextDamageAllowedTimeByNeedleAndTarget)
+            {
+                // 너무 오래 지난 기록만 정리한다.
+                // 일반 쿨타임보다 조금 늦게 지워도 기능에는 영향 없음.
+                if (Time.time >= pair.Value + 1f)
+                {
+                    removeCooldownKeys.Add(pair.Key);
+                }
+            }
+
+            for (int i = 0; i < removeCooldownKeys.Count; i++)
+            {
+                nextDamageAllowedTimeByNeedleAndTarget.Remove(removeCooldownKeys[i]);
             }
         }
 
@@ -462,6 +576,19 @@ namespace Vampire
         private void OnDrawGizmosSelected()
         {
             Gizmos.DrawWireSphere(transform.position, orbitRadius);
+
+            if (orbitNeedleVisuals != null)
+            {
+                float hitRadius = GetOrbitHitRadius();
+
+                for (int i = 0; i < orbitNeedleVisuals.Count; i++)
+                {
+                    if (orbitNeedleVisuals[i] != null)
+                    {
+                        Gizmos.DrawWireSphere(orbitNeedleVisuals[i].position, hitRadius);
+                    }
+                }
+            }
         }
     }
 }
