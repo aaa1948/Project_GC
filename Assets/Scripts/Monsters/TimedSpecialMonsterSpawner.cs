@@ -3,8 +3,6 @@ using UnityEngine;
 
 namespace Vampire
 {
-    // 특정 시간에 특수 몬스터를 정해진 수만큼 스폰하는 컨트롤러.
-    // 예: 150초에 저격수 1마리, 240초에 3마리, 420초에 5마리.
     public class TimedSpecialMonsterSpawner : MonoBehaviour
     {
         [System.Serializable]
@@ -21,7 +19,10 @@ namespace Vampire
             public float intervalBetweenSpawns = 0.15f;
 
             [Header("Monster")]
-            [Tooltip("LevelBlueprint의 Monster Settings에서 몇 번째 Monsters Element인지 입력합니다. 예: SniperMonster가 Element 4면 4")]
+            [Tooltip("true면 MonsterBlueprint가 들어있는 LevelBlueprint의 poolIndex를 자동으로 찾습니다.")]
+            public bool autoResolvePoolIndex = true;
+
+            [Tooltip("autoResolvePoolIndex가 꺼져 있을 때만 사용하는 수동 poolIndex입니다.")]
             public int monsterPoolIndex = 4;
 
             [Tooltip("스폰할 몬스터 블루프린트입니다. 예: Sniper Monster Blueprint")]
@@ -36,7 +37,6 @@ namespace Vampire
         }
 
         [Header("References")]
-        [Tooltip("씬에 있는 LevelManager를 넣어주세요. EntityManager는 LevelManager 안에서 자동으로 가져옵니다.")]
         [SerializeField] private LevelManager levelManager;
 
         [Header("Schedule")]
@@ -46,6 +46,8 @@ namespace Vampire
         [SerializeField] private bool debugLog = true;
 
         private EntityManager entityManager;
+        private LevelBlueprint levelBlueprint;
+
         private float elapsedTime = 0f;
         private bool[] spawnedFlags;
 
@@ -66,11 +68,11 @@ namespace Vampire
 
         private void Update()
         {
-            if (entityManager == null)
+            if (entityManager == null || levelBlueprint == null)
             {
                 ResolveReferences();
 
-                if (entityManager == null)
+                if (entityManager == null || levelBlueprint == null)
                 {
                     return;
                 }
@@ -116,6 +118,7 @@ namespace Vampire
             if (levelManager != null)
             {
                 entityManager = levelManager.EntityManager;
+                levelBlueprint = levelManager.CurrentLevelBlueprint;
             }
 
             if (entityManager == null && debugLog)
@@ -126,24 +129,69 @@ namespace Vampire
                     this
                 );
             }
+
+            if (levelBlueprint == null && debugLog)
+            {
+                Debug.LogWarning(
+                    "[TimedSpecialMonsterSpawner] LevelBlueprint를 아직 찾지 못했습니다. " +
+                    "LevelManager 초기화 순서를 확인하세요.",
+                    this
+                );
+            }
         }
 
         private IEnumerator SpawnEntryRoutine(TimedSpawnEntry entry)
         {
-            if (entityManager == null)
+            if (entityManager == null || levelBlueprint == null)
             {
                 ResolveReferences();
 
-                if (entityManager == null)
+                if (entityManager == null || levelBlueprint == null)
                 {
-                    Debug.LogError("[TimedSpecialMonsterSpawner] EntityManager가 없어 특수 몬스터를 스폰할 수 없습니다.", this);
+                    Debug.LogError(
+                        "[TimedSpecialMonsterSpawner] EntityManager 또는 LevelBlueprint가 없어 특수 몬스터를 스폰할 수 없습니다.",
+                        this
+                    );
+
                     yield break;
                 }
             }
 
             if (entry.monsterBlueprint == null)
             {
-                Debug.LogError($"[TimedSpecialMonsterSpawner] MonsterBlueprint가 비어 있습니다. Memo: {entry.memo}", this);
+                Debug.LogError(
+                    $"[TimedSpecialMonsterSpawner] MonsterBlueprint가 비어 있습니다. Memo: {entry.memo}",
+                    this
+                );
+
+                yield break;
+            }
+
+            int resolvedPoolIndex = entry.monsterPoolIndex;
+
+            if (entry.autoResolvePoolIndex)
+            {
+                if (!TryFindPoolIndexByBlueprint(entry.monsterBlueprint, out resolvedPoolIndex))
+                {
+                    Debug.LogError(
+                        $"[TimedSpecialMonsterSpawner] 자동 poolIndex 탐색 실패 | " +
+                        $"Blueprint={entry.monsterBlueprint.name} | Memo={entry.memo}\n" +
+                        $"Level 1 Blueprint의 Monster Settings에 해당 Blueprint가 등록되어 있는지 확인하세요.",
+                        this
+                    );
+
+                    yield break;
+                }
+            }
+
+            if (!IsValidPoolIndex(resolvedPoolIndex))
+            {
+                Debug.LogError(
+                    $"[TimedSpecialMonsterSpawner] 잘못된 poolIndex입니다. " +
+                    $"PoolIndex={resolvedPoolIndex} | Blueprint={entry.monsterBlueprint.name} | Memo={entry.memo}",
+                    this
+                );
+
                 yield break;
             }
 
@@ -151,12 +199,18 @@ namespace Vampire
 
             if (debugLog)
             {
+                string prefabName = levelBlueprint.monsters[resolvedPoolIndex].monstersPrefab != null
+                    ? levelBlueprint.monsters[resolvedPoolIndex].monstersPrefab.name
+                    : "NULL PREFAB";
+
                 Debug.Log(
                     $"[TimedSpecialMonsterSpawner] 시간표 스폰 시작 | " +
                     $"현재 시간: {FormatTime(elapsedTime)} | " +
                     $"예약 시간: {FormatTime(entry.spawnTimeSeconds)} | " +
                     $"Memo: {entry.memo} | " +
-                    $"MonsterPoolIndex: {entry.monsterPoolIndex} | " +
+                    $"RequestedPoolIndex: {entry.monsterPoolIndex} | " +
+                    $"ResolvedPoolIndex: {resolvedPoolIndex} | " +
+                    $"Prefab: {prefabName} | " +
                     $"Blueprint: {entry.monsterBlueprint.name} | " +
                     $"Count: {count}",
                     this
@@ -166,7 +220,7 @@ namespace Vampire
             for (int i = 0; i < count; i++)
             {
                 Monster monster = entityManager.SpawnMonsterRandomPosition(
-                    entry.monsterPoolIndex,
+                    resolvedPoolIndex,
                     entry.monsterBlueprint,
                     entry.hpBuff
                 );
@@ -187,6 +241,59 @@ namespace Vampire
                     yield return new WaitForSeconds(entry.intervalBetweenSpawns);
                 }
             }
+        }
+
+        private bool TryFindPoolIndexByBlueprint(MonsterBlueprint targetBlueprint, out int poolIndex)
+        {
+            poolIndex = -1;
+
+            if (levelBlueprint == null || levelBlueprint.monsters == null || targetBlueprint == null)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < levelBlueprint.monsters.Length; i++)
+            {
+                LevelBlueprint.MonstersContainer container = levelBlueprint.monsters[i];
+
+                if (container == null || container.monsterBlueprints == null)
+                {
+                    continue;
+                }
+
+                for (int j = 0; j < container.monsterBlueprints.Length; j++)
+                {
+                    if (container.monsterBlueprints[j] == targetBlueprint)
+                    {
+                        poolIndex = i;
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private bool IsValidPoolIndex(int poolIndex)
+        {
+            if (levelBlueprint == null || levelBlueprint.monsters == null)
+            {
+                return false;
+            }
+
+            if (poolIndex < 0 || poolIndex >= levelBlueprint.monsters.Length)
+            {
+                return false;
+            }
+
+            LevelBlueprint.MonstersContainer container = levelBlueprint.monsters[poolIndex];
+
+            if (container == null || container.monstersPrefab == null)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         private string FormatTime(float seconds)

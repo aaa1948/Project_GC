@@ -5,8 +5,6 @@ namespace Vampire
     public class MeleeMonster : Monster
     {
         protected new MeleeMonsterBlueprint monsterBlueprint;
-        protected EliteMonsterBlueprint eliteMonsterBlueprint;
-
         protected float timeSinceLastAttack;
 
         public override void Setup(
@@ -15,12 +13,7 @@ namespace Vampire
             MonsterBlueprint monsterBlueprint,
             float hpBuff = 0)
         {
-            base.Setup(monsterIndex, position, monsterBlueprint, hpBuff);
-
-            this.monsterBlueprint = monsterBlueprint as MeleeMonsterBlueprint;
-            this.eliteMonsterBlueprint = monsterBlueprint as EliteMonsterBlueprint;
-
-            if (this.monsterBlueprint == null)
+            if (monsterBlueprint is not MeleeMonsterBlueprint meleeMonsterBlueprint)
             {
                 Debug.LogError(
                     $"[MeleeMonster] 잘못된 Blueprint가 들어왔습니다. " +
@@ -29,14 +22,24 @@ namespace Vampire
                     $"Type: {(monsterBlueprint != null ? monsterBlueprint.GetType().Name : "NULL")}",
                     this
                 );
+
+                return;
             }
 
+            base.Setup(monsterIndex, position, monsterBlueprint, hpBuff);
+
+            this.monsterBlueprint = meleeMonsterBlueprint;
             timeSinceLastAttack = 0f;
         }
 
         protected override void Update()
         {
             base.Update();
+
+            if (!alive || monsterBlueprint == null)
+            {
+                return;
+            }
 
             timeSinceLastAttack += Time.deltaTime;
         }
@@ -45,12 +48,12 @@ namespace Vampire
         {
             base.FixedUpdate();
 
-            if (!alive)
+            if (!alive || monsterBlueprint == null)
             {
                 return;
             }
 
-            if (playerCharacter == null || rb == null || monsterBlueprint == null)
+            if (playerCharacter == null || rb == null)
             {
                 return;
             }
@@ -58,7 +61,10 @@ namespace Vampire
             Vector2 moveDirection =
                 ((Vector2)playerCharacter.transform.position - (Vector2)transform.position).normalized;
 
-            rb.velocity += moveDirection * GetEffectiveAcceleration() * Time.fixedDeltaTime;
+            rb.velocity +=
+                moveDirection *
+                monsterBlueprint.acceleration *
+                Time.fixedDeltaTime;
 
             if (entityManager != null && entityManager.Grid != null)
             {
@@ -68,17 +74,7 @@ namespace Vampire
 
         private void OnCollisionStay2D(Collision2D col)
         {
-            if (!alive)
-            {
-                return;
-            }
-
-            if (monsterBlueprint == null)
-            {
-                return;
-            }
-
-            if (playerCharacter == null)
+            if (!alive || monsterBlueprint == null)
             {
                 return;
             }
@@ -88,63 +84,30 @@ namespace Vampire
                 return;
             }
 
+            if (playerCharacter == null)
+            {
+                return;
+            }
+
             bool isTargetLayer =
-                (GetEffectiveMeleeLayer() & (1 << col.collider.gameObject.layer)) != 0;
+                (monsterBlueprint.meleeLayer & (1 << col.collider.gameObject.layer)) != 0;
 
             if (!isTargetLayer)
             {
                 return;
             }
 
-            float attackDelay = 1.0f / Mathf.Max(0.01f, GetEffectiveAttackSpeed());
+            float attackDelay = monsterBlueprint.atkspeed > 0f
+                ? 1.0f / monsterBlueprint.atkspeed
+                : 1.0f;
 
             if (timeSinceLastAttack < attackDelay)
             {
                 return;
             }
 
-            playerCharacter.TakeDamage(GetEffectiveAttack());
+            playerCharacter.TakeDamage(monsterBlueprint.atk);
             timeSinceLastAttack = Mathf.Repeat(timeSinceLastAttack, attackDelay);
-        }
-
-        private float GetEffectiveAcceleration()
-        {
-            if (eliteMonsterBlueprint != null)
-            {
-                return eliteMonsterBlueprint.GetEffectiveAcceleration();
-            }
-
-            return monsterBlueprint.acceleration;
-        }
-
-        private float GetEffectiveAttack()
-        {
-            if (eliteMonsterBlueprint != null)
-            {
-                return eliteMonsterBlueprint.GetEffectiveAttack();
-            }
-
-            return monsterBlueprint.atk;
-        }
-
-        private float GetEffectiveAttackSpeed()
-        {
-            if (eliteMonsterBlueprint != null)
-            {
-                return eliteMonsterBlueprint.GetEffectiveAttackSpeed();
-            }
-
-            return monsterBlueprint.atkspeed;
-        }
-
-        private LayerMask GetEffectiveMeleeLayer()
-        {
-            if (eliteMonsterBlueprint != null)
-            {
-                return eliteMonsterBlueprint.GetEffectiveMeleeLayer();
-            }
-
-            return monsterBlueprint.meleeLayer;
         }
     }
 }

@@ -9332,16 +9332,16 @@ MonoBehaviour:
     maxSpawnCount: 1
     maxAliveInPhase: 3
     normalToEliteMappings:
+    - normalMonsterFlatIndex: 0
+      eliteMonsterFlatIndex: 8
+      enabled: 1
     - normalMonsterFlatIndex: 1
       eliteMonsterFlatIndex: 9
-      enabled: 1
-    - normalMonsterFlatIndex: 2
-      eliteMonsterFlatIndex: 10
       enabled: 1
     maxNormalTableSampleAttempts: 30
     avoidDuplicateEliteInOneWave: 1
     fallbackToManualPoolIfNoMappedElite: 0
-    eliteMonsterFlatIndices: 090000000a000000
+    eliteMonsterFlatIndices: 0800000009000000
     additionalHpBuff: 0
   - phaseName: "Phase 2: 5\uBD84~8\uBD84"
     startTime: 300
@@ -9353,22 +9353,22 @@ MonoBehaviour:
     maxSpawnCount: 2
     maxAliveInPhase: 6
     normalToEliteMappings:
-    - normalMonsterFlatIndex: 3
-      eliteMonsterFlatIndex: 4
+    - normalMonsterFlatIndex: 2
+      eliteMonsterFlatIndex: 3
+      enabled: 1
+    - normalMonsterFlatIndex: 0
+      eliteMonsterFlatIndex: 8
       enabled: 1
     - normalMonsterFlatIndex: 1
       eliteMonsterFlatIndex: 9
       enabled: 1
-    - normalMonsterFlatIndex: 2
+    - normalMonsterFlatIndex: 4
       eliteMonsterFlatIndex: 10
-      enabled: 1
-    - normalMonsterFlatIndex: 5
-      eliteMonsterFlatIndex: 11
       enabled: 1
     maxNormalTableSampleAttempts: 30
     avoidDuplicateEliteInOneWave: 1
     fallbackToManualPoolIfNoMappedElite: 0
-    eliteMonsterFlatIndices: 04000000090000000a0000000b000000
+    eliteMonsterFlatIndices: 0300000008000000090000000a000000
     additionalHpBuff: 0
   - phaseName: "Phase 3: 8\uBD84~14\uBD84"
     startTime: 480
@@ -9380,25 +9380,25 @@ MonoBehaviour:
     maxSpawnCount: 4
     maxAliveInPhase: 12
     normalToEliteMappings:
-    - normalMonsterFlatIndex: 3
-      eliteMonsterFlatIndex: 4
+    - normalMonsterFlatIndex: 2
+      eliteMonsterFlatIndex: 3
+      enabled: 1
+    - normalMonsterFlatIndex: 0
+      eliteMonsterFlatIndex: 8
       enabled: 1
     - normalMonsterFlatIndex: 1
       eliteMonsterFlatIndex: 9
       enabled: 1
-    - normalMonsterFlatIndex: 2
+    - normalMonsterFlatIndex: 4
       eliteMonsterFlatIndex: 10
       enabled: 1
     - normalMonsterFlatIndex: 5
       eliteMonsterFlatIndex: 11
       enabled: 1
-    - normalMonsterFlatIndex: 6
-      eliteMonsterFlatIndex: 12
-      enabled: 1
     maxNormalTableSampleAttempts: 30
     avoidDuplicateEliteInOneWave: 1
     fallbackToManualPoolIfNoMappedElite: 0
-    eliteMonsterFlatIndices: 04000000090000000a0000000b0000000c000000
+    eliteMonsterFlatIndices: 0300000008000000090000000a0000000b000000
     additionalHpBuff: 0
   - phaseName: "Phase 3: 14\uBD84~20"
     startTime: 840
@@ -9410,8 +9410,11 @@ MonoBehaviour:
     maxSpawnCount: 4
     maxAliveInPhase: 24
     normalToEliteMappings:
-    - normalMonsterFlatIndex: 3
-      eliteMonsterFlatIndex: 4
+    - normalMonsterFlatIndex: 2
+      eliteMonsterFlatIndex: 3
+      enabled: 1
+    - normalMonsterFlatIndex: 4
+      eliteMonsterFlatIndex: 10
       enabled: 1
     - normalMonsterFlatIndex: 5
       eliteMonsterFlatIndex: 11
@@ -9422,13 +9425,10 @@ MonoBehaviour:
     - normalMonsterFlatIndex: 7
       eliteMonsterFlatIndex: 13
       enabled: 1
-    - normalMonsterFlatIndex: 8
-      eliteMonsterFlatIndex: 14
-      enabled: 1
     maxNormalTableSampleAttempts: 30
     avoidDuplicateEliteInOneWave: 1
     fallbackToManualPoolIfNoMappedElite: 0
-    eliteMonsterFlatIndices: 040000000b0000000c0000000d0000000e000000
+    eliteMonsterFlatIndices: 030000000a0000000b0000000c0000000d000000
     additionalHpBuff: 0
   debugLog: 0
   logMonsterIndexTableOnStart: 1
@@ -9670,7 +9670,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   levelManager: {fileID: 0}
-  trapMonsterPoolIndex: 5
+  trapMonsterPoolIndex: 10
   trapMonsterBlueprint: {fileID: 11400000, guid: f5484c90eb7bae64ab5daa68b3d0e47d, type: 2}
   maxActiveTraps: 4
   respawnDelay: 60
@@ -22045,10 +22045,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   levelManager: {fileID: 1764401684}
   spawnEntries:
-  - spawnTimeSeconds: 3
+  - spawnTimeSeconds: 10
     spawnCount: 1
     intervalBetweenSpawns: 0.15
-    monsterPoolIndex: 4
+    autoResolvePoolIndex: 1
+    monsterPoolIndex: 8
     monsterBlueprint: {fileID: 11400000, guid: 4b65cea1eeb064941bb483af69f4057f, type: 2}
     hpBuff: 0
     memo: snippp
