@@ -80,7 +80,7 @@ Material:
     - _OcclusionStrength: 1
     - _Parallax: 0.02
     - _ResetBlend: 0.9212862
-    - _Resetting: 1
+    - _Resetting: 0
     - _Ripple: 2.76
     - _RippleIntensity: 0.1
     - _RippleWidth: 0.4
