@@ -35,14 +35,23 @@ namespace Vampire
             zPositioner.Init(playerCharacter.transform);
         }
 
-        public virtual void Setup(bool spawnAnimation = true, bool collectableDuringSpawn = true) {
+        public virtual void Setup(bool spawnAnimation = true, bool collectableDuringSpawn = true)
+        {
             col.enabled = !spawnAnimation || collectableDuringSpawn;
             beingCollected = false;
+            enabled = true; //  [추가] 오브젝트 재사용을 위해 고유 Update 루프를 다시 켭니다.
+
             if (magnetic)
                 entityManager.MagneticCollectables.Add(this);
             if (spawnAnimation)
                 StartCoroutine(SpawnAnimation());
             gameObject.SetActive(true);
+
+            //  [추가] 만약 보석이 스폰되는 시점에 이미 MRI 자석을 보유 중이라면 즉시 흡수!
+            if (playerCharacter != null && playerCharacter.AutoCollectItems)
+            {
+                Collect();
+            }
         }
 
         public virtual void Collect(CollectionMode collectionMode = CollectionMode.FromGround)
@@ -166,6 +175,16 @@ namespace Vampire
             if (collider == playerCharacter.CollectableCollider)
             {
                 Collect();
+            }
+        }
+
+        protected virtual void Update()
+        {
+            // 플레이어가 MRI 자석을 보유하고 있고, 아직 수집이 시작되지 않은 보석이라면
+            if (playerCharacter != null && playerCharacter.AutoCollectItems && !beingCollected)
+            {
+                Collect();
+                enabled = false; //  [클린코드 최적화] 수집이 시작되었으므로 이 보석의 Update 연산을 즉시 중단합니다.
             }
         }
 

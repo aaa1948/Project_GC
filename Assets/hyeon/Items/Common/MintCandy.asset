@@ -33,7 +33,7 @@ MonoBehaviour:
   pierceCountBoost: 0
   extraProjectiles: 0
   burnChance: 0
-  slowChance: 0.05
+  slowChance: 1
   statusDurationBoost: 0
   auraDamagePerSecond: 0
   healOnKill: 0

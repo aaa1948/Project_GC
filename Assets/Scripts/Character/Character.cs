@@ -22,6 +22,7 @@ namespace Vampire
         [SerializeField] protected ParticleSystem dustParticles;
         [SerializeField] protected Material defaultMaterial, hitMaterial, deathMaterial;
         [SerializeField] protected ParticleSystem deathParticles;
+        [SerializeField] protected TextMeshProUGUI thermometerText;
 
         [Header("Character Data")]
         [SerializeField] protected CharacterBlueprint characterBlueprint;
@@ -60,6 +61,7 @@ namespace Vampire
         [SerializeField] protected bool hasShield = false;
         [SerializeField] protected int reviveCount = 0;
         [SerializeField] protected float invincibilityTimeBonus = 0f;
+        [SerializeField] private bool hasAntibioticBomb = false; //  항생제 폭탄 스위치
 
         [Header("Dash Settings")]
         [SerializeField] protected bool enableDash = true;
@@ -82,7 +84,24 @@ namespace Vampire
 
         [Header("Recovery Stats")]
         [SerializeField] protected float healOnIdlePerSecond = 0f; // 정지 시 초당 회복량
+        
+        [Header("Legendary Utility Stats")]
+        [SerializeField] protected bool autoCollectItems = false; // 기본값은 꺼짐
 
+        [Header("Debuff Stats")]
+        [SerializeField] private float slowChance = 0f; // 기본 둔화 확률 0% (0.0f)
+
+        [Header("Utility Combat Stats")]
+        [SerializeField] private int additionalPierce = 0; // 기본 추가 관통 0회
+
+        [SerializeField] private float burnChance = 0f; // 기본 화상 확률 0%
+
+        [Header("Rare Item Flags")]
+        [SerializeField] private bool hasGinsengStick = false;
+        [SerializeField] private float antibioticBombChance = 0f;
+        [SerializeField] private bool hasThermometer = false; // 전자체온계
+        [SerializeField] private int mouthwashCount = 0;//구강청결제
+        [SerializeField] private int reflexHammerCount = 0; // 반사신경망치
 
         protected SpriteRenderer spriteRenderer;
         protected SpriteAnimator spriteAnimator;
@@ -126,9 +145,31 @@ namespace Vampire
         public float Luck => characterBlueprint.luck * luckMultiplier;
         public int CurrentLevel => currentLevel;
 
-        public float DamageMultiplier => damageMultiplier;
-        public float AttackSpeedMultiplier => attackSpeedMultiplier;
+        public bool HasThermometer => hasThermometer;
+       //전자체온계 공속 스택
+        private int thermometerStacks = 0;
+        private float thermometerStackTimer = 0f;
+        private float thermometerMoveAccumulator = 0f;
+
+        public float AttackSpeedMultiplier
+        {
+            get
+            {
+                float finalSpeed = attackSpeedMultiplier;
+
+                // 전자체온계를 보유하고 있다면 스택당 공격 속도 증가!
+                if (hasThermometer)
+                {
+                    finalSpeed += (thermometerStacks * 0.03f);; //  스택당 공속 +3% (기획에 맞게 조절 가능)
+                }
+
+                return finalSpeed;
+            }
+        }
+        //까지 공속스택
+        public int MouthwashCount => mouthwashCount;
         public float ProjectileSpeedMultiplier => projectileSpeedMultiplier;
+        public float BurnChance => burnChance;
         public float CritChance => critChance;
         public int AdditionalProjectiles => additionalProjectiles;
         public float InvincibilityTimeBonus => invincibilityTimeBonus;
@@ -139,13 +180,19 @@ namespace Vampire
         public int CurrentDashCharges => currentDashCharges;
         public int MaxDashCharges => maxDashCharges;
         public bool IsDashing => isDashing;
-
+        public float AntibioticBombChance => antibioticBombChance;
+        public bool AutoCollectItems => autoCollectItems;
         public UnityEvent<float> OnDealDamage { get; } = new UnityEvent<float>();
         public UnityEvent OnDeath { get; } = new UnityEvent();
+        public float SlowChance => slowChance;
 
+        public int AdditionalPierce => additionalPierce;
         public CharacterBlueprint Blueprint => characterBlueprint;
         public Vector2 Velocity => rb != null ? rb.velocity : Vector2.zero;
 
+        public bool HasAntibioticBomb => hasAntibioticBomb;
+
+        
         // Spatial Hash Grid Client Interface
         public Vector2 Position => transform.position;
         public Vector2 Size => meleeHitboxCollider.bounds.size;
@@ -209,6 +256,7 @@ namespace Vampire
             zPositioner.Init(transform);
 
             InitDash();
+            UpdateThermometerDisplay();
         }
 
         protected virtual void Update()
@@ -217,6 +265,8 @@ namespace Vampire
 
             //  [추가] 정지 시 회복 로직 호출
             HandleHealOnIdle();
+
+            HandleThermometerMovementAndDecay();//체온계 지속시간 실시간 감시
 
             if (lookIndicator != null)
             {
@@ -232,10 +282,11 @@ namespace Vampire
         private void HandleHealOnIdle()
         {
             // 회복량이 설정되어 있고, 캐릭터가 멈춰있을 때 (속도가 거의 0일 때)
-            // velocity 변수명이 다르다면 rb.velocity.magnitude 등으로 수정해 주세요!
             if (healOnIdlePerSecond > 0 && Velocity.magnitude < 0.1f)
             {
-                GainHealth(healOnIdlePerSecond * Time.deltaTime);
+                //  고정 수치 대신 최대 체력(GetMaxHealth())의 퍼센트 비율로 회복하게 만듭니다!
+                float healAmount = GetMaxHealth() * healOnIdlePerSecond;
+                GainHealth(healAmount * Time.deltaTime);
             }
         }
 
@@ -660,6 +711,20 @@ namespace Vampire
 
             statsManager.IncreaseDamageTaken(damage);
 
+            // ---------------------------------------------------------------------------------
+            //  [추가] 반사신경 망치 로직: 아픈 데미지가 들어왔을 때 주변 적들을 사방으로 날려버립니다!
+            // ---------------------------------------------------------------------------------
+            if (reflexHammerCount > 0 && damage > 0f)
+            {
+                // 💡 1개면 0.005(0.5%), 2개면 0.01(1%), 10개면 0.05(5%)
+                float finalHammerChance = reflexHammerCount * 0.005f;
+
+                if (UnityEngine.Random.value < finalHammerChance)
+                {
+                    TriggerReflexHammer();
+                }
+            }
+
             if (currentHealth <= 0)
             {
                 if (reviveCount > 0)
@@ -769,6 +834,11 @@ namespace Vampire
             healOnIdlePerSecond += amount;
         }
 
+        public void AddBurnChance(float amount)
+        {
+            burnChance += amount;
+        }
+
         public void Move(Vector2 moveDirection)
         {
             this.moveDirection = moveDirection;
@@ -809,9 +879,22 @@ namespace Vampire
             attackSpeedMultiplier += amount;
         }
 
-        public void AddDamageMultiplier(float amount)
+        
+        public float DamageMultiplier
         {
-            damageMultiplier += amount;
+            get
+            {
+                // 원래 적용되던 기본 공격력 배율 변수
+                float finalMultiplier = damageMultiplier;
+
+                
+                if (hasGinsengStick && (currentHealth / GetMaxHealth()) <= 0.3f)
+                {
+                    finalMultiplier += 0.5f; // 공격력 +50% 증가
+                }
+
+                return finalMultiplier;
+            }
         }
 
         public void AddProjectileSpeed(float amount)
@@ -832,7 +915,10 @@ namespace Vampire
 
             healthBar.Setup(currentHealth, 0, maxHealth);
         }
-
+        public void EnableThermometer()
+        {
+            hasThermometer = true;
+        }
         public void AddMoveSpeedBoost(float amount)
         {
             if (movementSpeed == null)
@@ -857,15 +943,170 @@ namespace Vampire
         {
             expMultiplier += amount;
         }
-
+        public void AddAdditionalPierce(int amount)
+        {
+            additionalPierce += amount;
+        }
+        // 인공눈물과 치실이 사거리를 늘릴 때 사용할 함수입니다.
+        public void AddRangeMultiplier(float amount)
+        {
+           
+            rangeMultiplier += amount;
+        }
         public void AddCritChance(float amount)
         {
             critChance += amount;
         }
+        // 주사기가 적을 맞힐 때마다 플레이어의 체온(공속 스택)을 올립니다.
+        public void AddThermometerStack()
+        {
+            if (!hasThermometer) return;
 
+            if (thermometerStacks < 10) //  최대 10스택 제한 (최대 공속 +50%)
+            {
+                thermometerStacks++;
+                Debug.Log($"<color=cyan>[체온계 스택]</color> 적중 완료! 현재 스택: <b>{thermometerStacks}</b> (공속 +{thermometerStacks * 5}%)");
+            }
+
+            thermometerStackTimer = 3.0f; //  3초 동안 공격 안 하면 스택 초기화 (지속 시간)
+        }
+
+        //  매 프레임마다 타이머를 깎아서 스택을 식히는 최적화 함수
+        private void HandleThermometerMovementAndDecay()
+        {
+            if (!hasThermometer) return;
+
+            //  [상황 A] 플레이어가 이동 중일 때 (예열)
+            if (moveDirection != Vector2.zero)
+            {
+                thermometerStackTimer = 0f;
+                thermometerMoveAccumulator += Time.deltaTime;
+
+                // 0.25초 연속 이동 시 1스택 충전
+                if (thermometerMoveAccumulator >= 0.25f)
+                {
+                    thermometerMoveAccumulator = 0f;
+                    if (thermometerStacks < 10)
+                    {
+                        thermometerStacks++;
+
+                        //  스택이 올라갔으니 화면 UI를 갱신합니다.
+                        UpdateThermometerDisplay(); //  [UI 갱신 추가]
+
+                        Debug.Log($"<color=cyan>[체온계 예열]</color> 이동 중! 스택: <b>{thermometerStacks}</b> (공속 +{thermometerStacks * 3}%)");
+                    }
+                }
+            }
+            //  [상황 B] 플레이어가 제자리에 멈췄을 때 (즉시 실시간 냉각)
+            else
+            {
+                thermometerMoveAccumulator = 0f;
+
+                if (thermometerStacks > 0)
+                {
+                    thermometerStackTimer -= Time.deltaTime;
+
+                    if (thermometerStackTimer <= 0f)
+                    {
+                        thermometerStacks--;
+
+                        // 2️⃣ [여기에 추가!] 스택이 깎였으니 화면 UI를 실시간으로 갱신합니다.
+                        UpdateThermometerDisplay(); //  [UI 갱신 추가]
+
+                        thermometerStackTimer = 0.15f;
+
+                        if (thermometerStacks == 0)
+                        {
+                            Debug.Log("<color=gray>[체온계 냉각]</color> 완전히 냉각되었습니다. 공속 초기화.");
+                        }
+                        else
+                        {
+                            Debug.Log($"<color=gray>[체온계 냉각]</color> 정지 상태! 체온 저하 중... 남은 스택: <b>{thermometerStacks}</b> (공속 +{thermometerStacks * 3}%)");
+                        }
+                    }
+                }
+            }
+        }
+
+        private void UpdateThermometerDisplay()
+        {
+            if (thermometerText == null) return;
+
+            // 체온계가 없거나 0스택(정상 상태)이면 화면에서 깔끔하게 숨김
+            if (!hasThermometer || thermometerStacks == 0)
+            {
+                thermometerText.text = "";
+                return;
+            }
+
+            //  1. 데이터 실시간 계산
+            float displayTemp = 36.5f + thermometerStacks;            // 36.5도에서 스택당 1도씩 상승
+            int bonusAttackSpeed = thermometerStacks * 3;              // [레버 2]: 스택당 공속 3% 증가
+            string maxLabel = thermometerStacks >= 10 ? " <color=red>[MAX]</color>" : "";
+
+            //  2. 상현님이 요청하신 콤팩트하고 화려한 형식으로 문자열 조합!
+            // 출력 예시 ➔ 🌡️ 온도 스택: 5 (41.5°C | 공속 +15%)
+            thermometerText.text = $"<color=orange>🌡️ 온도 스택: {thermometerStacks}</color> ({displayTemp:0.0}°C | 공속 +{bonusAttackSpeed}%){maxLabel}";
+        }
+
+        // 피격 시 주변 적들을 탐색해 강력한 물리 넉백을 선사하는 함수
+        private void TriggerReflexHammer()
+        {
+            float pushRadius = 3.5f;     //  넉백 충격파 반경
+            float strongForce = 15.0f;   //  적들을 날려버릴 강력한 힘
+
+            // 내 주변 반경 내의 모든 콜라이더 탐색
+            Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, pushRadius);
+
+            foreach (Collider2D hit in hits)
+            {
+                // 몬스터 컴포넌트 추출
+                Monster monster = hit.GetComponentInParent<Monster>();
+                if (monster == null) continue;
+
+                IDamageable damageable = monster as IDamageable;
+                if (damageable != null)
+                {
+                    // 내 중심에서 몬스터를 바라보는 바깥 방향 벡터 계산
+                    Vector2 pushDirection = (monster.transform.position - transform.position).normalized;
+
+                    // 완전히 겹쳐있다면 랜덤 방향으로 보정
+                    if (pushDirection == Vector2.zero)
+                    {
+                        pushDirection = Random.insideUnitCircle.normalized;
+                    }
+
+                    //  데미지는 0, 강력한 넉백 힘과 방향을 타겟에게 전달합니다!
+                    damageable.TakeDamage(0f, pushDirection * strongForce);
+                }
+            }
+
+            Debug.Log("<color=red>[반사신경 망치]</color> 쾅! 반사 신경 작동, 주변 적들을 격퇴했습니다.");
+        }
         public void AddLuck(float amount)
         {
             luckMultiplier += amount;
+        }
+
+        public void EnableGinsengStick()
+        {
+            hasGinsengStick = true;
+        }
+        //전자체온계
+        public void AddMouthwash()
+        {
+            mouthwashCount++;
+        }
+        //반사신경망치
+        public void AddReflexHammer()
+        {
+            reflexHammerCount++;
+        }
+
+        public void EnableAntibioticBomb()
+        {
+            // 한 번 살 때마다 폭발 확률 5%(0.05)씩 누적!
+            antibioticBombChance += 0.05f;
         }
 
         public void AddLifeSteal(float amount)
@@ -881,11 +1122,22 @@ namespace Vampire
         {
             projectileSizeMultiplier += amount;
         }
+        public void AddDamageMultiplier(float amount)
+        {
+            damageMultiplier += amount;
+        }
         public void AddProjectileCount(int count)
         {
             additionalProjectiles += count;
         }
-
+        public void EnableAutoCollect()
+        {
+            autoCollectItems = true;
+        }
+        public void AddSlowChance(float amount)
+        {
+            slowChance += amount;
+        }
         public void EnableShield()
         {
             hasShield = true;

@@ -54,5 +54,15 @@ namespace Vampire
 
         // Legendary bonus
         public float rangeBonus;
+        //slow item
+        public float slowChance;
+        // burn item
+        public float burnChance;
+        // 항생제 폭탄 확률 칸 생성
+        public float explosionChance;
+        // 전자쳬온계
+        public bool thermometerEnabled;
+        // 구강청결제
+        public int reflectCount;
     }
 }
