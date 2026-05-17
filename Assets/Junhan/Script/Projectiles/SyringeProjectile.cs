@@ -17,12 +17,12 @@ namespace Vampire
 
         private SyringeSpecialRuntime specials;
         private int remainingPierces;
+        private int remainingReflects;
 
         // 한 투사체가 이미 맞힌 대상 기록
-        // 관통/귀환 중 같은 몬스터에게 중복 피해가 들어가지 않게 막는다.
         private readonly HashSet<int> hitTargetIds = new HashSet<int>();
 
-        // 풀링으로 재사용될 때 maxDistance가 계속 누적되는 것을 막기 위한 원본 사거리 저장
+        // 원본 사거리 저장
         private float baseMaxDistance;
 
         // 침귀환 상태
@@ -41,41 +41,23 @@ namespace Vampire
         private Vector2 returnCurveEnd;
 
         [Header("Needle Flight / 침 비행")]
-        [Tooltip("침 이미지의 날 부분이 이동 방향을 향하도록 보정하는 각도입니다. 방향이 반대면 135, -45, 45, -135 중 하나로 테스트하세요.")]
         [SerializeField] private float visualForwardAngleOffset = 135f;
-
-        [Tooltip("침귀환 발동 시, 적을 맞힌 뒤 앞으로 한 번 뚫고 지나가는 거리입니다.")]
         [SerializeField] private float returnNeedleForwardPassDistance = 0.65f;
-
-        [Tooltip("침귀환이 물방울 호처럼 휘어지는 데 걸리는 시간입니다.")]
         [SerializeField] private float returnNeedleCurveDuration = 0.35f;
-
-        [Tooltip("적중 후 앞으로 더 뻗어나가는 곡선 핸들 길이입니다.")]
         [SerializeField] private float returnNeedleCurveForwardHandle = 0.9f;
-
-        [Tooltip("몬스터 중심 기준 옆으로 벌어지는 곡선 폭입니다. 몬스터 한 마리 정도 여유를 주려면 1~1.4 정도가 적당합니다.")]
         [SerializeField] private float returnNeedleCurveSideOffset = 1.2f;
-
-        [Tooltip("곡선이 플레이어 쪽으로 끌려오는 정도입니다.")]
         [SerializeField] private float returnNeedleCurveReturnPull = 0.7f;
 
         [Header("Stuck Needle Visual / 꽂힌 침 연출")]
-        [Tooltip("체력이 남은 몬스터에게 일반 침이 적중했을 때, 맞은 위치에 침 시각 오브젝트를 남깁니다.")]
         [SerializeField] private bool enableStuckNeedleVisual = true;
-
-        [Tooltip("몬스터 몸에 꽂힌 침이 유지되는 시간입니다.")]
         [SerializeField] private float stuckNeedleLifetime = 2.5f;
-
-        [Tooltip("꽂힌 침의 크기 배율입니다. Visual_Needle의 실제 크기에 곱해집니다.")]
         [SerializeField] private float stuckNeedleScaleMultiplier = 0.85f;
-
-        [Tooltip("꽂힌 침의 투명도입니다.")]
         [SerializeField, Range(0f, 1f)] private float stuckNeedleAlpha = 0.9f;
-
-        [Tooltip("꽂힌 침이 대상 몬스터보다 위에 보이도록 Sorting Order에 더할 값입니다.")]
         [SerializeField] private int stuckNeedleSortingOrderBonus = 5;
 
-        // 플레이어 회복 메서드를 못 찾았을 때 경고가 너무 많이 뜨는 것을 막기 위한 플래그
+        [Header("Explosion Visuals")]
+        [SerializeField] private GameObject explosionEffectPrefab;
+
         private static bool hasWarnedHealMethodMissing = false;
 
         private bool IsReturnMode =>
@@ -114,6 +96,7 @@ namespace Vampire
         public void ConfigureSpecials(SyringeSpecialRuntime runtime)
         {
             specials = runtime;
+            remainingReflects = runtime.reflectCount;
 
             if (runtime.pierceEnabled)
             {
@@ -150,9 +133,6 @@ namespace Vampire
                     case NeedleFlightState.Normal:
                         if (distanceTravelled >= effectiveMaxDistance)
                         {
-                            // 핵심 수정:
-                            // 귀환침 보유 상태에서 적을 맞히지 못하고 사거리 끝에 도달해도
-                            // 그냥 사라지지 않고 플레이어에게 돌아오게 한다.
                             if (specials.returnNeedleEnabled)
                             {
                                 BeginReturnNeedleFromRangeEnd(direction);
@@ -196,7 +176,6 @@ namespace Vampire
                 yield return null;
             }
 
-            // 공기저항 등으로 속도가 0 이하가 되었을 때도 귀환침이면 돌아오게 한다.
             if (!isDespawning && specials.returnNeedleEnabled && flightState == NeedleFlightState.Normal)
             {
                 BeginReturnNeedleFromRangeEnd(direction);
@@ -262,91 +241,202 @@ namespace Vampire
             transform.rotation = Quaternion.Euler(0f, 0f, angle + visualForwardAngleOffset);
         }
 
+        // =====================================================================
+        // 📦 특수 효과 아이템 함수 모음집 (기존 효과 복구 및 정렬 완료)
+        // =====================================================================
+        private void ApplySlow(Component damageableComponent)
+        {
+            Monster monster =
+                damageableComponent.GetComponent<Monster>() ??
+                damageableComponent.GetComponentInParent<Monster>();
+
+            if (monster == null) return;
+
+            SlowStatus slowStatus = monster.GetComponent<SlowStatus>();
+            if (slowStatus == null)
+            {
+                slowStatus = monster.gameObject.AddComponent<SlowStatus>();
+            }
+
+            slowStatus.Apply(3f, 0.4f);
+        }
+
+        private void ApplyBurn(Component damageableComponent)
+        {
+            Monster monster =
+                damageableComponent.GetComponent<Monster>() ??
+                damageableComponent.GetComponentInParent<Monster>();
+
+            if (monster == null) return;
+
+            BurnStatus burnStatus = monster.GetComponent<BurnStatus>();
+            if (burnStatus == null)
+            {
+                burnStatus = monster.gameObject.AddComponent<BurnStatus>();
+            }
+
+            burnStatus.Apply(3f, 0.5f, 3f);
+        }
+
+        private void ApplyPoison(Component damageableComponent)
+        {
+            Monster monster =
+                damageableComponent.GetComponent<Monster>() ??
+                damageableComponent.GetComponentInParent<Monster>();
+
+            if (monster == null) return;
+
+            PoisonStatus poisonStatus = monster.GetComponent<PoisonStatus>();
+            if (poisonStatus == null)
+            {
+                poisonStatus = monster.gameObject.AddComponent<PoisonStatus>();
+            }
+
+            poisonStatus.Apply(
+                specials.poisonDuration,
+                specials.poisonTickInterval,
+                specials.poisonTickDamage
+            );
+        }
+
+        private void ApplyHoneySlow(Component damageableComponent)
+        {
+            Monster monster =
+                damageableComponent.GetComponent<Monster>() ??
+                damageableComponent.GetComponentInParent<Monster>();
+
+            if (monster == null) return;
+
+            HoneySlowStatus honeySlowStatus = monster.GetComponent<HoneySlowStatus>();
+            if (honeySlowStatus == null)
+            {
+                honeySlowStatus = monster.gameObject.AddComponent<HoneySlowStatus>();
+            }
+
+            honeySlowStatus.Apply(
+                specials.honeyDuration,
+                specials.honeySlowMultiplier
+            );
+        }
+
+        private void ApplyMosquitoHeal(Component damageableComponent)
+        {
+            if (specials.healingBlocked) return;
+            if (playerCharacter == null) return;
+
+            float healAmount = specials.mosquitoHealPerHit;
+
+            if (IsBossLikeTarget(damageableComponent))
+            {
+                healAmount *= specials.mosquitoBossHealMultiplier;
+            }
+
+            TryHealPlayer(healAmount);
+        }
+
+        private bool IsBossLikeTarget(Component damageableComponent)
+        {
+            if (damageableComponent == null) return false;
+
+            Component[] components = damageableComponent.GetComponentsInParent<Component>();
+
+            foreach (Component component in components)
+            {
+                if (component == null) continue;
+
+                string typeName = component.GetType().Name;
+                if (typeName.Contains("Boss")) return true;
+            }
+
+            string objectName = damageableComponent.gameObject.name;
+            return objectName.Contains("Boss") || objectName.Contains("보스");
+        }
+
+        private void TryHealPlayer(float healAmount)
+        {
+            if (playerCharacter == null || healAmount <= 0f) return;
+
+            string[] healMethodNames = { "GainHealth", "Heal", "AddHealth", "RestoreHealth" };
+            MethodInfo healMethod = null;
+
+            foreach (string methodName in healMethodNames)
+            {
+                healMethod = playerCharacter.GetType().GetMethod(
+                    methodName,
+                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
+                    null,
+                    new System.Type[] { typeof(float) },
+                    null
+                );
+
+                if (healMethod != null) break;
+            }
+
+            if (healMethod == null)
+            {
+                if (!hasWarnedHealMethodMissing)
+                {
+                    Debug.LogWarning("[모기침] Character에서 체력 회복 메서드를 찾지 못했습니다.");
+                    hasWarnedHealMethodMissing = true;
+                }
+                return;
+            }
+
+            healMethod.Invoke(playerCharacter, new object[] { healAmount });
+        }
+
+        // =====================================================================
+        // 🔍 타겟팅 및 충돌 헬퍼 함수들
+        // =====================================================================
         private bool TryGetValidMonsterTarget(Collider2D collider, out Monster monster)
         {
             monster = null;
-
-            if (collider == null)
-            {
-                return false;
-            }
+            if (collider == null) return false;
 
             monster = collider.GetComponentInParent<Monster>();
-
-            if (monster == null)
-            {
-                return false;
-            }
+            if (monster == null) return false;
 
             TrapMonster trapMonster = monster as TrapMonster;
-
-            if (trapMonster != null && !trapMonster.IsActive)
-            {
-                return false;
-            }
+            if (trapMonster != null && !trapMonster.IsActive) return false;
 
             return true;
         }
 
         private bool IsSameTarget(GameObject originalTarget, Monster monster)
         {
-            if (originalTarget == null || monster == null)
-            {
-                return false;
-            }
-
-            if (originalTarget == monster.gameObject)
-            {
-                return true;
-            }
+            if (originalTarget == null || monster == null) return false;
+            if (originalTarget == monster.gameObject) return true;
 
             Monster originalMonster = originalTarget.GetComponentInParent<Monster>();
-
             return originalMonster != null && originalMonster == monster;
         }
 
         private Transform FindClosestTarget()
         {
             Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, specials.homingRange);
-
             float closestDistance = float.MaxValue;
             Transform closestTarget = null;
 
             foreach (Collider2D hit in hits)
             {
                 Monster monster;
-
-                if (!TryGetValidMonsterTarget(hit, out monster))
-                {
-                    continue;
-                }
+                if (!TryGetValidMonsterTarget(hit, out monster)) continue;
 
                 IDamageable damageable = monster as IDamageable;
-
-                if (damageable == null)
-                {
-                    continue;
-                }
+                if (damageable == null) continue;
 
                 int targetId = monster.gameObject.GetInstanceID();
-
-                if (hitTargetIds.Contains(targetId))
-                {
-                    continue;
-                }
+                if (hitTargetIds.Contains(targetId)) continue;
 
                 Vector2 targetPosition = monster.CenterTransform != null
                     ? (Vector2)monster.CenterTransform.position
                     : (Vector2)monster.transform.position;
 
                 float distance = Vector2.Distance(transform.position, targetPosition);
-
                 if (distance < closestDistance)
                 {
                     closestDistance = distance;
-                    closestTarget = monster.CenterTransform != null
-                        ? monster.CenterTransform
-                        : monster.transform;
+                    closestTarget = monster.CenterTransform != null ? monster.CenterTransform : monster.transform;
                 }
             }
 
@@ -355,27 +445,16 @@ namespace Vampire
 
         protected override void OnTriggerEnter2D(Collider2D collider)
         {
-            if (isDespawning || !gameObject.activeInHierarchy)
-            {
-                return;
-            }
+            if (isDespawning || !gameObject.activeInHierarchy) return;
 
             bool isInTargetLayer = (targetLayer & (1 << collider.gameObject.layer)) != 0;
-
             Monster monsterTarget;
             bool isValidMonsterTarget = TryGetValidMonsterTarget(collider, out monsterTarget);
 
             if (!isValidMonsterTarget)
             {
-                if (monsterTarget != null)
-                {
-                    return;
-                }
-
-                if (!isInTargetLayer)
-                {
-                    return;
-                }
+                if (monsterTarget != null) return;
+                if (!isInTargetLayer) return;
             }
 
             IDamageable damageable = null;
@@ -392,36 +471,21 @@ namespace Vampire
             {
                 damageable = collider.GetComponentInParent<IDamageable>();
                 damageableComponent = damageable as Component;
-
                 if (damageableComponent == null)
                 {
-                    if (!IsReturnMode)
-                    {
-                        HitNothing();
-                    }
-
+                    if (!IsReturnMode) HitNothing();
                     return;
                 }
-
                 targetId = damageableComponent.gameObject.GetInstanceID();
             }
 
             if (damageable == null || damageableComponent == null)
             {
-                if (!IsReturnMode)
-                {
-                    HitNothing();
-                }
-
+                if (!IsReturnMode) HitNothing();
                 return;
             }
 
-            // 한 침 투사체는 같은 대상에게 한 번만 데미지를 준다.
-            if (hitTargetIds.Contains(targetId))
-            {
-                return;
-            }
-
+            if (hitTargetIds.Contains(targetId)) return;
             hitTargetIds.Add(targetId);
 
             float rawDamage = IsReturnMode
@@ -434,31 +498,29 @@ namespace Vampire
 
             DamageTarget(damageable, damageableComponent, rawDamage);
 
-            TryCreateStuckNeedleVisual(
-                damageableComponent,
-                hitPosition,
-                hitRotation,
-                hitScale
-            );
+            TryCreateStuckNeedleVisual(damageableComponent, hitPosition, hitRotation, hitScale);
 
-            // 귀환 중에는 적을 맞혀도 멈추지 않고 계속 플레이어에게 돌아간다.
-            if (IsReturnMode)
-            {
-                return;
-            }
+            if (IsReturnMode) return;
 
             bool canPierce = specials.pierceEnabled && remainingPierces > 0;
-
             if (canPierce)
             {
                 remainingPierces--;
-
-                if (col != null)
-                {
-                    StartCoroutine(ReenableColliderNextFrame());
-                }
-
+                if (col != null) StartCoroutine(ReenableColliderNextFrame());
                 return;
+            }
+
+            
+            //  구강 청결제 중첩 반사 로직: 남은 반사 횟수가 있다면 깎으면서 또 튕깁니다!
+            // ---------------------------------------------------------------------------------
+            if (remainingReflects > 0)
+            {
+                remainingReflects--; // 반사 횟수 1회 차감!
+
+                if (TryReflect(direction))
+                {
+                    return; // 튕기는 데 성공했다면 소멸하지 않고 계속 날아감!
+                }
             }
 
             if (specials.returnNeedleEnabled)
@@ -472,36 +534,19 @@ namespace Vampire
 
         private Vector3 GetProjectileVisualWorldPosition()
         {
-            if (projectileSpriteRenderer != null)
-            {
-                return projectileSpriteRenderer.transform.position;
-            }
-
-            return transform.position;
+            return projectileSpriteRenderer != null ? projectileSpriteRenderer.transform.position : transform.position;
         }
 
         private Quaternion GetProjectileVisualWorldRotation()
         {
-            if (projectileSpriteRenderer != null)
-            {
-                return projectileSpriteRenderer.transform.rotation;
-            }
-
-            return transform.rotation;
+            return projectileSpriteRenderer != null ? projectileSpriteRenderer.transform.rotation : transform.rotation;
         }
 
         private Vector3 GetProjectileVisualWorldScale()
         {
-            if (projectileSpriteRenderer != null)
-            {
-                return projectileSpriteRenderer.transform.lossyScale;
-            }
-
-            return transform.lossyScale;
+            return projectileSpriteRenderer != null ? projectileSpriteRenderer.transform.lossyScale : transform.lossyScale;
         }
 
-        // 적을 맞혔을 때의 귀환.
-        // 기존 컨셉 유지: 맞힌 뒤 앞으로 한 번 더 뚫고 지나간 다음 곡선으로 돌아온다.
         private void BeginReturnNeedleSequence(Monster hitMonster, Vector2 currentMoveDirection)
         {
             if (playerCharacter == null || playerCharacter.CenterTransform == null)
@@ -513,28 +558,18 @@ namespace Vampire
             if (currentMoveDirection == Vector2.zero)
             {
                 currentMoveDirection = direction;
-
-                if (currentMoveDirection == Vector2.zero)
-                {
-                    currentMoveDirection = Vector2.right;
-                }
+                if (currentMoveDirection == Vector2.zero) currentMoveDirection = Vector2.right;
             }
 
             returnForwardDirection = currentMoveDirection.normalized;
             returnForwardTravelled = 0f;
             returnTimer = 0f;
             returnCurveTimer = 0f;
-
             flightState = NeedleFlightState.ReturnForwardPass;
 
-            if (col != null)
-            {
-                StartCoroutine(ReenableColliderNextFrame());
-            }
+            if (col != null) StartCoroutine(ReenableColliderNextFrame());
         }
 
-        // 적을 못 맞히고 사거리 끝에 도달했을 때의 귀환.
-        // 추가 관통 없이 그 지점에서 바로 곡선으로 플레이어에게 돌아온다.
         private void BeginReturnNeedleFromRangeEnd(Vector2 currentMoveDirection)
         {
             if (playerCharacter == null || playerCharacter.CenterTransform == null)
@@ -546,11 +581,7 @@ namespace Vampire
             if (currentMoveDirection == Vector2.zero)
             {
                 currentMoveDirection = direction;
-
-                if (currentMoveDirection == Vector2.zero)
-                {
-                    currentMoveDirection = Vector2.right;
-                }
+                if (currentMoveDirection == Vector2.zero) currentMoveDirection = Vector2.right;
             }
 
             returnForwardDirection = currentMoveDirection.normalized;
@@ -564,7 +595,6 @@ namespace Vampire
         private void MoveReturnForwardPass()
         {
             returnTimer += Time.deltaTime;
-
             if (returnTimer >= Mathf.Max(0.1f, specials.returnNeedleMaxDuration))
             {
                 HitNothing();
@@ -572,7 +602,6 @@ namespace Vampire
             }
 
             float step = speed * Time.deltaTime;
-
             transform.position += step * (Vector3)returnForwardDirection;
             returnForwardTravelled += step;
 
@@ -595,35 +624,20 @@ namespace Vampire
 
             Vector2 start = transform.position;
             Vector2 playerPosition = playerCharacter.CenterTransform.position;
-
             Vector2 toPlayer = playerPosition - start;
 
-            if (toPlayer.sqrMagnitude <= 0.0001f)
-            {
-                toPlayer = -returnForwardDirection;
-            }
+            if (toPlayer.sqrMagnitude <= 0.0001f) toPlayer = -returnForwardDirection;
 
             Vector2 toPlayerDirection = toPlayer.normalized;
-
             Vector2 sideA = new Vector2(-returnForwardDirection.y, returnForwardDirection.x).normalized;
             Vector2 sideB = -sideA;
-
-            // 플레이어 방향과 더 잘 이어지는 쪽으로 호를 휘게 한다.
-            Vector2 chosenSide = Vector2.Dot(sideA, toPlayerDirection) >= Vector2.Dot(sideB, toPlayerDirection)
-                ? sideA
-                : sideB;
+            Vector2 chosenSide = Vector2.Dot(sideA, toPlayerDirection) >= Vector2.Dot(sideB, toPlayerDirection) ? sideA : sideB;
 
             float sideOffset = Mathf.Max(0.1f, returnNeedleCurveSideOffset);
             float forwardHandle = Mathf.Max(0.05f, returnNeedleCurveForwardHandle);
             float returnPull = Mathf.Max(0.05f, returnNeedleCurveReturnPull);
 
             returnCurveStart = start;
-
-            // 물방울 호 느낌:
-            // P0: 적을 관통한 지점 또는 사거리 끝
-            // P1: 기존 진행 방향으로 조금 더 뻗음
-            // P2: 옆으로 둥글게 빠지면서 플레이어 방향으로 끌림
-            // P3: 플레이어 근처
             returnCurveControl1 = start + returnForwardDirection * forwardHandle;
             returnCurveControl2 = start + chosenSide * sideOffset + toPlayerDirection * returnPull;
             returnCurveEnd = playerPosition;
@@ -641,7 +655,6 @@ namespace Vampire
             }
 
             returnTimer += Time.deltaTime;
-
             if (returnTimer >= Mathf.Max(0.1f, specials.returnNeedleMaxDuration))
             {
                 HitNothing();
@@ -655,16 +668,9 @@ namespace Vampire
             float easedT = Mathf.SmoothStep(0f, 1f, t);
 
             Vector2 previousPosition = transform.position;
-            Vector2 nextPosition = CubicBezier(
-                returnCurveStart,
-                returnCurveControl1,
-                returnCurveControl2,
-                returnCurveEnd,
-                easedT
-            );
+            Vector2 nextPosition = CubicBezier(returnCurveStart, returnCurveControl1, returnCurveControl2, returnCurveEnd, easedT);
 
             transform.position = nextPosition;
-
             Vector2 moveDirection = nextPosition - previousPosition;
 
             if (moveDirection.sqrMagnitude > 0.0001f)
@@ -676,23 +682,17 @@ namespace Vampire
             if (t >= 1f)
             {
                 flightState = NeedleFlightState.ReturnToPlayer;
-
-                if (col != null)
-                {
-                    StartCoroutine(ReenableColliderNextFrame());
-                }
+                if (col != null) StartCoroutine(ReenableColliderNextFrame());
             }
         }
 
         private Vector2 CubicBezier(Vector2 p0, Vector2 p1, Vector2 p2, Vector2 p3, float t)
         {
             float oneMinusT = 1f - t;
-
-            return
-                oneMinusT * oneMinusT * oneMinusT * p0 +
-                3f * oneMinusT * oneMinusT * t * p1 +
-                3f * oneMinusT * t * t * p2 +
-                t * t * t * p3;
+            return oneMinusT * oneMinusT * oneMinusT * p0 +
+                   3f * oneMinusT * oneMinusT * t * p1 +
+                   3f * oneMinusT * t * t * p2 +
+                   t * t * t * p3;
         }
 
         private bool MoveReturnToPlayer()
@@ -704,7 +704,6 @@ namespace Vampire
             }
 
             returnTimer += Time.deltaTime;
-
             if (returnTimer >= Mathf.Max(0.1f, specials.returnNeedleMaxDuration))
             {
                 HitNothing();
@@ -722,12 +721,7 @@ namespace Vampire
             }
 
             direction = toPlayer.normalized;
-
-            float returnStep =
-                speed *
-                Mathf.Max(0.01f, specials.returnNeedleSpeedMultiplier) *
-                Time.deltaTime;
-
+            float returnStep = speed * Mathf.Max(0.01f, specials.returnNeedleSpeedMultiplier) * Time.deltaTime;
             transform.position += returnStep * (Vector3)direction;
             ApplyVisualRotationToDirection(direction);
 
@@ -736,24 +730,16 @@ namespace Vampire
 
         private void DamageTarget(IDamageable damageable, Component damageableComponent, float rawDamage)
         {
-            PlayerGeneralStatRuntime statRuntime =
-                PlayerGeneralStatRuntime.GetOrCreate(playerCharacter);
-
+            PlayerGeneralStatRuntime statRuntime = PlayerGeneralStatRuntime.GetOrCreate(playerCharacter);
             bool isCritical = false;
             float finalDamage = rawDamage;
 
             if (statRuntime != null)
             {
-                finalDamage = statRuntime.CalculateOffensiveDamage(
-                    playerCharacter,
-                    damageableComponent,
-                    rawDamage,
-                    out isCritical
-                );
+                finalDamage = statRuntime.CalculateOffensiveDamage(playerCharacter, damageableComponent, rawDamage, out isCritical);
             }
 
             float finalKnockback = knockback;
-
             if (statRuntime != null)
             {
                 finalKnockback *= statRuntime.KnockbackMultiplier;
@@ -762,88 +748,48 @@ namespace Vampire
             damageable.TakeDamage(finalDamage, finalKnockback * direction);
             OnHitDamageable?.Invoke(finalDamage);
 
-            if (isCritical)
-            {
-                Debug.Log($"[치명타] 침 공격 치명타 발생 | 피해 {finalDamage:0.##}");
-            }
+            if (isCritical) Debug.Log($"[치명타] 침 공격 치명타 발생 | 피해 {finalDamage:0.##}");
 
+            // --------------------------------------------------
+            // 🎯 특수 기능 조건부 트리거 작동 구역
+            // --------------------------------------------------
             if (specials.poisonEnabled)
             {
                 ApplyPoison(damageableComponent);
             }
-
+            if (specials.slowChance > 0 && Random.value < specials.slowChance)
+            {
+                ApplySlow(damageableComponent);
+            }
+            if (specials.burnChance > 0 && UnityEngine.Random.value < specials.burnChance)
+            {
+                ApplyBurn(damageableComponent);
+            }
             if (specials.honeyEnabled)
             {
                 ApplyHoneySlow(damageableComponent);
             }
-
             if (specials.mosquitoEnabled)
             {
                 ApplyMosquitoHeal(damageableComponent);
             }
-
-            if (specials.explosionEnabled)
+            if (specials.explosionEnabled && UnityEngine.Random.value < specials.explosionChance)
             {
                 ApplyExplosion(damageableComponent.gameObject);
             }
         }
 
-        private void TryCreateStuckNeedleVisual(
-            Component damageableComponent,
-            Vector3 hitPosition,
-            Quaternion hitRotation,
-            Vector3 hitScale)
+        private void TryCreateStuckNeedleVisual(Component damageableComponent, Vector3 hitPosition, Quaternion hitRotation, Vector3 hitScale)
         {
-            if (!enableStuckNeedleVisual)
-            {
-                return;
-            }
+            if (!enableStuckNeedleVisual || IsReturnMode || specials.returnNeedleEnabled || specials.pierceEnabled || damageableComponent == null) return;
 
-            if (IsReturnMode)
-            {
-                return;
-            }
-
-            if (specials.returnNeedleEnabled)
-            {
-                return;
-            }
-
-            if (specials.pierceEnabled)
-            {
-                return;
-            }
-
-            if (damageableComponent == null)
-            {
-                return;
-            }
-
-            Monster monster =
-                damageableComponent.GetComponent<Monster>() ??
-                damageableComponent.GetComponentInParent<Monster>();
-
-            if (monster == null)
-            {
-                return;
-            }
+            Monster monster = damageableComponent.GetComponent<Monster>() ?? damageableComponent.GetComponentInParent<Monster>();
+            if (monster == null) return;
 
             TrapMonster trapMonster = monster as TrapMonster;
-
-            if (trapMonster != null && !trapMonster.IsActive)
-            {
-                return;
-            }
-
-            if (monster.HP <= 0f)
-            {
-                return;
-            }
-
-            if (projectileSpriteRenderer == null || projectileSpriteRenderer.sprite == null)
-            {
-                return;
-            }
+            if (trapMonster != null && !trapMonster.IsActive) return;
+            if (monster.HP <= 0f) return;
+            if (projectileSpriteRenderer == null || projectileSpriteRenderer.sprite == null) return;
 
             GameObject stuckNeedleObject = new GameObject("Stuck Needle Visual");
             Transform stuckTransform = stuckNeedleObject.transform;
@@ -851,7 +797,6 @@ namespace Vampire
             stuckTransform.position = hitPosition;
             stuckTransform.rotation = hitRotation;
             stuckTransform.localScale = hitScale * stuckNeedleScaleMultiplier;
-
             stuckTransform.SetParent(monster.transform, true);
 
             SpriteRenderer renderer = stuckNeedleObject.AddComponent<SpriteRenderer>();
@@ -864,18 +809,15 @@ namespace Vampire
             renderer.color = baseColor;
 
             SpriteRenderer targetRenderer = monster.GetComponentInChildren<SpriteRenderer>();
-
             if (targetRenderer != null)
             {
                 renderer.sortingLayerID = targetRenderer.sortingLayerID;
-                renderer.sortingOrder =
-                    targetRenderer.sortingOrder + Mathf.Max(5, stuckNeedleSortingOrderBonus);
+                renderer.sortingOrder = targetRenderer.sortingOrder + Mathf.Max(5, stuckNeedleSortingOrderBonus);
             }
             else
             {
                 renderer.sortingLayerID = projectileSpriteRenderer.sortingLayerID;
-                renderer.sortingOrder =
-                    projectileSpriteRenderer.sortingOrder + Mathf.Max(5, stuckNeedleSortingOrderBonus);
+                renderer.sortingOrder = projectileSpriteRenderer.sortingOrder + Mathf.Max(5, stuckNeedleSortingOrderBonus);
             }
 
             StuckNeedleVisual stuckVisual = stuckNeedleObject.AddComponent<StuckNeedleVisual>();
@@ -884,210 +826,37 @@ namespace Vampire
 
         private IEnumerator ReenableColliderNextFrame()
         {
-            if (col == null)
-            {
-                yield break;
-            }
-
+            if (col == null) yield break;
             col.enabled = false;
-
             yield return null;
-
-            if (!isDespawning && gameObject.activeInHierarchy)
-            {
-                col.enabled = true;
-            }
-        }
-
-        private void ApplyPoison(Component damageableComponent)
-        {
-            Monster monster =
-                damageableComponent.GetComponent<Monster>() ??
-                damageableComponent.GetComponentInParent<Monster>();
-
-            if (monster == null)
-            {
-                return;
-            }
-
-            PoisonStatus poisonStatus = monster.GetComponent<PoisonStatus>();
-
-            if (poisonStatus == null)
-            {
-                poisonStatus = monster.gameObject.AddComponent<PoisonStatus>();
-            }
-
-            poisonStatus.Apply(
-                specials.poisonDuration,
-                specials.poisonTickInterval,
-                specials.poisonTickDamage
-            );
-        }
-
-        private void ApplyHoneySlow(Component damageableComponent)
-        {
-            Monster monster =
-                damageableComponent.GetComponent<Monster>() ??
-                damageableComponent.GetComponentInParent<Monster>();
-
-            if (monster == null)
-            {
-                return;
-            }
-
-            HoneySlowStatus honeySlowStatus = monster.GetComponent<HoneySlowStatus>();
-
-            if (honeySlowStatus == null)
-            {
-                honeySlowStatus = monster.gameObject.AddComponent<HoneySlowStatus>();
-            }
-
-            honeySlowStatus.Apply(
-                specials.honeyDuration,
-                specials.honeySlowMultiplier
-            );
-        }
-
-        private void ApplyMosquitoHeal(Component damageableComponent)
-        {
-            if (specials.healingBlocked)
-            {
-                return;
-            }
-
-            if (playerCharacter == null)
-            {
-                return;
-            }
-
-            float healAmount = specials.mosquitoHealPerHit;
-
-            if (IsBossLikeTarget(damageableComponent))
-            {
-                healAmount *= specials.mosquitoBossHealMultiplier;
-            }
-
-            TryHealPlayer(healAmount);
-        }
-
-        private bool IsBossLikeTarget(Component damageableComponent)
-        {
-            if (damageableComponent == null)
-            {
-                return false;
-            }
-
-            Component[] components = damageableComponent.GetComponentsInParent<Component>();
-
-            foreach (Component component in components)
-            {
-                if (component == null)
-                {
-                    continue;
-                }
-
-                string typeName = component.GetType().Name;
-
-                if (typeName.Contains("Boss"))
-                {
-                    return true;
-                }
-            }
-
-            string objectName = damageableComponent.gameObject.name;
-
-            return objectName.Contains("Boss") || objectName.Contains("보스");
-        }
-
-        private void TryHealPlayer(float healAmount)
-        {
-            if (playerCharacter == null || healAmount <= 0f)
-            {
-                return;
-            }
-
-            string[] healMethodNames =
-            {
-                "GainHealth",
-                "Heal",
-                "AddHealth",
-                "RestoreHealth"
-            };
-
-            MethodInfo healMethod = null;
-
-            foreach (string methodName in healMethodNames)
-            {
-                healMethod = playerCharacter.GetType().GetMethod(
-                    methodName,
-                    BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic,
-                    null,
-                    new System.Type[] { typeof(float) },
-                    null
-                );
-
-                if (healMethod != null)
-                {
-                    break;
-                }
-            }
-
-            if (healMethod == null)
-            {
-                if (!hasWarnedHealMethodMissing)
-                {
-                    Debug.LogWarning(
-                        "[모기침] Character에서 체력 회복 메서드를 찾지 못했습니다. " +
-                        "GainHealth(float), Heal(float), AddHealth(float), RestoreHealth(float) 중 하나가 필요합니다."
-                    );
-
-                    hasWarnedHealMethodMissing = true;
-                }
-
-                return;
-            }
-
-            healMethod.Invoke(playerCharacter, new object[] { healAmount });
+            if (!isDespawning && gameObject.activeInHierarchy) col.enabled = true;
         }
 
         private void ApplyExplosion(GameObject originalTarget)
         {
-            Collider2D[] hits =
-                Physics2D.OverlapCircleAll(transform.position, specials.explosionRadius);
+            if (explosionEffectPrefab != null)
+            {
+                Instantiate(explosionEffectPrefab, transform.position, Quaternion.identity);
+            }
 
+            Debug.Log($"<color=orange><b>[💥 항생제 폭탄 발동]</b></color> 중심 타겟: {originalTarget.name} | 폭발 반경: {specials.explosionRadius}");
+
+            Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, specials.explosionRadius);
             HashSet<int> damagedIds = new HashSet<int>();
-
-            PlayerGeneralStatRuntime statRuntime =
-                PlayerGeneralStatRuntime.GetOrCreate(playerCharacter);
+            PlayerGeneralStatRuntime statRuntime = PlayerGeneralStatRuntime.GetOrCreate(playerCharacter);
 
             foreach (Collider2D hit in hits)
             {
                 Monster monster;
-
-                if (!TryGetValidMonsterTarget(hit, out monster))
-                {
-                    continue;
-                }
-
-                if (IsSameTarget(originalTarget, monster))
-                {
-                    continue;
-                }
+                if (!TryGetValidMonsterTarget(hit, out monster)) continue;
+                if (IsSameTarget(originalTarget, monster)) continue;
 
                 int splashId = monster.gameObject.GetInstanceID();
-
-                if (damagedIds.Contains(splashId))
-                {
-                    continue;
-                }
+                if (damagedIds.Contains(splashId)) continue;
 
                 IDamageable splashDamageable = monster as IDamageable;
                 Component splashComponent = monster;
-
-                if (splashDamageable == null || splashComponent == null)
-                {
-                    continue;
-                }
+                if (splashDamageable == null || splashComponent == null) continue;
 
                 damagedIds.Add(splashId);
 
@@ -1096,24 +865,73 @@ namespace Vampire
 
                 if (statRuntime != null)
                 {
-                    splashDamage = statRuntime.CalculateOffensiveDamage(
-                        playerCharacter,
-                        splashComponent,
-                        splashDamage,
-                        out isCritical
-                    );
+                    splashDamage = statRuntime.CalculateOffensiveDamage(playerCharacter, splashComponent, splashDamage, out isCritical);
                 }
 
                 splashDamageable.TakeDamage(splashDamage, Vector2.zero);
-
-                if (isCritical)
-                {
-                    Debug.Log($"[치명타] 폭발침 치명타 발생 | 피해 {splashDamage:0.##}");
-                }
+                Debug.Log($"<color=yellow><b> └ [↳ 💥 스플래시 피해 완수]</b></color> 휩쓸린 몹: {monster.gameObject.name} | 입은 피해: {splashDamage}");
             }
         }
-    }
 
+        // =====================================================================
+        // 💡 구강 청결제 반사 전용 엔진
+        // =====================================================================
+        private bool TryReflect(Vector2 currentDirection)
+        {
+            Transform closestEnemy = FindClosestReflectTarget();
+
+            if (closestEnemy != null)
+            {
+                Vector2 targetPosition = closestEnemy.position;
+                direction = (targetPosition - (Vector2)transform.position).normalized;
+            }
+            else
+            {
+                direction = -currentDirection;
+            }
+
+            ApplyVisualRotationToDirection(direction);
+
+            if (col != null)
+            {
+                StartCoroutine(ReenableColliderNextFrame());
+            }
+
+            Debug.Log($"<color=lightblue>[구강 청결제]</color> 투사체 반사 발동! 새로운 타겟 방향으로 꺾임.");
+            return true;
+        }
+
+        private Transform FindClosestReflectTarget()
+        {
+            float reflectRadius = 4.0f;
+            Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, reflectRadius);
+            float closestDistance = float.MaxValue;
+            Transform closestTarget = null;
+
+            foreach (Collider2D hit in hits)
+            {
+                Monster monster;
+                if (!TryGetValidMonsterTarget(hit, out monster)) continue;
+
+                int targetId = monster.gameObject.GetInstanceID();
+                if (hitTargetIds.Contains(targetId)) continue;
+
+                float distance = Vector2.Distance(transform.position, monster.transform.position);
+                if (distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    closestTarget = monster.transform;
+                }
+            }
+
+            return closestTarget;
+        }
+
+    } // 👈 SyringeProjectile 클래스 끝
+
+    // =====================================================================
+    // StuckNeedleVisual 서브 클래스
+    // =====================================================================
     public class StuckNeedleVisual : MonoBehaviour
     {
         private Monster ownerMonster;
@@ -1136,7 +954,6 @@ namespace Vampire
         private IEnumerator LifetimeRoutine()
         {
             yield return new WaitForSeconds(lifetime);
-
             Destroy(gameObject);
         }
 

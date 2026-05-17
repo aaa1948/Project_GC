@@ -31,6 +31,9 @@ namespace Vampire
         protected Coroutine hitAnimationCoroutine = null;
         protected bool alive = true;
         protected Transform centerTransform;
+        //상현추가
+        protected float currentAcceleration;
+        protected float runtimeMoveSpeed;
 
         private Vector3 originalLocalScale = Vector3.one;
 
@@ -45,6 +48,21 @@ namespace Vampire
 
         public Dictionary<int, int> ListIndexByCellIndex { get; set; }
         public int QueryID { get; set; } = -1;
+        //상현추가
+        public float moveSpeed
+        {
+            get => runtimeMoveSpeed;
+            set
+            {
+                // 속도가 0 이하로 내려가서 무한대 드래그가 걸리는 것을 방지
+                runtimeMoveSpeed = Mathf.Max(0.05f, value);
+                if (rb != null)
+                {
+                    //  속도가 변하면 가속도와 비례하여 물리 마찰력(drag)을 실시간으로 재계산합니다!
+                    rb.drag = currentAcceleration / (runtimeMoveSpeed * runtimeMoveSpeed);
+                }
+            }
+        }
 
         protected virtual void Awake()
         {
@@ -259,25 +277,27 @@ namespace Vampire
                 centerTransform.position = transform.position;
             }
 
-            float moveSpeed = monsterBlueprint != null ? monsterBlueprint.movespeed : 1f;
-            float acceleration = monsterBlueprint != null ? monsterBlueprint.acceleration : 1f;
+            // 상현수정
+            float baseMoveSpeed = monsterBlueprint != null ? monsterBlueprint.movespeed : 1f;
+            currentAcceleration = monsterBlueprint != null ? monsterBlueprint.acceleration : 1f;
 
             if (eliteBlueprint != null)
             {
-                moveSpeed = eliteBlueprint.GetEffectiveMoveSpeed();
-                acceleration = eliteBlueprint.GetEffectiveAcceleration();
+                baseMoveSpeed = eliteBlueprint.GetEffectiveMoveSpeed();
+                currentAcceleration = eliteBlueprint.GetEffectiveAcceleration();
             }
 
             float spd = Random.Range(
-                moveSpeed - 0.1f,
-                moveSpeed + 0.1f
+                baseMoveSpeed - 0.1f,
+                baseMoveSpeed + 0.1f
             );
 
-            spd = Mathf.Max(0.05f, spd);
+            // 중요: 새로 만든 프로퍼티에 대입하여 기본 속도를 세팅합니다.
+            // 프로퍼티 내부의 set 구문이 작동하면서 rb.drag(마찰력)도 자동으로 계산되어 들어갑니다!
+            this.moveSpeed = spd;
 
             if (rb != null)
             {
-                rb.drag = acceleration / (spd * spd);
                 rb.velocity = Vector2.zero;
             }
 

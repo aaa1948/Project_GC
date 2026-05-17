@@ -32,7 +32,7 @@ MonoBehaviour:
   rangeBoost: 0
   pierceCountBoost: 0
   extraProjectiles: 0
-  burnChance: 0.05
+  burnChance: 1
   slowChance: 0
   statusDurationBoost: 0
   auraDamagePerSecond: 0

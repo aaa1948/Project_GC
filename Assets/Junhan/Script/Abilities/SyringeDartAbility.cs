@@ -234,7 +234,7 @@ namespace Vampire
         [SerializeField] private float cursorNeedleBackDisplayScale = 0.8f;
 
         private CursorControlledNeedleController cursorControlledNeedleController;
-
+        
         public GameObject ProjectilePrefab => projectilePrefab;
         public LayerMask MonsterLayer => monsterLayer;
 
@@ -652,23 +652,33 @@ namespace Vampire
 
         private SyringeSpecialRuntime BuildSpecialRuntime()
         {
+            
+            int bonusPierce = Mathf.RoundToInt(GetPublicFloatProperty(playerCharacter, "AdditionalPierce", 0f));
+            int totalPierceCount = pierceCount + bonusPierce;
+
             SyringeSpecialRuntime runtime = new SyringeSpecialRuntime
             {
+                slowChance = playerCharacter.SlowChance,
+                burnChance = playerCharacter.BurnChance,
+                thermometerEnabled = playerCharacter.HasThermometer,
+                reflectCount = playerCharacter.MouthwashCount,
                 poisonEnabled = poisonEnabled,
                 poisonDuration = poisonDuration,
                 poisonTickInterval = poisonTickInterval,
                 poisonTickDamage = poisonTickDamage,
 
-                explosionEnabled = explosionEnabled,
+                explosionEnabled = explosionEnabled || playerCharacter.AntibioticBombChance > 0f,
                 explosionRadius = explosionRadius,
                 explosionDamage = explosionDamage,
+                explosionChance = playerCharacter.AntibioticBombChance,
 
                 homingEnabled = homingEnabled,
                 homingRange = homingRange,
                 homingLerpSpeed = homingLerpSpeed,
 
-                pierceEnabled = pierceEnabled,
-                pierceCount = pierceCount,
+                
+                pierceEnabled = pierceEnabled || totalPierceCount > 0,
+                pierceCount = totalPierceCount,
 
                 honeyEnabled = honeyEnabled,
                 honeyDuration = honeyDuration,
@@ -684,10 +694,7 @@ namespace Vampire
                 returnNeedleArriveDistance = returnNeedleArriveDistance,
                 returnNeedleMaxDuration = returnNeedleMaxDuration,
 
-                // HP 1 전설 증강이 켜져 있으면 모기침 회복을 막는다.
                 healingBlocked = lifeBurnEnabled,
-
-                // 전설/특수 사거리 보너스는 SyringeProjectile에서 maxDistance에 더해진다.
                 rangeBonus = lifeBurnEnabled ? lifeBurnBonusRange : 0f
             };
 
