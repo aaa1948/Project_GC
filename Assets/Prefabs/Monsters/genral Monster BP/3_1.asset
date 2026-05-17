@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1f1ae058c390b426495056b39e15d543, type: 3}
   m_Name: 3_1
   m_EditorClassIdentifier: 
-  name: 1
+  name: "\uC601\uC591\uC81C"
   hp: 150
   atk: 5
   recovery: 0
