@@ -31,39 +31,45 @@ MonoBehaviour:
   - {fileID: 7378740072262091319, guid: d559d8ad76e7e4646b8d57b68f47e392, type: 3}
   - {fileID: 7378740072262091319, guid: fc9486cd06fa0534e830e3b0792ae540, type: 3}
   monsters:
-  - monstersPrefab: {fileID: 8960830493049914446, guid: 12adb3a92ed404612906d2c1fe4b586e, type: 3}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: 399940952553bf947a6340bd0adf19e8, type: 3}
     monsterBlueprints:
-    - {fileID: 11400000, guid: 1d1547b98475241e798c26597f6553a5, type: 2}
-    - {fileID: 11400000, guid: 03a9f1276c78f4503b3757f7e14adbed, type: 2}
-    - {fileID: 11400000, guid: 1b3587b35d7cb4a008d17889617a4db5, type: 2}
-  - monstersPrefab: {fileID: 8960830493049914446, guid: dfcf798c11f284752815ead20a8dbaeb, type: 3}
+    - {fileID: 11400000, guid: 23cbbabfbfc14e4498b09675b4940a0c, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: 8a397a3661916974e8e924a689ce294d, type: 3}
     monsterBlueprints:
-    - {fileID: 11400000, guid: 38f13c65830f840f99434d21ce75baef, type: 2}
-  - monstersPrefab: {fileID: 8960830493049914446, guid: b21d49c07805e4c2c8cab56371c5aad6, type: 3}
-    monsterBlueprints:
-    - {fileID: 11400000, guid: 0c81abe360d964c53b7e90be45a30ca5, type: 2}
-  - monstersPrefab: {fileID: 8960830493049914446, guid: f221b6d092ee543038a69c17c526bab0, type: 3}
-    monsterBlueprints:
-    - {fileID: 11400000, guid: f2518533fe52946a188a4e6a74ecff6e, type: 2}
-  - monstersPrefab: {fileID: 8960830493049914446, guid: a44b011fa2eb8bd4da4a1615f68591b9, type: 3}
-    monsterBlueprints:
-    - {fileID: 11400000, guid: 4b65cea1eeb064941bb483af69f4057f, type: 2}
-  - monstersPrefab: {fileID: 7130632717509287678, guid: 2a99d0baa50bf3d4281ed58269f4adc0, type: 3}
-    monsterBlueprints:
-    - {fileID: 11400000, guid: f5484c90eb7bae64ab5daa68b3d0e47d, type: 2}
-  - monstersPrefab: {fileID: 8960830493049914446, guid: 12adb3a92ed404612906d2c1fe4b586e, type: 3}
-    monsterBlueprints:
-    - {fileID: 11400000, guid: 784dd4ef41fcc754291fad20a5410c14, type: 2}
-    - {fileID: 11400000, guid: f4dab74aec78875478f41a2021c36fa2, type: 2}
-    - {fileID: 11400000, guid: 0d5ebf868a8ec5042969b8cc098bdfbf, type: 2}
-    - {fileID: 11400000, guid: 50a9bc9958c37d345b3548c64a4351ab, type: 2}
-  - monstersPrefab: {fileID: 8960830493049914446, guid: 2cc2f6a300c7c064e8c741710935724d, type: 3}
-    monsterBlueprints:
-    - {fileID: 11400000, guid: fd859e63b1c5df740b6b559bcaa17031, type: 2}
+    - {fileID: 11400000, guid: 90fba8307cc57ca45aa183b28d883534, type: 2}
   - monstersPrefab: {fileID: 8960830493049914446, guid: 574e4726c1b6fd840b1008fadccc6391, type: 3}
     monsterBlueprints:
     - {fileID: 11400000, guid: e116b97a1a21fec48a3af32b4706b909, type: 2}
     - {fileID: 11400000, guid: 155bf50c0d2204642a6ca159080c74dc, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: 74257ac8d42091c41b39377b5aef3199, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: 66de12b7cb39f584d8c89366ee7d27de, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: 570aaf57a6ce5f548874e0b6fb86563f, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: 63ef44ffe88d963469a0de489862fc74, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: 003f1f5d57a9fd84180d0c83a624ec21, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: d7559159349e33e41994c84cd55e4a29, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: 0936209b98deeb247a553a0a37654666, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: d859fc1f55039d843830177320577405, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: 12adb3a92ed404612906d2c1fe4b586e, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: 784dd4ef41fcc754291fad20a5410c14, type: 2}
+    - {fileID: 11400000, guid: 0d5ebf868a8ec5042969b8cc098bdfbf, type: 2}
+    - {fileID: 11400000, guid: f4dab74aec78875478f41a2021c36fa2, type: 2}
+    - {fileID: 11400000, guid: c73eb4bd38da09d4d8442ac98248540c, type: 2}
+    - {fileID: 11400000, guid: 97f87d6abaec70f4cafe586d915eb003, type: 2}
+    - {fileID: 11400000, guid: f96273ced2f62dc4a954e53caa856a2d, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: a44b011fa2eb8bd4da4a1615f68591b9, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: 4b65cea1eeb064941bb483af69f4057f, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: 2cc2f6a300c7c064e8c741710935724d, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: fd859e63b1c5df740b6b559bcaa17031, type: 2}
+  - monstersPrefab: {fileID: 7130632717509287678, guid: 2a99d0baa50bf3d4281ed58269f4adc0, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: f5484c90eb7bae64ab5daa68b3d0e47d, type: 2}
   miniBosses: []
   finalBoss:
     bossPrefab: {fileID: 8960830493049914446, guid: 867d2b957fe0d1f479d2db0105efa53c, type: 3}

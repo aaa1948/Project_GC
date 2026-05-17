@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 652861d122f24d741823f114aa23b102, type: 3}
-  m_Name: Elite Melee Monster 2
+  m_Name: Elite Melee Monster 4
   m_EditorClassIdentifier: 
   name: Elite Melee Monster
   hp: 50
@@ -25,12 +25,12 @@ MonoBehaviour:
   coinLootTable:
     lootTable: []
   walkSpriteSequence:
-  - {fileID: -1159827789, guid: 5c133df4e168243918889aa50bab75fb, type: 3}
+  - {fileID: -1498753039, guid: 7e513dbfca8774c7c89285ffb164b2a5, type: 3}
   walkFrameTime: 0.2
   meleeLayer:
     serializedVersion: 2
     m_Bits: 0
-  sourceNormalBlueprint: {fileID: 11400000, guid: 66de12b7cb39f584d8c89366ee7d27de, type: 2}
+  sourceNormalBlueprint: {fileID: 11400000, guid: d859fc1f55039d843830177320577405, type: 2}
   useSourceVisual: 1
   useSourceCombatStats: 1
   useSourceLootTables: 1

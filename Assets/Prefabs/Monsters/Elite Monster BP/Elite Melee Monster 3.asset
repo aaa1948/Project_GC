@@ -30,6 +30,10 @@ MonoBehaviour:
   meleeLayer:
     serializedVersion: 2
     m_Bits: 0
+  sourceNormalBlueprint: {fileID: 11400000, guid: 63ef44ffe88d963469a0de489862fc74, type: 2}
+  useSourceVisual: 1
+  useSourceCombatStats: 1
+  useSourceLootTables: 1
   scaleMultiplier: 2
   hpMultiplier: 4
   silverRewardCalls: 2
