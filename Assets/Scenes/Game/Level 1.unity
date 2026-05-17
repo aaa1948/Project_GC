@@ -9319,7 +9319,7 @@ MonoBehaviour:
   levelManager: {fileID: 0}
   spawnEnabled: 1
   globalMaxAliveElites: 8
-  requireEliteMonsterBlueprint: 1
+  requireEliteMonsterBlueprint: 0
   cleanupInactiveElitesEveryFrame: 1
   spawnPhases:
   - phaseName: "2\uBD84\uB300 \uC5D8\uB9AC\uD2B8 \uD14C\uC2A4\uD2B8"

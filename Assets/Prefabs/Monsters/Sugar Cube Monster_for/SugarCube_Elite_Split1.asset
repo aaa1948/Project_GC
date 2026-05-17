@@ -1,0 +1,41 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 51429b71656263a4ab59946ca4e4e2ad, type: 3}
+  m_Name: SugarCube_Elite_Split1
+  m_EditorClassIdentifier: 
+  name: "\uC5D8\uB9AC\uD2B8 \uC124\uD0D5 \uD050\uBE0C \uBD84\uC5F4\uCCB41"
+  hp: 150
+  atk: 10
+  recovery: 0
+  armor: 0
+  atkspeed: 1
+  movespeed: 20
+  acceleration: 120
+  gemLootTable:
+    lootTable: []
+  coinLootTable:
+    lootTable: []
+  walkSpriteSequence: []
+  walkFrameTime: 0
+  meleeLayer:
+    serializedVersion: 2
+    m_Bits: 256
+  splitStage: 3
+  splitChildBlueprint: {fileID: 11400000, guid: c0fb1c6263b6740488ad92700105824f, type: 2}
+  splitChildCount: 2
+  visualScaleMultiplier: 1.5
+  splitSpawnRadius: 0.35
+  splitScatterKnockback: 1.5
+  splitOnlyWhenKilledByPlayer: 1
+  childIgnoresParentHpBuff: 1
+  dropLootOnDeath: 0
+  debugLog: 0
