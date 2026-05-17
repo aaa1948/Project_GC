@@ -101,7 +101,7 @@ namespace Vampire
         [SerializeField] private float antibioticBombChance = 0f;
         [SerializeField] private bool hasThermometer = false; // 전자체온계
         [SerializeField] private int mouthwashCount = 0;//구강청결제
-        [SerializeField] private bool hasReflexHammer = false;
+        [SerializeField] private int reflexHammerCount = 0; // 반사신경망치
 
         protected SpriteRenderer spriteRenderer;
         protected SpriteAnimator spriteAnimator;
@@ -714,9 +714,15 @@ namespace Vampire
             // ---------------------------------------------------------------------------------
             //  [추가] 반사신경 망치 로직: 아픈 데미지가 들어왔을 때 주변 적들을 사방으로 날려버립니다!
             // ---------------------------------------------------------------------------------
-            if (hasReflexHammer && damage > 0f && UnityEngine.Random.value < 0.005f) // 💡 0.5% 확률 (1.0 기준 0.005)
+            if (reflexHammerCount > 0 && damage > 0f)
             {
-                TriggerReflexHammer();
+                // 💡 1개면 0.005(0.5%), 2개면 0.01(1%), 10개면 0.05(5%)
+                float finalHammerChance = reflexHammerCount * 0.005f;
+
+                if (UnityEngine.Random.value < finalHammerChance)
+                {
+                    TriggerReflexHammer();
+                }
             }
 
             if (currentHealth <= 0)
@@ -1092,9 +1098,9 @@ namespace Vampire
             mouthwashCount++;
         }
         //반사신경망치
-        public void EnableReflexHammer()
+        public void AddReflexHammer()
         {
-            hasReflexHammer = true;
+            reflexHammerCount++;
         }
 
         public void EnableAntibioticBomb()
