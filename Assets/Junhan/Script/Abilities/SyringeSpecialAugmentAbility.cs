@@ -10,35 +10,39 @@ namespace Vampire
             Explosion,
             Homing,
             Pierce,
-
-            // 신규 특수 증강
             Honey,
             Mosquito,
-
-            // 신규 특수 증강 - 침귀환
             ReturnNeedle,
-
-            // 신규 특수 증강 - 침술진
             AcupunctureFormation
         }
 
         [Header("Special Augment")]
         [SerializeField] private SpecialAugmentType augmentType;
 
+        [Header("Debug")]
+        [SerializeField] private bool debugLog = true;
+
         private SyringeDartAbility syringeDartAbility;
 
-        public override void Init(AbilityManager abilityManager, EntityManager entityManager, Character playerCharacter)
+        public override void Init(
+            AbilityManager abilityManager,
+            EntityManager entityManager,
+            Character playerCharacter)
         {
             base.Init(abilityManager, entityManager, playerCharacter);
 
-            // 특수 증강은 한 번만 선택 가능하게 한다.
+            // 특수 증강은 한 번만 선택 가능
             maxLevel = 1;
 
-            syringeDartAbility = abilityManager.GetComponentInChildren<SyringeDartAbility>(true);
+            RefreshSyringeDartAbilityReference();
 
             if (syringeDartAbility == null)
             {
-                Debug.LogError("[SyringeSpecialAugmentAbility] SyringeDartAbility를 찾지 못했습니다.");
+                Debug.LogError(
+                    "[SyringeSpecialAugmentAbility] SyringeDartAbility를 찾지 못했습니다. " +
+                    "AbilityManager 아래에 실제 시작 침 능력이 있는지 확인하세요.",
+                    this
+                );
             }
         }
 
@@ -46,8 +50,15 @@ namespace Vampire
         {
             base.Use();
 
+            RefreshSyringeDartAbilityReference();
+
             if (syringeDartAbility == null)
             {
+                Debug.LogError(
+                    $"[SyringeSpecialAugmentAbility] {augmentType} 적용 실패: SyringeDartAbility가 없습니다.",
+                    this
+                );
+
                 return;
             }
 
@@ -85,10 +96,24 @@ namespace Vampire
                     syringeDartAbility.EnableAcupunctureFormationAugment();
                     break;
             }
+
+            if (debugLog)
+            {
+                Debug.Log(
+                    $"[SyringeSpecialAugmentAbility] 특수증강 적용 완료 | " +
+                    $"Type={augmentType} | " +
+                    $"Target={syringeDartAbility.name} | " +
+                    $"Owned={syringeDartAbility.Owned} | " +
+                    $"Active={syringeDartAbility.gameObject.activeInHierarchy}",
+                    syringeDartAbility
+                );
+            }
         }
 
         public override bool RequirementsMet()
         {
+            RefreshSyringeDartAbilityReference();
+
             if (syringeDartAbility == null)
             {
                 return false;
@@ -122,6 +147,17 @@ namespace Vampire
 
                 default:
                     return false;
+            }
+        }
+
+        private void RefreshSyringeDartAbilityReference()
+        {
+            SyringeDartAbility resolvedAbility =
+                SyringeAbilityResolver.FindOwnedOrFirst(abilityManager);
+
+            if (resolvedAbility != null)
+            {
+                syringeDartAbility = resolvedAbility;
             }
         }
     }

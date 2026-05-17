@@ -64,8 +64,9 @@ MonoBehaviour:
     m_WaitForCompletion: 0
     m_LocalVariables: []
   rarity: 15
-  augmentTier: 0
+  augmentTier: 1
   augmentType: 3
+  debugLog: 1
   references:
     version: 2
     RefIds: []

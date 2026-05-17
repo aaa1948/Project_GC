@@ -494,7 +494,7 @@ MonoBehaviour:
   normalMonsterSilverMin: 1
   normalMonsterSilverMax: 2
   bossMonsterBonusSilver: 100
-  debugLog: 1
+  debugLog: 0
 --- !u!1 &74421787
 GameObject:
   m_ObjectHideFlags: 0
@@ -9346,9 +9346,9 @@ MonoBehaviour:
     fallbackToManualPoolIfNoMappedElite: 0
     eliteMonsterFlatIndices: 08000000090000000a000000
     additionalHpBuff: 0
-  debugLog: 1
+  debugLog: 0
   logMonsterIndexTableOnStart: 1
-  debugFollowSelection: 1
+  debugFollowSelection: 0
 --- !u!1 &1207884297
 GameObject:
   m_ObjectHideFlags: 0
@@ -9594,7 +9594,7 @@ MonoBehaviour:
   maxDistanceFromPlayer: 8
   minDistanceBetweenTraps: 2.5
   spawnPositionTryCount: 20
-  debugLog: 1
+  debugLog: 0
 --- !u!4 &1228875797
 Transform:
   m_ObjectHideFlags: 0
@@ -21862,7 +21862,7 @@ MonoBehaviour:
   spawnOffsetFromPlayer: {x: 1.5, y: 1.5}
   useFixedSpawnPoint: 0
   fixedSpawnPoint: {fileID: 0}
-  logOnSpawn: 1
+  logOnSpawn: 0
   debugSpawnKey: 289
 --- !u!224 &2082455969 stripped
 RectTransform:
