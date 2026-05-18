@@ -5029,6 +5029,7 @@ GameObject:
   - component: {fileID: 8809120472644291009}
   - component: {fileID: 1671960822479111993}
   - component: {fileID: -3007320843196733932}
+  - component: {fileID: 1943931074877483503}
   m_Layer: 7
   m_Name: Boss_Real
   m_TagString: Untagged
@@ -5257,7 +5258,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74e44a481e271744c8e4993ee2bae273, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  patternName: 
+  patternName: "\uD3ED\uD0C4\uD22C\uD558"
   cooldown: 3
   nearWeightPhase1: 10
   midWeightPhase1: 10
@@ -5321,7 +5322,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 252d5806f61827f4b945816f539e8a05, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  patternName: 
+  patternName: "\uBC1C\uC0AC\uCCB4 \uBC1C\uC0AC"
   cooldown: 3
   nearWeightPhase1: 10
   midWeightPhase1: 10
@@ -5354,7 +5355,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a067d4dfe8da2eb469aca311e949f14d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  patternName: 
+  patternName: "\uB3CC\uC9C4"
   cooldown: 3
   nearWeightPhase1: 10
   midWeightPhase1: 10
@@ -5370,6 +5371,52 @@ MonoBehaviour:
   ringCountPhase1: 1
   ringCountPhase2: 2
   ringInterval: 0.25
+  debugShot: 0
+--- !u!114 &1943931074877483503
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8960830493049914446}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7850e71ecc209584c9aa612b22ff21a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  patternName: "\uC720\uB3C4\uD0C4"
+  cooldown: 3
+  nearWeightPhase1: 50
+  midWeightPhase1: 50
+  farWeightPhase1: 50
+  nearWeightPhase2: 50
+  midWeightPhase2: 50
+  farWeightPhase2: 50
+  missilePrefab: {fileID: 79574699671740622, guid: e45b96cccb487f34ba156a57101ef984, type: 3}
+  missileCountPhase1: 4
+  missileCountPhase2: 4
+  totalSpreadAngle: 90
+  missileSpeed: 0.9
+  missileDamage: 12
+  missileLifeTime: 12
+  turnSpeed: 2.2
+  laneOffsetDistance: 1.4
+  laneFadeDistance: 2.2
+  initialSpreadDuration: 0.35
+  muzzleOffsetFromBoss: 0.9
+  burstCountPhase1: 1
+  burstCountPhase2: 1
+  burstInterval: 0.35
+  destroyByPlayerProjectile: 1
+  playerProjectileLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  projectileHitCheckRadius: 0.25
+  rotateToMoveDirection: 1
+  visualForwardAngleOffset: 0
+  destroyEffectPrefab: {fileID: 0}
+  forceMissileSortingOrder: 1
+  missileSortingOrder: 560
   debugShot: 0
 --- !u!1001 &6061857700174536434
 PrefabInstance:
