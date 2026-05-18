@@ -772,198 +772,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 120761154}
   m_CullTransparentMesh: 1
---- !u!1 &128378504
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 128378508}
-  - component: {fileID: 128378507}
-  - component: {fileID: 128378506}
-  - component: {fileID: 128378505}
-  - component: {fileID: 128378509}
-  m_Layer: 0
-  m_Name: Interaction_EliteSummon
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!114 &128378505
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 128378504}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9a83caa647122c74fb4b4fef8d9d76a2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  interactionKey: 101
-  interactOnce: 1
-  disableObjectAfterInteract: 1
-  disableColliderAfterInteract: 1
-  promptRoot: {fileID: 0}
-  promptText: {fileID: 0}
-  promptTMPText: {fileID: 0}
-  promptMessage: "[E] \uC0C1\uD638\uC791\uC6A9"
-  levelManager: {fileID: 0}
-  debugLog: 1
-  minSpawnCount: 5
-  maxSpawnCount: 15
-  scaleCountByLevelTime: 1
-  spawnRadius: 5
-  minDistanceFromPlayer: 2.5
-  followCurrentNormalSpawnTable: 1
-  maxSelectionAttempts: 20
-  fallbackRandomMappedElite: 1
-  normalToEliteMappings:
-  - normalFlatIndex: 0
-    eliteFlatIndex: 8
-  - normalFlatIndex: 1
-    eliteFlatIndex: 9
-  - normalFlatIndex: 2
-    eliteFlatIndex: 3
-  - normalFlatIndex: 4
-    eliteFlatIndex: 10
-  - normalFlatIndex: 5
-    eliteFlatIndex: 11
-  - normalFlatIndex: 6
-    eliteFlatIndex: 12
-  - normalFlatIndex: 7
-    eliteFlatIndex: 13
-  intervalBetweenSpawns: 0.05
-  hpBuff: 0
---- !u!58 &128378506
-CircleCollider2D:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 128378504}
-  m_Enabled: 1
-  m_Density: 1
-  m_Material: {fileID: 0}
-  m_IncludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_ExcludeLayers:
-    serializedVersion: 2
-    m_Bits: 0
-  m_LayerOverridePriority: 0
-  m_ForceSendLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ForceReceiveLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_ContactCaptureLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_CallbackLayers:
-    serializedVersion: 2
-    m_Bits: 4294967295
-  m_IsTrigger: 1
-  m_UsedByEffector: 0
-  m_UsedByComposite: 0
-  m_Offset: {x: 0, y: 0}
-  serializedVersion: 2
-  m_Radius: 0.5
---- !u!212 &128378507
-SpriteRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 128378504}
-  m_Enabled: 1
-  m_CastShadows: 0
-  m_ReceiveShadows: 0
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 1
-  m_LightProbeUsage: 1
-  m_ReflectionProbeUsage: 1
-  m_RayTracingMode: 0
-  m_RayTraceProcedural: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 10754, guid: 0000000000000000f000000000000000, type: 0}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 0
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_Sprite: {fileID: -1792711463, guid: 47d8a91e3026e405a96bac590c863934, type: 3}
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_FlipX: 0
-  m_FlipY: 0
-  m_DrawMode: 0
-  m_Size: {x: 0.33333334, y: 0.3125}
-  m_AdaptiveModeThreshold: 0.5
-  m_SpriteTileMode: 0
-  m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
-  m_SpriteSortPoint: 0
---- !u!4 &128378508
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 128378504}
-  serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.646013, y: -7.0348697, z: -0.0024334788}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &128378509
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 128378504}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 1e3c26e95cb90db49b3a42fcc955d942, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  displayName: Marker
-  markerKind: 0
-  showOnMiniMap: 1
-  showOnFullMap: 1
-  hideUntilDiscovered: 1
-  alwaysVisible: 0
-  discoverDistance: 5
-  miniMapColor: {r: 0.05656061, g: 1, b: 0.015686274, a: 1}
-  miniMapSize: 6
-  fullMapColor: {r: 0.054901965, g: 1, b: 0.015686275, a: 1}
-  fullMapSize: 8
 --- !u!1 &154289834
 GameObject:
   m_ObjectHideFlags: 0
@@ -1509,12 +1317,12 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 271402288}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 1.646013, y: -7.0348697, z: -0.0024334788}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 0}
+  m_Father: {fileID: 1207884298}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &271402293
 MonoBehaviour:
@@ -10336,6 +10144,8 @@ Transform:
   - {fileID: 1228875797}
   - {fileID: 1207597746}
   - {fileID: 2055230364}
+  - {fileID: 271402292}
+  - {fileID: 1609493736}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1223039554
@@ -16393,6 +16203,62 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1557272234}
   m_CullTransparentMesh: 1
+--- !u!1 &1609493735
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1609493736}
+  - component: {fileID: 1609493737}
+  m_Layer: 0
+  m_Name: Elite Summon Object Spawner
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1609493736
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1609493735}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 1.646013, y: -7.0348697, z: -0.0024334788}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1207884298}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1609493737
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1609493735}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fc5ee57d84574f844a3fae93582738ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  levelManager: {fileID: 0}
+  eliteSummonObjectPrefab: {fileID: 8883575360997113124, guid: ef128a96719c28240a9fb1cb6510c853, type: 3}
+  firstSpawnDelay: 30
+  spawnInterval: 60
+  spawnCountPerWave: 2
+  minSpawnDistanceFromPlayer: 8
+  maxSpawnDistanceFromPlayer: 14
+  minDistanceBetweenSpawnedObjects: 5
+  maxPositionAttempts: 30
+  maxActiveObjects: 20
+  destroyInactiveSpawnedObjects: 1
+  debugLog: 1
 --- !u!1 &1627267661
 GameObject:
   m_ObjectHideFlags: 0
@@ -23909,5 +23775,3 @@ SceneRoots:
   m_Roots:
   - {fileID: 1421529453}
   - {fileID: 1207884298}
-  - {fileID: 271402292}
-  - {fileID: 128378508}

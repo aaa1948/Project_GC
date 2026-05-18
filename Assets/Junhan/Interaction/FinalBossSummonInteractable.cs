@@ -23,7 +23,7 @@ namespace Vampire
         [Tooltip("체크하면 현재 플레이 시간에 따라 보스 HP와 데미지가 변경됩니다.")]
         [SerializeField] private bool applyTimeBasedScaling = true;
 
-        [Tooltip("true면 LevelManager의 LevelDuration을 기준으로 분 단위를 계산합니다. 현재 20분 스테이지면 20분 기준이 됩니다.")]
+        [Tooltip("true면 LevelManager의 LevelDuration을 기준으로 분 단위를 계산합니다.")]
         [SerializeField] private bool useLevelDurationAsMaxMinute = true;
 
         [Tooltip("useLevelDurationAsMaxMinute이 꺼져 있을 때 사용할 최대 기준 분입니다.")]
@@ -60,6 +60,21 @@ namespace Vampire
         [SerializeField] private bool disableBossLevelSpawnersAfterSpawn = true;
 
         private static bool bossSummonedByInteraction = false;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetStaticStateOnPlayStart()
+        {
+            bossSummonedByInteraction = false;
+        }
+
+        protected override void Awake()
+        {
+            // 다시하기로 씬이 재로드될 때 static 값이 남아서
+            // 실제 보스가 없는데도 "이미 보스가 존재"한다고 판단하는 문제 방지.
+            bossSummonedByInteraction = false;
+
+            base.Awake();
+        }
 
         protected override bool ExecuteInteraction(Character player)
         {
@@ -218,7 +233,7 @@ namespace Vampire
             {
                 if (useRandomDirectionAroundPlayer)
                 {
-                    Vector2 randomDirection = Random.insideUnitCircle.normalized;
+                    Vector2 randomDirection = UnityEngine.Random.insideUnitCircle.normalized;
 
                     if (randomDirection == Vector2.zero)
                     {
