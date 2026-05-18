@@ -22,15 +22,15 @@ MonoBehaviour:
   - minute: 3
     spawnRate: 2.2
   - minute: 5
-    spawnRate: 3
-  - minute: 8
     spawnRate: 4
+  - minute: 8
+    spawnRate: 7
   - minute: 12
-    spawnRate: 5
+    spawnRate: 11
   - minute: 16
-    spawnRate: 6.2
+    spawnRate: 15
   - minute: 20
-    spawnRate: 7.2
+    spawnRate: 20
   normalMonsterEntries:
   - memo: "\uB808\uBCA81 \uC704\uC0B0 \uC2AC\uB77C\uC784"
     monsterBlueprint: {fileID: 11400000, guid: 23cbbabfbfc14e4498b09675b4940a0c, type: 2}
