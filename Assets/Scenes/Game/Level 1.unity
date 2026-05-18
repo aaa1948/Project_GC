@@ -597,7 +597,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &64523754
 Transform:
   m_ObjectHideFlags: 0
@@ -10101,7 +10101,7 @@ MonoBehaviour:
     eliteMonsterFlatIndices: 030000000a0000000b0000000c0000000d000000
     additionalHpBuff: 0
   debugLog: 0
-  logMonsterIndexTableOnStart: 1
+  logMonsterIndexTableOnStart: 0
   debugFollowSelection: 0
 --- !u!1 &1207884297
 GameObject:
@@ -10715,9 +10715,9 @@ MonoBehaviour:
     activePuddles: []
   logEventState: 0
   logMonsterIndexTableOnStart: 0
-  logExtraSpawn: 0
-  logGoldRushModifier: 0
-  logAcidEvent: 0
+  logExtraSpawn: 1
+  logGoldRushModifier: 1
+  logAcidEvent: 1
 --- !u!1 &1348383117
 GameObject:
   m_ObjectHideFlags: 0
@@ -16259,7 +16259,7 @@ MonoBehaviour:
   maxPositionAttempts: 30
   maxActiveObjects: 20
   destroyInactiveSpawnedObjects: 1
-  debugLog: 1
+  debugLog: 0
 --- !u!1 &1627267661
 GameObject:
   m_ObjectHideFlags: 0
@@ -22599,7 +22599,7 @@ MonoBehaviour:
     hpBuff: 0
     memo: "15\uBD84 \uBBF8\uB2C8\uBCF4\uC2A4"
   spawnEachEntryOnlyOnce: 1
-  debugLog: 1
+  debugLog: 0
 --- !u!1 &2001856712
 GameObject:
   m_ObjectHideFlags: 0
@@ -22823,7 +22823,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5bde36bc0478f6d4aa2e6deaa470feb4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  debugLog: 1
+  debugLog: 0
 --- !u!1 &2055230363
 GameObject:
   m_ObjectHideFlags: 0
@@ -22871,7 +22871,7 @@ MonoBehaviour:
   levelBlueprint: {fileID: 11400000, guid: ace7cd4ef65de4d9787fe14e2a0f8c92, type: 2}
   spawnBalanceProfile: {fileID: 11400000, guid: f1fe676548cc3034c8046726ee6f2c46, type: 2}
   applyOnAwake: 1
-  logMonsterIndexTableAfterApply: 1
+  logMonsterIndexTableAfterApply: 0
 --- !u!1 &2076536164
 GameObject:
   m_ObjectHideFlags: 0
@@ -23105,7 +23105,7 @@ MonoBehaviour:
     monsterBlueprint: {fileID: 11400000, guid: 4b65cea1eeb064941bb483af69f4057f, type: 2}
     hpBuff: 0
     memo: snippp
-  debugLog: 1
+  debugLog: 0
 --- !u!4 &2093063619
 Transform:
   m_ObjectHideFlags: 0
