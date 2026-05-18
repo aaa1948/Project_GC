@@ -17,11 +17,17 @@ namespace Vampire
         [SerializeField] private GameOverDialog gameOverDialog;
         [SerializeField] private GameTimer gameTimer;
 
+        [Header("Result Panel")]
+        [Tooltip("새 결과 패널입니다. 연결하면 GameOverDialog보다 우선 사용됩니다.")]
+        [SerializeField] private LevelResultPanel levelResultPanel;
+
         private float levelTime = 0f;
         private float timeSinceLastMonsterSpawned;
         private float timeSinceLastChestSpawned;
+
         private bool miniBossSpawned = false;
         private bool finalBossSpawned = false;
+        private bool levelEnded = false;
 
         public float CurrentLevelTime => levelTime;
         public float LevelDuration => levelBlueprint != null ? levelBlueprint.levelTime : 0f;
@@ -32,22 +38,51 @@ namespace Vampire
         public void Init(LevelBlueprint levelBlueprint)
         {
             this.levelBlueprint = levelBlueprint;
+
             levelTime = 0f;
+            timeSinceLastMonsterSpawned = 0f;
+            timeSinceLastChestSpawned = 0f;
+            miniBossSpawned = false;
+            finalBossSpawned = false;
+            levelEnded = false;
 
-            entityManager.Init(this.levelBlueprint, playerCharacter, inventory, statsManager, infiniteBackground, abilitySelectionDialog);
+            entityManager.Init(
+                this.levelBlueprint,
+                playerCharacter,
+                inventory,
+                statsManager,
+                infiniteBackground,
+                abilitySelectionDialog
+            );
 
-            abilityManager.Init(this.levelBlueprint, entityManager, playerCharacter, abilityManager);
-            abilitySelectionDialog.Init(abilityManager, entityManager, playerCharacter);
+            abilityManager.Init(
+                this.levelBlueprint,
+                entityManager,
+                playerCharacter,
+                abilityManager
+            );
 
-            playerCharacter.Init(entityManager, abilityManager, statsManager);
+            abilitySelectionDialog.Init(
+                abilityManager,
+                entityManager,
+                playerCharacter
+            );
+
+            playerCharacter.Init(
+                entityManager,
+                abilityManager,
+                statsManager
+            );
+
             playerCharacter.OnDeath.AddListener(GameOver);
 
-            entityManager.SpawnGemsAroundPlayer(this.levelBlueprint.initialExpGemCount, this.levelBlueprint.initialExpGemType);
+            entityManager.SpawnGemsAroundPlayer(
+                this.levelBlueprint.initialExpGemCount,
+                this.levelBlueprint.initialExpGemType
+            );
 
             entityManager.SpawnChest(levelBlueprint.chestBlueprint);
-
             infiniteBackground.Init(this.levelBlueprint.backgroundTexture, playerCharacter.transform);
-
             inventory.Init();
         }
 
@@ -58,8 +93,17 @@ namespace Vampire
 
         private void Update()
         {
+            if (levelEnded)
+            {
+                return;
+            }
+
             levelTime += Time.deltaTime;
-            gameTimer.SetTime(levelTime);
+
+            if (gameTimer != null)
+            {
+                gameTimer.SetTime(levelTime);
+            }
 
             HandleNormalMonsterSpawn();
             HandleBossSpawn();
@@ -81,12 +125,18 @@ namespace Vampire
             timeSinceLastMonsterSpawned += Time.deltaTime;
 
             float spawnRate = GetCurrentBaseMonsterSpawnRate();
-            float monsterSpawnDelay = spawnRate > 0f ? 1.0f / spawnRate : float.PositiveInfinity;
+            float monsterSpawnDelay = spawnRate > 0f
+                ? 1.0f / spawnRate
+                : float.PositiveInfinity;
 
             if (timeSinceLastMonsterSpawned >= monsterSpawnDelay)
             {
                 SpawnMonsterFromSpawnTable();
-                timeSinceLastMonsterSpawned = Mathf.Repeat(timeSinceLastMonsterSpawned, monsterSpawnDelay);
+
+                timeSinceLastMonsterSpawned = Mathf.Repeat(
+                    timeSinceLastMonsterSpawned,
+                    monsterSpawnDelay
+                );
             }
         }
 
@@ -118,14 +168,26 @@ namespace Vampire
                 levelTime > levelBlueprint.miniBosses[0].spawnTime)
             {
                 miniBossSpawned = true;
-                entityManager.SpawnMonsterRandomPosition(levelBlueprint.monsters.Length, levelBlueprint.miniBosses[0].bossBlueprint);
+
+                entityManager.SpawnMonsterRandomPosition(
+                    levelBlueprint.monsters.Length,
+                    levelBlueprint.miniBosses[0].bossBlueprint
+                );
             }
 
             if (!finalBossSpawned && levelTime > levelBlueprint.levelTime)
             {
                 finalBossSpawned = true;
-                Monster finalBoss = entityManager.SpawnMonsterRandomPosition(levelBlueprint.monsters.Length, levelBlueprint.finalBoss.bossBlueprint);
-                finalBoss.OnKilled.AddListener(LevelPassed);
+
+                Monster finalBoss = entityManager.SpawnMonsterRandomPosition(
+                    levelBlueprint.monsters.Length,
+                    levelBlueprint.finalBoss.bossBlueprint
+                );
+
+                if (finalBoss != null)
+                {
+                    finalBoss.OnKilled.AddListener(LevelPassed);
+                }
             }
         }
 
@@ -145,7 +207,10 @@ namespace Vampire
                     entityManager.SpawnChest(levelBlueprint.chestBlueprint);
                 }
 
-                timeSinceLastChestSpawned = Mathf.Repeat(timeSinceLastChestSpawned, levelBlueprint.chestSpawnDelay);
+                timeSinceLastChestSpawned = Mathf.Repeat(
+                    timeSinceLastChestSpawned,
+                    levelBlueprint.chestSpawnDelay
+                );
             }
         }
 
@@ -166,14 +231,19 @@ namespace Vampire
                 return 0f;
             }
 
-            return levelBlueprint.monsterSpawnTable.GetSpawnRate(GetNormalizedLevelTime());
+            return levelBlueprint.monsterSpawnTable.GetSpawnRate(
+                GetNormalizedLevelTime()
+            );
         }
 
         public void SpawnMonsterByFlatIndex(int monsterIndex, float hpMultiplier = 1f)
         {
             if (levelBlueprint == null || entityManager == null)
             {
-                Debug.LogWarning("[LevelManager] SpawnMonsterByFlatIndex 실패: LevelBlueprint 또는 EntityManager가 비어 있습니다.");
+                Debug.LogWarning(
+                    "[LevelManager] SpawnMonsterByFlatIndex 실패: LevelBlueprint 또는 EntityManager가 비어 있습니다."
+                );
+
                 return;
             }
 
@@ -191,17 +261,22 @@ namespace Vampire
                 return;
             }
 
-            if (blueprintIndex < 0 || blueprintIndex >= levelBlueprint.monsters[poolIndex].monsterBlueprints.Length)
+            if (blueprintIndex < 0 ||
+                blueprintIndex >= levelBlueprint.monsters[poolIndex].monsterBlueprints.Length)
             {
                 Debug.LogWarning($"[LevelManager] 잘못된 blueprintIndex입니다: {blueprintIndex}");
                 return;
             }
 
-            MonsterBlueprint monsterBlueprint = levelBlueprint.monsters[poolIndex].monsterBlueprints[blueprintIndex];
+            MonsterBlueprint monsterBlueprint =
+                levelBlueprint.monsters[poolIndex].monsterBlueprints[blueprintIndex];
 
             if (monsterBlueprint == null)
             {
-                Debug.LogWarning($"[LevelManager] MonsterBlueprint가 비어 있습니다. monsterIndex={monsterIndex}");
+                Debug.LogWarning(
+                    $"[LevelManager] MonsterBlueprint가 비어 있습니다. monsterIndex={monsterIndex}"
+                );
+
                 return;
             }
 
@@ -212,7 +287,9 @@ namespace Vampire
             );
         }
 
-        public void SpawnRandomMonsterFromFlatIndexList(List<int> monsterIndices, float hpMultiplier = 1f)
+        public void SpawnRandomMonsterFromFlatIndexList(
+            List<int> monsterIndices,
+            float hpMultiplier = 1f)
         {
             if (monsterIndices == null || monsterIndices.Count == 0)
             {
@@ -220,6 +297,7 @@ namespace Vampire
             }
 
             int selectedIndex = monsterIndices[Random.Range(0, monsterIndices.Count)];
+
             SpawnMonsterByFlatIndex(selectedIndex, hpMultiplier);
         }
 
@@ -244,13 +322,18 @@ namespace Vampire
                     continue;
                 }
 
-                for (int blueprintIndex = 0; blueprintIndex < container.monsterBlueprints.Length; blueprintIndex++)
+                for (int blueprintIndex = 0;
+                     blueprintIndex < container.monsterBlueprints.Length;
+                     blueprintIndex++)
                 {
                     MonsterBlueprint blueprint = container.monsterBlueprints[blueprintIndex];
                     string monsterName = blueprint != null ? blueprint.name : "NULL";
 
                     Debug.Log(
-                        $"[MonsterIndex] flatIndex={flatIndex} | poolIndex={poolIndex} | blueprintIndex={blueprintIndex} | name={monsterName}"
+                        $"[MonsterIndex] flatIndex={flatIndex} | " +
+                        $"poolIndex={poolIndex} | " +
+                        $"blueprintIndex={blueprintIndex} | " +
+                        $"name={monsterName}"
                     );
 
                     flatIndex++;
@@ -262,29 +345,74 @@ namespace Vampire
 
         public void GameOver()
         {
-            Time.timeScale = 0;
-            int coinCount = PlayerPrefs.GetInt("Coins");
-            PlayerPrefs.SetInt("Coins", coinCount + statsManager.CoinsGained);
-            gameOverDialog.Open(false, statsManager);
+            if (levelEnded)
+            {
+                return;
+            }
+
+            levelEnded = true;
+
+            SaveCoinsGained();
+
+            Time.timeScale = 0f;
+
+            if (levelResultPanel != null)
+            {
+                levelResultPanel.Open(false);
+                return;
+            }
+
+            if (gameOverDialog != null)
+            {
+                gameOverDialog.Open(false, statsManager);
+            }
         }
 
         public void LevelPassed(Monster finalBossKilled)
         {
-            Time.timeScale = 0;
+            if (levelEnded)
+            {
+                return;
+            }
+
+            levelEnded = true;
+
+            SaveCoinsGained();
+
+            Time.timeScale = 0f;
+
+            if (levelResultPanel != null)
+            {
+                levelResultPanel.Open(true);
+                return;
+            }
+
+            if (gameOverDialog != null)
+            {
+                gameOverDialog.Open(true, statsManager);
+            }
+        }
+
+        private void SaveCoinsGained()
+        {
+            if (statsManager == null)
+            {
+                return;
+            }
+
             int coinCount = PlayerPrefs.GetInt("Coins");
             PlayerPrefs.SetInt("Coins", coinCount + statsManager.CoinsGained);
-            gameOverDialog.Open(true, statsManager);
         }
 
         public void Restart()
         {
-            Time.timeScale = 1;
+            Time.timeScale = 1f;
             SceneManager.LoadScene(SceneManager.GetActiveScene().name);
         }
 
         public void ReturnToMainMenu()
         {
-            Time.timeScale = 1;
+            Time.timeScale = 1f;
             SceneManager.LoadScene(0);
         }
     }
