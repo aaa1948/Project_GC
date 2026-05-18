@@ -5029,6 +5029,7 @@ GameObject:
   - component: {fileID: 8809120472644291009}
   - component: {fileID: 1671960822479111993}
   - component: {fileID: -3007320843196733932}
+  - component: {fileID: 1943931074877483503}
   m_Layer: 7
   m_Name: Boss_Real
   m_TagString: Untagged
@@ -5072,6 +5073,18 @@ MonoBehaviour:
   dissolveMaterial: {fileID: 2100000, guid: 6e8eea0ed92094605ac676c1b177e375, type: 2}
   deathParticles: {fileID: 2261849384277177159}
   shadow: {fileID: 3138994436324826512}
+  bossController: {fileID: 0}
+  useDeathAnimatorTrigger: 0
+  deathAnimator: {fileID: 0}
+  deathTriggerName: Die
+  deathAnimationWaitTime: 1.5
+  hideBossVisualAfterDeath: 1
+  delayClearUntilRewardCollected: 1
+  bossClearRewardPrefab: {fileID: 3141833122139879170, guid: 4d53fbd787fd1994f81ebc0231c6697c, type: 3}
+  bossClearRewardSpawnOffset: {x: 0, y: 0, z: 0}
+  clearImmediatelyIfRewardPrefabMissing: 1
+  dropDefaultLootOnDeath: 0
+  debugBossDeath: 1
 --- !u!50 &1509248373225648304
 Rigidbody2D:
   serializedVersion: 4
@@ -5225,26 +5238,68 @@ MonoBehaviour:
   forceBasicBulletSortingOrder: 1
   basicBulletSortingOrder: 500
   enableMovement: 1
-  moveSpeedPhase1: 0.8
-  moveSpeedPhase2: 1.2
+  baseMoveSpeed: 0.8
   stopDistanceFromPlayer: 1.5
   moveWhileUsingPattern: 1
   patternMoveSpeedMultiplier: 0.35
   movementSmoothTime: 0.18
   flipSpriteToPlayer: 1
-  firstPatternDelay: 3
-  patternIntervalMin: 4
-  patternIntervalMax: 7
+  firstPatternDelay: 10
+  patternIntervalMin: 10
+  patternIntervalMax: 15
   thinkInterval: 0.3
-  patternGap: 1.2
+  patternGap: 1
   nearDistanceThreshold: 4
   midDistanceThreshold: 8
-  phase2HpRatio: 0.5
-  phase2Active: 0
-  rewardOnDeath: 1
+  phase1Settings:
+    phaseName: Phase 1
+    enterHpRatio: 1
+    damageMultiplier: 1
+    projectileSpeedMultiplier: 1
+    movementSpeedMultiplier: 1
+    basicAttackCooldownMultiplier: 1
+    patternCooldownMultiplier: 1
+    patternIntervalMultiplier: 1
+    patternGapMultiplier: 1
+    ignoreDistanceAndUseRandomPattern: 0
+    transitionPauseSeconds: 0
+    invincibleDuringTransition: 0
+    phaseSprite: {fileID: 0}
+    phaseTransitionEffectPrefab: {fileID: 0}
+  phase2Settings:
+    phaseName: Phase 2
+    enterHpRatio: 0.5
+    damageMultiplier: 1.5
+    projectileSpeedMultiplier: 1.5
+    movementSpeedMultiplier: 1.5
+    basicAttackCooldownMultiplier: 1.5
+    patternCooldownMultiplier: 0.7
+    patternIntervalMultiplier: 0.7
+    patternGapMultiplier: 0.7
+    ignoreDistanceAndUseRandomPattern: 0
+    transitionPauseSeconds: 2
+    invincibleDuringTransition: 1
+    phaseSprite: {fileID: 0}
+    phaseTransitionEffectPrefab: {fileID: 0}
+  phase3Settings:
+    phaseName: Phase 3
+    enterHpRatio: 0.2
+    damageMultiplier: 2
+    projectileSpeedMultiplier: 2
+    movementSpeedMultiplier: 2
+    basicAttackCooldownMultiplier: 0.5
+    patternCooldownMultiplier: 0.5
+    patternIntervalMultiplier: 0.5
+    patternGapMultiplier: 0.5
+    ignoreDistanceAndUseRandomPattern: 1
+    transitionPauseSeconds: 2
+    invincibleDuringTransition: 1
+    phaseSprite: {fileID: 0}
+    phaseTransitionEffectPrefab: {fileID: 0}
   debugMovement: 0
   debugPattern: 0
   debugBasicAttack: 0
+  debugPhase: 1
 --- !u!114 &5015667122555973235
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5257,7 +5312,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 74e44a481e271744c8e4993ee2bae273, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  patternName: 
+  patternName: "\uD3ED\uD0C4\uD22C\uD558"
   cooldown: 3
   nearWeightPhase1: 10
   midWeightPhase1: 10
@@ -5265,13 +5320,18 @@ MonoBehaviour:
   nearWeightPhase2: 10
   midWeightPhase2: 10
   farWeightPhase2: 10
+  nearWeightPhase3: 10
+  midWeightPhase3: 10
+  farWeightPhase3: 10
   warningCirclePrefab: {fileID: 6326675434172693389, guid: f5088ef85aadd1c4eb438815cf7627c4, type: 3}
   warningDuration: 1
   explosionRadius: 2
   explosionDamage: 20
   bombCountPhase1: 1
   bombCountPhase2: 3
+  bombCountPhase3: 4
   randomOffsetRadius: 1.5
+  debugBomb: 0
 --- !u!114 &8809120472644291009
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5292,16 +5352,22 @@ MonoBehaviour:
   nearWeightPhase2: 10
   midWeightPhase2: 10
   farWeightPhase2: 10
+  nearWeightPhase3: 10
+  midWeightPhase3: 10
+  farWeightPhase3: 10
   warningLinePrefab: {fileID: 3500323201647957297, guid: 39ffc1f9dd07a9248bd4bda7a75c0bae, type: 3}
   warningTime: 0.9
   warningWidth: 1.5
   warningColor: {r: 0.4, g: 0.85, b: 1, a: 0.45}
   chargeDistancePhase1: 6
   chargeDistancePhase2: 8
+  chargeDistancePhase3: 9
   chargeSpeedPhase1: 14
   chargeSpeedPhase2: 18
+  chargeSpeedPhase3: 20
   chargeDamagePhase1: 15
   chargeDamagePhase2: 25
+  chargeDamagePhase3: 30
   endLag: 0.4
   hitboxSize: {x: 1.2, y: 1.2}
   playerLayer:
@@ -5321,7 +5387,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 252d5806f61827f4b945816f539e8a05, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  patternName: 
+  patternName: "\uBC1C\uC0AC\uCCB4 \uBC1C\uC0AC"
   cooldown: 3
   nearWeightPhase1: 10
   midWeightPhase1: 10
@@ -5329,14 +5395,19 @@ MonoBehaviour:
   nearWeightPhase2: 10
   midWeightPhase2: 10
   farWeightPhase2: 10
+  nearWeightPhase3: 10
+  midWeightPhase3: 10
+  farWeightPhase3: 10
   bulletPrefab: {fileID: 2434312293593349568, guid: 76661a6e6373fae4e9bcd9a73322111f, type: 3}
   bulletSpeed: 8
   bulletDamage: 10
   bulletCountPhase1: 7
   bulletCountPhase2: 11
+  bulletCountPhase3: 13
   totalSpreadAngle: 90
   burstCountPhase1: 1
   burstCountPhase2: 2
+  burstCountPhase3: 2
   burstInterval: 0.25
   muzzleOffsetFromBoss: 0.9
   forceBulletSortingOrder: 1
@@ -5354,7 +5425,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a067d4dfe8da2eb469aca311e949f14d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  patternName: 
+  patternName: "\uB3CC\uC9C4"
   cooldown: 3
   nearWeightPhase1: 10
   midWeightPhase1: 10
@@ -5362,14 +5433,72 @@ MonoBehaviour:
   nearWeightPhase2: 10
   midWeightPhase2: 10
   farWeightPhase2: 10
+  nearWeightPhase3: 10
+  midWeightPhase3: 10
+  farWeightPhase3: 10
   bulletPrefab: {fileID: 2434312293593349568, guid: 76661a6e6373fae4e9bcd9a73322111f, type: 3}
   bulletSpeed: 6
   bulletDamage: 8
   bulletCountPhase1: 12
   bulletCountPhase2: 20
+  bulletCountPhase3: 24
   ringCountPhase1: 1
   ringCountPhase2: 2
+  ringCountPhase3: 2
   ringInterval: 0.25
+  forceBulletSortingOrder: 1
+  bulletSortingOrder: 550
+  debugShot: 0
+--- !u!114 &1943931074877483503
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8960830493049914446}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7850e71ecc209584c9aa612b22ff21a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  patternName: "\uC720\uB3C4\uD0C4"
+  cooldown: 3
+  nearWeightPhase1: 50
+  midWeightPhase1: 50
+  farWeightPhase1: 50
+  nearWeightPhase2: 50
+  midWeightPhase2: 50
+  farWeightPhase2: 50
+  nearWeightPhase3: 10
+  midWeightPhase3: 10
+  farWeightPhase3: 10
+  missilePrefab: {fileID: 79574699671740622, guid: e45b96cccb487f34ba156a57101ef984, type: 3}
+  missileCountPhase1: 4
+  missileCountPhase2: 4
+  missileCountPhase3: 5
+  totalSpreadAngle: 90
+  missileSpeed: 0.9
+  missileDamage: 12
+  missileLifeTime: 12
+  turnSpeed: 2.2
+  laneOffsetDistance: 1.4
+  laneFadeDistance: 2.2
+  initialSpreadDuration: 0.35
+  muzzleOffsetFromBoss: 0.9
+  burstCountPhase1: 1
+  burstCountPhase2: 1
+  burstCountPhase3: 2
+  burstInterval: 0.35
+  destroyByPlayerProjectile: 1
+  playerProjectileLayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  projectileHitCheckRadius: 0.25
+  rotateToMoveDirection: 1
+  visualForwardAngleOffset: 0
+  destroyEffectPrefab: {fileID: 0}
+  forceMissileSortingOrder: 1
+  missileSortingOrder: 560
   debugShot: 0
 --- !u!1001 &6061857700174536434
 PrefabInstance:
