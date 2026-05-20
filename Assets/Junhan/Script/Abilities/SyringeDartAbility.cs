@@ -37,6 +37,8 @@ namespace Vampire
         [Header("Explosion Settings")]
         [SerializeField] private float explosionRadius = 1.5f;
         [SerializeField] private float explosionDamage = 2f;
+        [Tooltip("폭발침 특수증강을 먹었을 때 폭발이 발생할 확률입니다. 1이면 100% 확률로 폭발합니다.")]
+        [SerializeField, Range(0f, 1f)] private float specialExplosionChance = 1f;
 
         [Header("Homing Settings")]
         [SerializeField] private float homingRange = 6f;
@@ -652,32 +654,60 @@ namespace Vampire
 
         private SyringeSpecialRuntime BuildSpecialRuntime()
         {
-            
-            int bonusPierce = Mathf.RoundToInt(GetPublicFloatProperty(playerCharacter, "AdditionalPierce", 0f));
-            int totalPierceCount = pierceCount + bonusPierce;
+            float additionalPierceFromCharacter = GetPublicFloatProperty(playerCharacter, "AdditionalPierce", 0f);
+
+            int bonusPierce = pierceEnabled
+                ? Mathf.RoundToInt(additionalPierceFromCharacter)
+                : 0;
+
+            int totalPierceCount = pierceEnabled
+                ? Mathf.Max(0, pierceCount + bonusPierce)
+                : 0;
+
+            float antibioticBombChance = 0f;
+
+            if (playerCharacter != null)
+            {
+                antibioticBombChance = Mathf.Max(0f, playerCharacter.AntibioticBombChance);
+            }
+
+            float finalExplosionChance = 0f;
+
+            if (explosionEnabled)
+            {
+                finalExplosionChance = Mathf.Max(finalExplosionChance, specialExplosionChance);
+            }
+
+            if (antibioticBombChance > 0f)
+            {
+                finalExplosionChance = Mathf.Max(finalExplosionChance, antibioticBombChance);
+            }
 
             SyringeSpecialRuntime runtime = new SyringeSpecialRuntime
             {
-                slowChance = playerCharacter.SlowChance,
-                burnChance = playerCharacter.BurnChance,
-                thermometerEnabled = playerCharacter.HasThermometer,
-                reflectCount = playerCharacter.MouthwashCount,
+                slowChance = playerCharacter != null ? playerCharacter.SlowChance : 0f,
+                burnChance = playerCharacter != null ? playerCharacter.BurnChance : 0f,
+                thermometerEnabled = playerCharacter != null && playerCharacter.HasThermometer,
+                reflectCount = playerCharacter != null ? playerCharacter.MouthwashCount : 0,
+
                 poisonEnabled = poisonEnabled,
                 poisonDuration = poisonDuration,
                 poisonTickInterval = poisonTickInterval,
                 poisonTickDamage = poisonTickDamage,
 
-                explosionEnabled = explosionEnabled || playerCharacter.AntibioticBombChance > 0f,
+                explosionEnabled = finalExplosionChance > 0f,
                 explosionRadius = explosionRadius,
                 explosionDamage = explosionDamage,
-                explosionChance = playerCharacter.AntibioticBombChance,
+                explosionChance = finalExplosionChance,
 
                 homingEnabled = homingEnabled,
                 homingRange = homingRange,
                 homingLerpSpeed = homingLerpSpeed,
 
-                
-                pierceEnabled = pierceEnabled || totalPierceCount > 0,
+                // 핵심 수정:
+                // 관통침 증강을 먹었을 때만 기본 침이 관통한다.
+                // 기본 pierceCount가 2여도 pierceEnabled가 false면 관통하지 않는다.
+                pierceEnabled = pierceEnabled && totalPierceCount > 0,
                 pierceCount = totalPierceCount,
 
                 honeyEnabled = honeyEnabled,
@@ -688,6 +718,8 @@ namespace Vampire
                 mosquitoHealPerHit = mosquitoHealPerHit,
                 mosquitoBossHealMultiplier = mosquitoBossHealMultiplier,
 
+                // 침귀환은 그대로 유지.
+                // 복귀 중에는 SyringeProjectile의 IsReturnMode 로직에 의해 관통 처리된다.
                 returnNeedleEnabled = returnNeedleEnabled,
                 returnNeedleSpeedMultiplier = returnNeedleSpeedMultiplier,
                 returnNeedleDamageMultiplier = returnNeedleDamageMultiplier,

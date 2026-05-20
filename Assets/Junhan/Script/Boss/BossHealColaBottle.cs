@@ -1,4 +1,6 @@
 using System.Collections;
+using System.Collections.Generic;
+using System.Reflection;
 using UnityEngine;
 
 namespace Vampire
@@ -16,18 +18,31 @@ namespace Vampire
         [Tooltip("콜라병 스프라이트 렌더러입니다. 비워두면 자식 오브젝트에서 자동으로 찾습니다.")]
         [SerializeField] private SpriteRenderer spriteRenderer;
 
-        [Tooltip("콜라병 피격 판정 콜라이더입니다. 가능하면 루트가 아니라 자식 Hitbox 오브젝트의 Collider2D를 넣으세요.")]
+        [Tooltip("콜라병 피격 판정 콜라이더입니다. 가능하면 자식 Hitbox 오브젝트의 Collider2D를 넣으세요.")]
         [SerializeField] private Collider2D hitbox;
 
         [Tooltip("콜라병 Rigidbody2D입니다. 비워두면 현재 오브젝트에서 자동으로 찾거나 추가합니다.")]
         [SerializeField] private Rigidbody2D rb;
 
+        [Header("Projectile Hit Detection")]
+        [Tooltip("체크하면 투사체가 콜라병을 targetLayer로 인식하지 못해도, 콜라병 쪽에서 직접 투사체 충돌을 감지해 데미지를 받습니다.")]
+        [SerializeField] private bool acceptProjectileTriggerDamage = true;
+
+        [Tooltip("체크하면 콜라병을 맞춘 플레이어 투사체를 즉시 사라지게 합니다.")]
+        [SerializeField] private bool consumeProjectileOnHit = true;
+
+        [Tooltip("투사체에서 데미지 값을 읽지 못했을 때 사용할 기본 데미지입니다.")]
+        [SerializeField] private float fallbackProjectileDamage = 1f;
+
+        [Tooltip("콜라병이 투사체로 받을 데미지 배율입니다. 1이면 투사체 데미지를 그대로 받습니다.")]
+        [SerializeField] private float projectileDamageMultiplier = 1f;
+
         [Header("Hitbox Auto Setup")]
         [Tooltip("체크하면 Awake에서 자식 Collider2D를 우선으로 찾아 Hitbox에 자동 연결합니다.")]
         [SerializeField] private bool autoFindChildHitbox = true;
 
-        [Tooltip("체크하면 Hitbox가 루트 오브젝트에 붙어 있을 때 경고 로그를 출력합니다. 플레이어 투사체 인식을 위해 자식 Hitbox를 권장합니다.")]
-        [SerializeField] private bool warnIfHitboxIsRoot = true;
+        [Tooltip("체크하면 Hitbox 자식 오브젝트에 BossHealColaBottleHitboxForwarder를 자동으로 붙입니다.")]
+        [SerializeField] private bool autoAddHitboxForwarder = true;
 
         [Header("Hit Flash")]
         [Tooltip("피격 시 잠깐 바꿀 흰색 머티리얼입니다. 없어도 동작합니다.")]
@@ -52,12 +67,15 @@ namespace Vampire
         private bool isDestroyed = false;
         private GameObject runtimeDestroyVfxPrefab;
 
+        private readonly HashSet<int> processedProjectileIds = new HashSet<int>();
+
         public bool IsDestroyed => isDestroyed;
 
         private void Awake()
         {
             ResolveReferences();
             SetupPhysics();
+            SetupHitboxForwarder();
         }
 
         private void ResolveReferences()
@@ -103,15 +121,6 @@ namespace Vampire
             {
                 defaultMaterial = spriteRenderer.sharedMaterial;
             }
-
-            if (warnIfHitboxIsRoot && hitbox != null && hitbox.gameObject == gameObject)
-            {
-                Debug.LogWarning(
-                    "[BossHealColaBottle] Hitbox가 루트 오브젝트에 붙어 있습니다. " +
-                    "일부 투사체는 Collider의 부모에서 IDamageable을 찾기 때문에, " +
-                    "Boss_Heal_ColaBottle 아래에 자식 Hitbox 오브젝트를 만들고 그쪽에 Collider2D를 두는 것을 권장합니다."
-                );
-            }
         }
 
         private void SetupPhysics()
@@ -130,6 +139,24 @@ namespace Vampire
             }
         }
 
+        private void SetupHitboxForwarder()
+        {
+            if (!autoAddHitboxForwarder || hitbox == null)
+            {
+                return;
+            }
+
+            BossHealColaBottleHitboxForwarder forwarder =
+                hitbox.GetComponent<BossHealColaBottleHitboxForwarder>();
+
+            if (forwarder == null)
+            {
+                forwarder = hitbox.gameObject.AddComponent<BossHealColaBottleHitboxForwarder>();
+            }
+
+            forwarder.Init(this);
+        }
+
         public void Setup(
             BossColaBottleHealPattern ownerPattern,
             float hp,
@@ -142,30 +169,76 @@ namespace Vampire
             currentHp = maxHp;
             isDestroyed = false;
             debugLog = enableDebugLog;
+            processedProjectileIds.Clear();
 
             runtimeDestroyVfxPrefab = destroyVfxOverride != null ? destroyVfxOverride : destroyVfxPrefab;
 
             ResolveReferences();
             SetupPhysics();
-
-            if (hitbox != null)
-            {
-                hitbox.enabled = true;
-            }
-
-            if (spriteRenderer != null)
-            {
-                spriteRenderer.enabled = true;
-
-                if (defaultMaterial != null)
-                {
-                    spriteRenderer.sharedMaterial = defaultMaterial;
-                }
-            }
+            SetupHitboxForwarder();
+            ShowBottleVisualAndCollision();
 
             if (debugLog)
             {
                 Debug.Log($"[BossHealColaBottle] 생성 완료 / HP={currentHp}");
+            }
+        }
+
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            ProcessProjectileHit(other);
+        }
+
+        public void ProcessProjectileHit(Collider2D other)
+        {
+            if (!acceptProjectileTriggerDamage)
+            {
+                return;
+            }
+
+            if (isDestroyed || other == null)
+            {
+                return;
+            }
+
+            Projectile projectile = other.GetComponentInParent<Projectile>();
+
+            if (projectile == null)
+            {
+                return;
+            }
+
+            if (IsProjectileDespawning(projectile))
+            {
+                return;
+            }
+
+            int projectileId = projectile.GetInstanceID();
+
+            if (processedProjectileIds.Contains(projectileId))
+            {
+                return;
+            }
+
+            processedProjectileIds.Add(projectileId);
+
+            float projectileDamage = GetFloatField(projectile, "damage", fallbackProjectileDamage);
+            float projectileKnockback = GetFloatField(projectile, "knockback", 0f);
+            Vector2 projectileDirection = GetVector2Field(projectile, "direction", Vector2.zero);
+
+            float finalDamage = Mathf.Max(0f, projectileDamage) * Mathf.Max(0f, projectileDamageMultiplier);
+            Vector2 finalKnockback = projectileKnockback * projectileDirection;
+
+            if (debugLog)
+            {
+                Debug.Log($"[BossHealColaBottle] 투사체 직접 감지 / projectile={projectile.name}, damage={finalDamage}");
+            }
+
+            TakeDamage(finalDamage, finalKnockback);
+
+            if (consumeProjectileOnHit)
+            {
+                TryConsumeProjectile(projectile);
             }
         }
 
@@ -210,12 +283,7 @@ namespace Vampire
             }
 
             isDestroyed = true;
-
-            if (hitbox != null)
-            {
-                hitbox.enabled = false;
-            }
-
+            HideBottleVisualAndCollision();
             Destroy(gameObject);
         }
 
@@ -228,10 +296,7 @@ namespace Vampire
 
             isDestroyed = true;
 
-            if (hitbox != null)
-            {
-                hitbox.enabled = false;
-            }
+            HideBottleVisualAndCollision();
 
             if (runtimeDestroyVfxPrefab != null)
             {
@@ -246,6 +311,70 @@ namespace Vampire
             owner?.NotifyBottleDestroyed(this);
 
             Destroy(gameObject);
+        }
+
+        private void ShowBottleVisualAndCollision()
+        {
+            SpriteRenderer[] renderers = GetComponentsInChildren<SpriteRenderer>(true);
+
+            foreach (SpriteRenderer renderer in renderers)
+            {
+                if (renderer != null)
+                {
+                    renderer.enabled = true;
+                }
+            }
+
+            Collider2D[] colliders = GetComponentsInChildren<Collider2D>(true);
+
+            foreach (Collider2D collider in colliders)
+            {
+                if (collider != null)
+                {
+                    collider.enabled = true;
+                    collider.isTrigger = true;
+                }
+            }
+
+            if (spriteRenderer != null && defaultMaterial != null)
+            {
+                spriteRenderer.sharedMaterial = defaultMaterial;
+            }
+        }
+
+        private void HideBottleVisualAndCollision()
+        {
+            if (hitFlashCoroutine != null)
+            {
+                StopCoroutine(hitFlashCoroutine);
+                hitFlashCoroutine = null;
+            }
+
+            SpriteRenderer[] renderers = GetComponentsInChildren<SpriteRenderer>(true);
+
+            foreach (SpriteRenderer renderer in renderers)
+            {
+                if (renderer != null)
+                {
+                    renderer.enabled = false;
+                }
+            }
+
+            Collider2D[] colliders = GetComponentsInChildren<Collider2D>(true);
+
+            foreach (Collider2D collider in colliders)
+            {
+                if (collider != null)
+                {
+                    collider.enabled = false;
+                }
+            }
+
+            if (rb != null)
+            {
+                rb.velocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+            }
         }
 
         private void PlayHitFlash()
@@ -269,12 +398,159 @@ namespace Vampire
 
             yield return new WaitForSeconds(hitFlashSeconds);
 
-            if (spriteRenderer != null && defaultMaterial != null)
+            if (!isDestroyed && spriteRenderer != null && defaultMaterial != null)
             {
                 spriteRenderer.sharedMaterial = defaultMaterial;
             }
 
             hitFlashCoroutine = null;
+        }
+
+        private static bool IsProjectileDespawning(Projectile projectile)
+        {
+            return GetBoolField(projectile, "isDespawning", false);
+        }
+
+        private static void TryConsumeProjectile(Projectile projectile)
+        {
+            if (projectile == null)
+            {
+                return;
+            }
+
+            MethodInfo destroyMethod = FindMethod(projectile.GetType(), "DestroyProjectile");
+
+            if (destroyMethod != null)
+            {
+                destroyMethod.Invoke(projectile, null);
+                return;
+            }
+
+            projectile.gameObject.SetActive(false);
+        }
+
+        private static float GetFloatField(object target, string fieldName, float fallback)
+        {
+            if (target == null)
+            {
+                return fallback;
+            }
+
+            FieldInfo field = FindField(target.GetType(), fieldName);
+
+            if (field == null || field.FieldType != typeof(float))
+            {
+                return fallback;
+            }
+
+            return (float)field.GetValue(target);
+        }
+
+        private static bool GetBoolField(object target, string fieldName, bool fallback)
+        {
+            if (target == null)
+            {
+                return fallback;
+            }
+
+            FieldInfo field = FindField(target.GetType(), fieldName);
+
+            if (field == null || field.FieldType != typeof(bool))
+            {
+                return fallback;
+            }
+
+            return (bool)field.GetValue(target);
+        }
+
+        private static Vector2 GetVector2Field(object target, string fieldName, Vector2 fallback)
+        {
+            if (target == null)
+            {
+                return fallback;
+            }
+
+            FieldInfo field = FindField(target.GetType(), fieldName);
+
+            if (field == null || field.FieldType != typeof(Vector2))
+            {
+                return fallback;
+            }
+
+            return (Vector2)field.GetValue(target);
+        }
+
+        private static FieldInfo FindField(System.Type type, string fieldName)
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+            System.Type currentType = type;
+
+            while (currentType != null)
+            {
+                FieldInfo field = currentType.GetField(fieldName, flags);
+
+                if (field != null)
+                {
+                    return field;
+                }
+
+                currentType = currentType.BaseType;
+            }
+
+            return null;
+        }
+
+        private static MethodInfo FindMethod(System.Type type, string methodName)
+        {
+            const BindingFlags flags = BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic;
+
+            System.Type currentType = type;
+
+            while (currentType != null)
+            {
+                MethodInfo method = currentType.GetMethod(methodName, flags);
+
+                if (method != null)
+                {
+                    return method;
+                }
+
+                currentType = currentType.BaseType;
+            }
+
+            return null;
+        }
+    }
+
+    public class BossHealColaBottleHitboxForwarder : MonoBehaviour
+    {
+        private BossHealColaBottle owner;
+
+        public void Init(BossHealColaBottle colaBottle)
+        {
+            owner = colaBottle;
+        }
+
+        private void Awake()
+        {
+            if (owner == null)
+            {
+                owner = GetComponentInParent<BossHealColaBottle>();
+            }
+        }
+
+        private void OnTriggerEnter2D(Collider2D other)
+        {
+            if (owner == null)
+            {
+                owner = GetComponentInParent<BossHealColaBottle>();
+            }
+
+            if (owner != null)
+            {
+                owner.ProcessProjectileHit(other);
+            }
         }
     }
 }
