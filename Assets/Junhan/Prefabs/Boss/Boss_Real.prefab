@@ -5030,6 +5030,7 @@ GameObject:
   - component: {fileID: 1671960822479111993}
   - component: {fileID: -3007320843196733932}
   - component: {fileID: 1943931074877483503}
+  - component: {fileID: -2132358606978188551}
   m_Layer: 7
   m_Name: Boss_Real
   m_TagString: Untagged
@@ -5500,6 +5501,48 @@ MonoBehaviour:
   forceMissileSortingOrder: 1
   missileSortingOrder: 560
   debugShot: 0
+--- !u!114 &-2132358606978188551
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8960830493049914446}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4d67eafb7a322bc4888956f4dcd020b1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  patternName: "\uCF5C\uB77C\uBCD1\uD68C\uBCF5\uD328\uD134"
+  cooldown: 40
+  nearWeightPhase1: 100
+  midWeightPhase1: 100
+  farWeightPhase1: 100
+  nearWeightPhase2: 100
+  midWeightPhase2: 100
+  farWeightPhase2: 100
+  nearWeightPhase3: 100
+  midWeightPhase3: 100
+  farWeightPhase3: 100
+  colaBottlePrefab: {fileID: 8778423848610247580, guid: 73ff580fe533a144aa62e9a2a44bdfe3, type: 3}
+  bottleCount: 4
+  spawnDistance: 4.5
+  spawnAngleOffset: 45
+  bottleHp: 100
+  healDelayAfterSpawn: 15
+  healPerSecond: 10
+  healTickInterval: 0.25
+  maxPatternDuration: 0
+  makeBossInvincibleWhileBottleExists: 1
+  allowOtherPatternsWhileBottleExists: 1
+  bottleSpawnVfxPrefab: {fileID: 0}
+  bottleDestroyVfxPrefab: {fileID: 0}
+  bossHealVfxPrefab: {fileID: 0}
+  healVfxInterval: 1
+  forceBottleSortingOrder: 1
+  bottleSortingOrder: 450
+  patternCastSeconds: 0.2
+  debugLog: 1
 --- !u!1001 &6061857700174536434
 PrefabInstance:
   m_ObjectHideFlags: 0
