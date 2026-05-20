@@ -64,40 +64,6 @@ namespace Vampire
             ForceGoldRushOnlyNormalMonsters = onlyNormalMonsters;
             SuppressOriginalCoinDropsDuringGoldRush = suppressOriginalCoinDrops;
 
-            CoinDropAttemptMultiplier = 1f;
-            CoinValueMultiplier = 1f;
-            MaxCoinDropAttempts = 1;
-
-            AdditionalCoinDropChance = 0f;
-            AdditionalCoinDropCount = 0;
-
-            DebugGoldRush = DebugGoldRush || debugGoldRush;
-        }
-
-        public static void ApplyGoldRushModifier(
-            float dropAttemptMultiplier,
-            float valueMultiplier,
-            int maxDropAttempts,
-            float additionalCoinDropChance,
-            int additionalCoinDropCount,
-            CoinType additionalCoinType,
-            bool debugGoldRush)
-        {
-            CoinDropAttemptMultiplier = Mathf.Max(CoinDropAttemptMultiplier, dropAttemptMultiplier);
-            CoinValueMultiplier = Mathf.Max(CoinValueMultiplier, valueMultiplier);
-            MaxCoinDropAttempts = Mathf.Max(MaxCoinDropAttempts, maxDropAttempts);
-
-            AdditionalCoinDropChance = Mathf.Max(
-                AdditionalCoinDropChance,
-                additionalCoinDropChance
-            );
-
-            AdditionalCoinDropCount = Mathf.Max(
-                AdditionalCoinDropCount,
-                additionalCoinDropCount
-            );
-
-            AdditionalCoinType = additionalCoinType;
             DebugGoldRush = DebugGoldRush || debugGoldRush;
         }
 

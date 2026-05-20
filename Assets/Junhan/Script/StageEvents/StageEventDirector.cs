@@ -8,10 +8,10 @@ namespace Vampire
         [System.Serializable]
         public class EventStartTimeRange
         {
-            [Tooltip("이벤트가 시작될 수 있는 최소 시간입니다. 단위는 분입니다. 예: 2 = 2분")]
+            [Tooltip("랜덤 시작 최소 시간입니다. 단위는 분입니다. 2 = 2분")]
             public float minStartMinute = 2f;
 
-            [Tooltip("이벤트가 시작될 수 있는 최대 시간입니다. 단위는 분입니다. 예: 4 = 4분")]
+            [Tooltip("랜덤 시작 최대 시간입니다. 단위는 분입니다. 4 = 4분")]
             public float maxStartMinute = 4f;
 
             public float GetRandomStartTimeSeconds()
@@ -21,33 +21,41 @@ namespace Vampire
 
                 return Random.Range(min, max) * 60f;
             }
+
+            public bool IsValid()
+            {
+                float min = Mathf.Min(minStartMinute, maxStartMinute);
+                float max = Mathf.Max(minStartMinute, maxStartMinute);
+
+                return max > 0f && !Mathf.Approximately(min, max);
+            }
         }
 
         [System.Serializable]
         public class MonsterSurgeEvent
         {
             [Header("Event Info")]
-            [Tooltip("이벤트 이름입니다. UI 알림과 디버그 로그에 표시됩니다.")]
+            [Tooltip("UI에 표시될 이벤트 이름입니다.")]
             public string eventName = "감염 증식";
 
-            [Tooltip("체크되어 있으면 이 이벤트가 발동됩니다.")]
+            [Tooltip("체크되어 있으면 이벤트가 발동됩니다.")]
             public bool enabled = true;
 
             [Header("Timing")]
-            [Tooltip("랜덤 시간 범위를 사용하지 않을 때 사용할 고정 시작 시간입니다. 단위는 초입니다.")]
+            [Tooltip("랜덤 시간을 쓰지 않을 때 사용하는 고정 시작 시간입니다. 단위는 초입니다. 60 = 1분")]
             public float startTime = 60f;
 
             [Tooltip("이벤트 지속 시간입니다. 단위는 초입니다.")]
             public float duration = 15f;
 
-            [Tooltip("체크하면 아래 Start Time Ranges 중 하나를 골라 랜덤 시간에 이벤트를 시작합니다.")]
+            [Tooltip("체크하면 아래 시간 범위 중 하나를 골라 랜덤 시작 시간을 정합니다.")]
             public bool useRandomStartTime = true;
 
-            [Tooltip("이벤트 시작 시간 후보 범위입니다. 단위는 분입니다. 예: 2~4분, 4~6분처럼 여러 개 추가할 수 있습니다.")]
+            [Tooltip("랜덤 시작 시간 범위입니다. 단위는 분입니다. 예: 2~4분, 4~6분")]
             public List<EventStartTimeRange> startTimeRanges = new List<EventStartTimeRange>();
 
-            [Header("Spawn Table Surge")]
-            [Tooltip("현재 시간대의 Monster Spawn Table 비율을 그대로 따라가며, 스폰량을 몇 배로 늘릴지 정합니다. 2면 기존 스폰량만큼 추가 스폰되어 총 2배 느낌입니다.")]
+            [Header("Spawn Surge")]
+            [Tooltip("현재 시간대의 Monster Spawn Table 비율을 그대로 따라가며 스폰량을 몇 배로 늘릴지 정합니다. 2 = 총 2배 느낌")]
             public float spawnMultiplier = 2f;
 
             [Tooltip("기본 스폰률이 너무 낮은 구간에서도 이벤트 체감이 나도록 하는 최소 기준 스폰률입니다.")]
@@ -66,36 +74,36 @@ namespace Vampire
         public class GoldRushEvent
         {
             [Header("Event Info")]
-            [Tooltip("이벤트 이름입니다. UI 알림과 디버그 로그에 표시됩니다.")]
+            [Tooltip("UI에 표시될 이벤트 이름입니다.")]
             public string eventName = "골드 러시";
 
-            [Tooltip("체크되어 있으면 이 이벤트가 발동됩니다.")]
+            [Tooltip("체크되어 있으면 이벤트가 발동됩니다.")]
             public bool enabled = true;
 
             [Header("Timing")]
-            [Tooltip("랜덤 시간 범위를 사용하지 않을 때 사용할 고정 시작 시간입니다. 단위는 초입니다.")]
+            [Tooltip("랜덤 시간을 쓰지 않을 때 사용하는 고정 시작 시간입니다. 단위는 초입니다. 60 = 1분")]
             public float startTime = 30f;
 
             [Tooltip("이벤트 지속 시간입니다. 단위는 초입니다.")]
             public float duration = 15f;
 
-            [Tooltip("체크하면 아래 Start Time Ranges 중 하나를 골라 랜덤 시간에 이벤트를 시작합니다.")]
+            [Tooltip("체크하면 아래 시간 범위 중 하나를 골라 랜덤 시작 시간을 정합니다.")]
             public bool useRandomStartTime = true;
 
-            [Tooltip("이벤트 시작 시간 후보 범위입니다. 단위는 분입니다. 예: 2~4분, 4~6분처럼 여러 개 추가할 수 있습니다.")]
+            [Tooltip("랜덤 시작 시간 범위입니다. 단위는 분입니다. 예: 2~4분, 4~6분")]
             public List<EventStartTimeRange> startTimeRanges = new List<EventStartTimeRange>();
 
             [Header("Guaranteed Gold Drop")]
-            [Tooltip("골드러쉬 중 일반 몬스터 처치 시 강제로 드랍할 코인 종류입니다. 5원짜리 골드는 Gold5입니다.")]
+            [Tooltip("골드러쉬 중 일반 몬스터가 무조건 드랍할 코인입니다. 5원 골드는 Gold5입니다.")]
             public CoinType guaranteedCoinType = CoinType.Gold5;
 
-            [Tooltip("골드러쉬 중 일반 몬스터 1마리당 강제로 드랍할 코인 개수입니다.")]
+            [Tooltip("골드러쉬 중 몬스터 1마리당 강제 드랍할 코인 개수입니다.")]
             public int guaranteedCoinCount = 1;
 
-            [Tooltip("체크하면 EliteMonsterBlueprint가 아닌 일반 몬스터에게만 강제 골드 드랍을 적용합니다.")]
+            [Tooltip("체크하면 일반 몬스터에게만 강제 골드 드랍을 적용하고 엘리트 몬스터는 제외합니다.")]
             public bool applyOnlyToNormalMonsters = true;
 
-            [Tooltip("체크하면 골드러쉬 중 기존 coinLootTable 확률 드랍은 무시하고, 강제 골드만 드랍합니다.")]
+            [Tooltip("체크하면 기존 coinLootTable 확률 드랍은 막고, 강제 Gold5만 드랍합니다.")]
             public bool suppressOriginalCoinDrops = true;
 
             [Header("Runtime")]
@@ -110,64 +118,41 @@ namespace Vampire
         public class AcidSecretionEvent
         {
             [Header("Event Info")]
-            [Tooltip("이벤트 이름입니다. UI 알림과 디버그 로그에 표시됩니다.")]
+            [Tooltip("UI에 표시될 이벤트 이름입니다.")]
             public string eventName = "위산분비";
 
-            [Tooltip("체크되어 있으면 이 이벤트가 발동됩니다.")]
+            [Tooltip("체크되어 있으면 이벤트가 발동됩니다.")]
             public bool enabled = true;
 
             [Header("Timing")]
-            [Tooltip("랜덤 시간 범위를 사용하지 않을 때 사용할 고정 시작 시간입니다. 단위는 초입니다.")]
+            [Tooltip("랜덤 시간을 쓰지 않을 때 사용하는 고정 시작 시간입니다. 단위는 초입니다. 60 = 1분")]
             public float startTime = 45f;
 
             [Tooltip("이벤트 지속 시간입니다. 단위는 초입니다.")]
             public float duration = 15f;
 
-            [Tooltip("체크하면 아래 Start Time Ranges 중 하나를 골라 랜덤 시간에 이벤트를 시작합니다.")]
+            [Tooltip("체크하면 아래 시간 범위 중 하나를 골라 랜덤 시작 시간을 정합니다.")]
             public bool useRandomStartTime = true;
 
-            [Tooltip("이벤트 시작 시간 후보 범위입니다. 단위는 분입니다. 예: 2~4분, 4~6분처럼 여러 개 추가할 수 있습니다.")]
+            [Tooltip("랜덤 시작 시간 범위입니다. 단위는 분입니다. 예: 2~4분, 4~6분")]
             public List<EventStartTimeRange> startTimeRanges = new List<EventStartTimeRange>();
 
             [Header("Acid Puddle")]
-            [Tooltip("필드에 생성할 산성판 프리팹입니다.")]
             public GameObject acidPuddlePrefab;
-
-            [Tooltip("산성판 웨이브가 생성되는 간격입니다. 단위는 초입니다.")]
             public float puddleSpawnInterval = 1f;
-
-            [Tooltip("한 번에 생성할 산성판 개수입니다.")]
             public int puddlesPerWave = 3;
-
-            [Tooltip("동시에 유지될 수 있는 산성판 최대 개수입니다.")]
             public int maxActivePuddles = 12;
-
-            [Tooltip("플레이어로부터 산성판이 생성될 최소 거리입니다.")]
             public float minSpawnDistanceFromPlayer = 1.2f;
-
-            [Tooltip("플레이어로부터 산성판이 생성될 최대 거리입니다.")]
             public float maxSpawnDistanceFromPlayer = 6f;
-
-            [Tooltip("산성판 유지 시간입니다. 단위는 초입니다.")]
             public float puddleLifeTime = 6f;
-
-            [Tooltip("산성판 틱당 데미지입니다.")]
             public float puddleDamagePerTick = 3f;
-
-            [Tooltip("산성판 데미지 틱 간격입니다. 단위는 초입니다.")]
             public float puddleTickInterval = 0.5f;
-
-            [Tooltip("산성판 크기 배율입니다.")]
             public float puddleScale = 1.6f;
-
-            [Tooltip("산성판이 실제 데미지를 주기 전 경고 시간입니다. 단위는 초입니다.")]
             public float puddleWarningDuration = 0.4f;
-
-            [Tooltip("체크하면 플레이어가 산성판에 들어가는 즉시 데미지 틱을 발생시킵니다.")]
             public bool damageImmediatelyOnEnter = false;
 
             [Header("Acid Slime Spawn")]
-            [Tooltip("위산 슬라임으로 사용할 몬스터 flatIndex 목록입니다. 아직 위산 슬라임이 없다면 테스트용으로 저등급 몬스터 index를 넣어도 됩니다.")]
+            [Tooltip("위산 슬라임으로 사용할 몬스터 flatIndex 목록입니다.")]
             public List<int> acidSlimeMonsterIndices = new List<int>();
 
             [Tooltip("위산 이벤트 중 추가 슬라임 스폰량 배수입니다.")]
@@ -176,14 +161,11 @@ namespace Vampire
             [Tooltip("기본 스폰률이 너무 낮은 구간에서도 위산 슬라임이 나오도록 하는 최소 기준 스폰률입니다.")]
             public float acidSlimeMinimumReferenceSpawnRate = 1f;
 
-            [Tooltip("위산 슬라임의 HP 보정값입니다. 기존 SpawnRandomMonsterFromFlatIndexList 로직을 그대로 사용합니다.")]
+            [Tooltip("위산 슬라임 HP 배율입니다.")]
             public float acidSlimeHpMultiplier = 1f;
 
             [Header("Reward")]
-            [Tooltip("이벤트 종료 시 보상을 지급할지 여부입니다.")]
             public bool rewardOnEnd = true;
-
-            [Tooltip("체크하면 이벤트 종료 시 임시 아이템 보상용 Chest를 생성합니다.")]
             public bool spawnChestAsTemporaryItemReward = true;
 
             [Header("Runtime")]
@@ -201,11 +183,11 @@ namespace Vampire
         [Header("References")]
         [SerializeField] private LevelManager levelManager;
 
-        [Tooltip("이벤트 시작 UI 알림을 담당하는 컴포넌트입니다. 비워두면 Debug.Log만 출력됩니다.")]
+        [Tooltip("이벤트 시작 알림 UI입니다.")]
         [SerializeField] private StageEventToastUI eventToastUI;
 
         [Header("UI Message")]
-        [Tooltip("{0} 위치에 이벤트 이름이 들어갑니다. 예: 골드 러시 이벤트가 시작됐습니다!")]
+        [Tooltip("{0} 위치에 이벤트 이름이 들어갑니다.")]
         [SerializeField] private string eventStartMessageFormat = "{0} 이벤트가 시작됐습니다!";
 
         [Header("1. Monster Surge Events")]
@@ -236,7 +218,7 @@ namespace Vampire
                 eventToastUI = FindObjectOfType<StageEventToastUI>();
             }
 
-            PrepareAllEventRuntimeValues();
+            PrepareAllEvents();
 
             if (levelManager != null && logMonsterIndexTableOnStart)
             {
@@ -271,7 +253,7 @@ namespace Vampire
             }
         }
 
-        private void PrepareAllEventRuntimeValues()
+        private void PrepareAllEvents()
         {
             foreach (MonsterSurgeEvent surgeEvent in monsterSurgeEvents)
             {
@@ -284,6 +266,7 @@ namespace Vampire
                 surgeEvent.finished = false;
                 surgeEvent.spawnAccumulator = 0f;
                 surgeEvent.resolvedStartTime = ResolveStartTime(
+                    surgeEvent.eventName,
                     surgeEvent.startTime,
                     surgeEvent.useRandomStartTime,
                     surgeEvent.startTimeRanges
@@ -300,6 +283,7 @@ namespace Vampire
                 goldRushEvent.started = false;
                 goldRushEvent.finished = false;
                 goldRushEvent.resolvedStartTime = ResolveStartTime(
+                    goldRushEvent.eventName,
                     goldRushEvent.startTime,
                     goldRushEvent.useRandomStartTime,
                     goldRushEvent.startTimeRanges
@@ -319,6 +303,7 @@ namespace Vampire
                 acidEvent.puddleSpawnTimer = 0f;
                 acidEvent.acidSlimeAccumulator = 0f;
                 acidEvent.resolvedStartTime = ResolveStartTime(
+                    acidEvent.eventName,
                     acidEvent.startTime,
                     acidEvent.useRandomStartTime,
                     acidEvent.startTimeRanges
@@ -336,23 +321,51 @@ namespace Vampire
         }
 
         private float ResolveStartTime(
+            string eventName,
             float fallbackStartTime,
             bool useRandomStartTime,
             List<EventStartTimeRange> ranges)
         {
-            if (!useRandomStartTime || ranges == null || ranges.Count == 0)
+            if (!useRandomStartTime)
             {
                 return Mathf.Max(0f, fallbackStartTime);
             }
 
-            EventStartTimeRange selectedRange = ranges[Random.Range(0, ranges.Count)];
+            List<EventStartTimeRange> validRanges = new List<EventStartTimeRange>();
 
-            if (selectedRange == null)
+            if (ranges != null)
             {
+                for (int i = 0; i < ranges.Count; i++)
+                {
+                    if (ranges[i] != null && ranges[i].IsValid())
+                    {
+                        validRanges.Add(ranges[i]);
+                    }
+                }
+            }
+
+            if (validRanges.Count == 0)
+            {
+                Debug.LogWarning(
+                    $"[StageEvent] {eventName}: Use Random Start Time이 켜져 있지만 유효한 Start Time Range가 없습니다. " +
+                    $"fallback Start Time {fallbackStartTime:F1}초를 사용합니다. 1분은 60초입니다."
+                );
+
                 return Mathf.Max(0f, fallbackStartTime);
             }
 
-            return Mathf.Max(0f, selectedRange.GetRandomStartTimeSeconds());
+            EventStartTimeRange selectedRange = validRanges[Random.Range(0, validRanges.Count)];
+            float resolvedTime = selectedRange.GetRandomStartTimeSeconds();
+
+            if (logEventState)
+            {
+                Debug.Log(
+                    $"[StageEvent] {eventName} random start resolved: {resolvedTime:F1}s " +
+                    $"({resolvedTime / 60f:F2}min)"
+                );
+            }
+
+            return Mathf.Max(0f, resolvedTime);
         }
 
         private void UpdateMonsterSurgeEvent(MonsterSurgeEvent surgeEvent, float currentTime)
@@ -377,9 +390,7 @@ namespace Vampire
                 {
                     Debug.Log(
                         $"[StageEvent] Start: {surgeEvent.eventName} | " +
-                        $"time={currentTime:F1}s | " +
-                        $"planned={surgeEvent.resolvedStartTime:F1}s | " +
-                        $"duration={surgeEvent.duration:F1}s"
+                        $"time={currentTime:F1}s | planned={surgeEvent.resolvedStartTime:F1}s | duration={surgeEvent.duration:F1}s"
                     );
                 }
             }
@@ -423,9 +434,7 @@ namespace Vampire
                 {
                     Debug.Log(
                         $"[StageEvent] Monster Surge Extra Spawn | " +
-                        $"baseRate={baseSpawnRate:F2} | " +
-                        $"multiplier={surgeEvent.spawnMultiplier:F2} | " +
-                        $"extraRate={extraSpawnRate:F2}"
+                        $"baseRate={baseSpawnRate:F2} | multiplier={surgeEvent.spawnMultiplier:F2} | extraRate={extraSpawnRate:F2}"
                     );
                 }
             }
@@ -452,9 +461,7 @@ namespace Vampire
                 {
                     Debug.Log(
                         $"[StageEvent] Start: {goldRushEvent.eventName} | " +
-                        $"time={currentTime:F1}s | " +
-                        $"planned={goldRushEvent.resolvedStartTime:F1}s | " +
-                        $"duration={goldRushEvent.duration:F1}s"
+                        $"time={currentTime:F1}s | planned={goldRushEvent.resolvedStartTime:F1}s | duration={goldRushEvent.duration:F1}s"
                     );
                 }
             }
@@ -478,17 +485,6 @@ namespace Vampire
                 goldRushEvent.suppressOriginalCoinDrops,
                 logGoldRushModifier
             );
-
-            if (logGoldRushModifier)
-            {
-                Debug.Log(
-                    $"[StageEvent] GoldRush Active | " +
-                    $"coin={StageEventRuntimeModifiers.ForcedGoldRushCoinType} | " +
-                    $"count={StageEventRuntimeModifiers.ForcedGoldRushCoinCount} | " +
-                    $"normalOnly={StageEventRuntimeModifiers.ForceGoldRushOnlyNormalMonsters} | " +
-                    $"suppressOriginal={StageEventRuntimeModifiers.SuppressOriginalCoinDropsDuringGoldRush}"
-                );
-            }
         }
 
         private void UpdateAcidSecretionEvent(AcidSecretionEvent acidEvent, float currentTime)
@@ -514,9 +510,7 @@ namespace Vampire
                 {
                     Debug.Log(
                         $"[StageEvent] Start: {acidEvent.eventName} | " +
-                        $"time={currentTime:F1}s | " +
-                        $"planned={acidEvent.resolvedStartTime:F1}s | " +
-                        $"duration={acidEvent.duration:F1}s"
+                        $"time={currentTime:F1}s | planned={acidEvent.resolvedStartTime:F1}s | duration={acidEvent.duration:F1}s"
                     );
                 }
             }
@@ -712,7 +706,7 @@ namespace Vampire
 
         private void ShowEventStartedUI(string eventName)
         {
-            string safeEventName = string.IsNullOrWhiteSpace(eventName)
+            string safeEventName = string.IsNullOrEmpty(eventName)
                 ? "스테이지"
                 : eventName;
 
@@ -751,7 +745,7 @@ namespace Vampire
             }
 
             StageEventRuntimeModifiers.ResetCoinModifiers();
-            PrepareAllEventRuntimeValues();
+            PrepareAllEvents();
 
             Debug.Log("[StageEvent] Runtime reset complete.");
         }

@@ -473,7 +473,7 @@ GameObject:
   - component: {fileID: 46124795}
   - component: {fileID: 46124794}
   m_Layer: 5
-  m_Name: Background
+  m_Name: ToastPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -10878,7 +10878,7 @@ MonoBehaviour:
   monsterSurgeEvents:
   - eventName: "\uAC10\uC5FC \uC99D\uC2DD"
     enabled: 1
-    startTime: 1
+    startTime: 999
     duration: 40
     useRandomStartTime: 1
     startTimeRanges:
@@ -10895,7 +10895,7 @@ MonoBehaviour:
   goldRushEvents:
   - eventName: "\uACE8\uB4DC \uB7EC\uC2DC"
     enabled: 1
-    startTime: 1
+    startTime: 999
     duration: 30
     useRandomStartTime: 1
     startTimeRanges:
@@ -10913,7 +10913,7 @@ MonoBehaviour:
   acidSecretionEvents:
   - eventName: "\uC704\uC0B0\uBD84\uBE44"
     enabled: 1
-    startTime: 1
+    startTime: 999
     duration: 30
     useRandomStartTime: 1
     startTimeRanges:

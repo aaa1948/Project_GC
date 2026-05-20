@@ -7,27 +7,26 @@ namespace Vampire
     public class StageEventToastUI : MonoBehaviour
     {
         [Header("References")]
-        [Tooltip("이벤트 알림 전체 패널입니다. 비워두면 이 스크립트가 붙은 오브젝트를 사용합니다.")]
+        [Tooltip("실제로 보이고 사라질 알림 패널입니다. 가능하면 이 스크립트가 붙은 오브젝트의 자식 오브젝트를 연결하세요.")]
         [SerializeField] private GameObject panelRoot;
 
-        [Tooltip("알림 UI를 부드럽게 보이고 숨기기 위한 CanvasGroup입니다.")]
+        [Tooltip("패널과 그 자식 UI 전체를 숨기기 위한 CanvasGroup입니다. Panel Root에 붙어 있어야 합니다.")]
         [SerializeField] private CanvasGroup canvasGroup;
 
-        [Tooltip("이벤트 시작 문구를 표시할 TextMeshProUGUI 텍스트입니다.")]
+        [Tooltip("이벤트 시작 문구를 표시할 TMP 텍스트입니다.")]
         [SerializeField] private TextMeshProUGUI messageText;
 
         [Header("Timing")]
-        [Tooltip("알림이 완전히 보인 상태로 유지되는 시간입니다. 2로 두면 약 2초 동안 표시됩니다.")]
+        [Tooltip("알림이 완전히 보인 상태로 유지되는 시간입니다.")]
         [SerializeField] private float visibleDuration = 2f;
 
-        [Tooltip("알림이 나타나는 페이드 인 시간입니다.")]
+        [Tooltip("알림이 나타나는 시간입니다.")]
         [SerializeField] private float fadeInDuration = 0.15f;
 
-        [Tooltip("알림이 사라지는 페이드 아웃 시간입니다.")]
+        [Tooltip("알림이 사라지는 시간입니다.")]
         [SerializeField] private float fadeOutDuration = 0.35f;
 
         [Header("Debug")]
-        [Tooltip("체크하면 알림 표시 로그를 Console에 출력합니다.")]
         [SerializeField] private bool debugLog = false;
 
         private Coroutine showRoutine;
@@ -45,8 +44,8 @@ namespace Vampire
             if (!gameObject.activeInHierarchy)
             {
                 Debug.LogWarning(
-                    "[StageEventToastUI] 이 오브젝트가 비활성화되어 있어 알림 코루틴을 실행할 수 없습니다. " +
-                    "StageEventToastUI가 붙은 오브젝트는 항상 활성화 상태로 두세요.",
+                    "[StageEventToastUI] StageEventToastUI가 붙은 오브젝트가 꺼져 있습니다. " +
+                    "이 오브젝트는 항상 활성화 상태로 두고, Panel Root만 숨기세요.",
                     this
                 );
 
@@ -78,12 +77,12 @@ namespace Vampire
                 panelRoot = gameObject;
             }
 
-            if (canvasGroup == null)
+            if (canvasGroup == null && panelRoot != null)
             {
                 canvasGroup = panelRoot.GetComponent<CanvasGroup>();
             }
 
-            if (canvasGroup == null)
+            if (canvasGroup == null && panelRoot != null)
             {
                 canvasGroup = panelRoot.AddComponent<CanvasGroup>();
             }
@@ -97,7 +96,7 @@ namespace Vampire
             }
 
             yield return Fade(0f, 1f, fadeInDuration);
-            yield return new WaitForSeconds(visibleDuration);
+            yield return new WaitForSecondsRealtime(visibleDuration);
             yield return Fade(1f, 0f, fadeOutDuration);
 
             HideImmediate();
@@ -121,7 +120,7 @@ namespace Vampire
 
             while (timer < duration)
             {
-                timer += Time.deltaTime;
+                timer += Time.unscaledDeltaTime;
                 float t = Mathf.Clamp01(timer / duration);
                 SetAlpha(Mathf.Lerp(from, to, t));
                 yield return null;
@@ -138,7 +137,7 @@ namespace Vampire
             }
 
             canvasGroup.alpha = alpha;
-            canvasGroup.interactable = alpha > 0.01f;
+            canvasGroup.interactable = false;
             canvasGroup.blocksRaycasts = false;
         }
 
@@ -146,9 +145,9 @@ namespace Vampire
         {
             SetAlpha(0f);
 
-            if (panelRoot != null)
+            if (panelRoot != null && panelRoot != gameObject)
             {
-                panelRoot.SetActive(true);
+                panelRoot.SetActive(false);
             }
         }
     }
