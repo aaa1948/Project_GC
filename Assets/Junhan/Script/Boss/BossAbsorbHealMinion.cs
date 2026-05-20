@@ -359,12 +359,28 @@ namespace Vampire
                 return;
             }
 
-            Projectile projectile = other.GetComponentInParent<Projectile>();
+            // 핵심 수정:
+            // 흡수 몬스터는 플레이어의 침 투사체만 맞아야 한다.
+            // SniperBulletProjectile 같은 적 탄환도 Projectile을 상속할 수 있으므로,
+            // Projectile 전체를 허용하면 적 탄환이 흡수 몬스터를 대신 잡아버리는 문제가 생긴다.
+            SyringeProjectile syringeProjectile = other.GetComponentInParent<SyringeProjectile>();
 
-            if (projectile == null)
+            if (syringeProjectile == null)
             {
+                if (debugLog)
+                {
+                    Projectile ignoredProjectile = other.GetComponentInParent<Projectile>();
+
+                    if (ignoredProjectile != null)
+                    {
+                        Debug.Log($"[BossAbsorbHealMinion] 플레이어 침이 아닌 투사체 무시 / projectile={ignoredProjectile.name}");
+                    }
+                }
+
                 return;
             }
+
+            Projectile projectile = syringeProjectile;
 
             if (IsProjectileDespawning(projectile))
             {
@@ -389,7 +405,7 @@ namespace Vampire
 
             if (debugLog)
             {
-                Debug.Log($"[BossAbsorbHealMinion] 투사체 직접 감지 / projectile={projectile.name}, damage={finalDamage}");
+                Debug.Log($"[BossAbsorbHealMinion] 플레이어 침 직접 감지 / projectile={projectile.name}, damage={finalDamage}");
             }
 
             TakeDamage(finalDamage, finalKnockback);
