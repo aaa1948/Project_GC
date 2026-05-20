@@ -17,16 +17,17 @@ namespace Vampire
         [SerializeField] private TextMeshProUGUI messageText;
 
         [Header("Timing")]
-        [Tooltip("알림이 완전히 보인 상태로 유지되는 시간입니다.")]
+        [Tooltip("알림이 완전히 보인 상태로 유지되는 시간입니다. 2로 두면 약 2초 동안 표시됩니다.")]
         [SerializeField] private float visibleDuration = 2f;
 
-        [Tooltip("알림이 나타나는 시간입니다.")]
+        [Tooltip("알림이 나타나는 페이드 인 시간입니다.")]
         [SerializeField] private float fadeInDuration = 0.15f;
 
-        [Tooltip("알림이 사라지는 시간입니다.")]
+        [Tooltip("알림이 사라지는 페이드 아웃 시간입니다.")]
         [SerializeField] private float fadeOutDuration = 0.35f;
 
         [Header("Debug")]
+        [Tooltip("체크하면 알림 표시/숨김 로그를 Console에 출력합니다.")]
         [SerializeField] private bool debugLog = false;
 
         private Coroutine showRoutine;
@@ -37,6 +38,15 @@ namespace Vampire
             HideImmediate();
         }
 
+        private void OnDisable()
+        {
+            if (showRoutine != null)
+            {
+                StopCoroutine(showRoutine);
+                showRoutine = null;
+            }
+        }
+
         public void Show(string message)
         {
             InitializeReferences();
@@ -44,16 +54,22 @@ namespace Vampire
             if (!gameObject.activeInHierarchy)
             {
                 Debug.LogWarning(
-                    "[StageEventToastUI] StageEventToastUI가 붙은 오브젝트가 꺼져 있습니다. " +
-                    "이 오브젝트는 항상 활성화 상태로 두고, Panel Root만 숨기세요.",
+                    "[StageEventToastUI] StageEventToastUI가 붙은 오브젝트가 비활성화되어 있습니다. " +
+                    "이 오브젝트는 항상 활성화 상태로 두고, Panel Root만 꺼지게 하세요.",
                     this
                 );
 
                 return;
             }
 
+            if (panelRoot != null && !panelRoot.activeSelf)
+            {
+                panelRoot.SetActive(true);
+            }
+
             if (messageText != null)
             {
+                messageText.enabled = true;
                 messageText.text = message;
             }
 
@@ -90,10 +106,7 @@ namespace Vampire
 
         private IEnumerator ShowRoutine()
         {
-            if (panelRoot != null && !panelRoot.activeSelf)
-            {
-                panelRoot.SetActive(true);
-            }
+            SetAlpha(0f);
 
             yield return Fade(0f, 1f, fadeInDuration);
             yield return new WaitForSecondsRealtime(visibleDuration);
@@ -145,9 +158,22 @@ namespace Vampire
         {
             SetAlpha(0f);
 
+            if (messageText != null)
+            {
+                messageText.enabled = false;
+            }
+
+            // 중요:
+            // panelRoot가 이 스크립트가 붙은 자기 자신이면 끄면 안 된다.
+            // 자기 자신을 끄면 Show 코루틴을 다시 실행할 수 없기 때문.
             if (panelRoot != null && panelRoot != gameObject)
             {
                 panelRoot.SetActive(false);
+            }
+
+            if (debugLog)
+            {
+                Debug.Log("[StageEventToastUI] HideImmediate", this);
             }
         }
     }

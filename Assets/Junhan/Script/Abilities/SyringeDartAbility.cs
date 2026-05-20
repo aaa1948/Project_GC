@@ -476,6 +476,12 @@ namespace Vampire
 
             // 대물침은 침귀환과 무관하게 기존 차지샷으로 작동해야 하므로 귀환 효과를 강제로 끈다.
             runtime.returnNeedleEnabled = false;
+
+            // 대물침은 전설 차지샷이므로 유도침 증강의 영향을 받지 않는다.
+            // 유도침을 보유하고 있어도 대물침은 발사 시점의 aimDirection 그대로 직선 비행한다.
+            runtime.homingEnabled = false;
+            runtime.homingLerpSpeed = 0f;
+
             runtime.pierceEnabled = true;
             runtime.pierceCount = stats.unlimitedPierce ? int.MaxValue : stats.pierceCount;
             runtime.rangeBonus += stats.rangeBonus;
