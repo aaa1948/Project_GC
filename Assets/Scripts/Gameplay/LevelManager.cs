@@ -154,6 +154,10 @@ namespace Vampire
 
             SpawnMonsterByFlatIndex(monsterIndex, hpMultiplier);
         }
+        public void SpawnMonsterFromCurrentSpawnTable()
+        {
+            SpawnMonsterFromSpawnTable();
+        }
 
         private void HandleBossSpawn()
         {

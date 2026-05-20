@@ -12,16 +12,23 @@ namespace Vampire
         public static int AdditionalCoinDropCount { get; private set; } = 0;
         public static CoinType AdditionalCoinType { get; private set; } = CoinType.Bronze1;
 
+        public static bool ForceGoldRushCoinDrop { get; private set; } = false;
+        public static CoinType ForcedGoldRushCoinType { get; private set; } = CoinType.Gold5;
+        public static int ForcedGoldRushCoinCount { get; private set; } = 0;
+        public static bool ForceGoldRushOnlyNormalMonsters { get; private set; } = true;
+        public static bool SuppressOriginalCoinDropsDuringGoldRush { get; private set; } = true;
+
         public static bool DebugGoldRush { get; private set; } = false;
 
         public static bool GoldRushActive
         {
             get
             {
-                return CoinDropAttemptMultiplier > 1f
-                    || CoinValueMultiplier > 1f
-                    || AdditionalCoinDropChance > 0f
-                    || AdditionalCoinDropCount > 0;
+                return CoinDropAttemptMultiplier > 1f ||
+                       CoinValueMultiplier > 1f ||
+                       AdditionalCoinDropChance > 0f ||
+                       AdditionalCoinDropCount > 0 ||
+                       ForceGoldRushCoinDrop;
             }
         }
 
@@ -35,7 +42,36 @@ namespace Vampire
             AdditionalCoinDropCount = 0;
             AdditionalCoinType = CoinType.Bronze1;
 
+            ForceGoldRushCoinDrop = false;
+            ForcedGoldRushCoinType = CoinType.Gold5;
+            ForcedGoldRushCoinCount = 0;
+            ForceGoldRushOnlyNormalMonsters = true;
+            SuppressOriginalCoinDropsDuringGoldRush = true;
+
             DebugGoldRush = false;
+        }
+
+        public static void ApplyGoldRushForcedCoinDrop(
+            CoinType forcedCoinType,
+            int forcedCoinCount,
+            bool onlyNormalMonsters,
+            bool suppressOriginalCoinDrops,
+            bool debugGoldRush)
+        {
+            ForceGoldRushCoinDrop = true;
+            ForcedGoldRushCoinType = forcedCoinType;
+            ForcedGoldRushCoinCount = Mathf.Max(1, forcedCoinCount);
+            ForceGoldRushOnlyNormalMonsters = onlyNormalMonsters;
+            SuppressOriginalCoinDropsDuringGoldRush = suppressOriginalCoinDrops;
+
+            CoinDropAttemptMultiplier = 1f;
+            CoinValueMultiplier = 1f;
+            MaxCoinDropAttempts = 1;
+
+            AdditionalCoinDropChance = 0f;
+            AdditionalCoinDropCount = 0;
+
+            DebugGoldRush = DebugGoldRush || debugGoldRush;
         }
 
         public static void ApplyGoldRushModifier(
@@ -51,17 +87,43 @@ namespace Vampire
             CoinValueMultiplier = Mathf.Max(CoinValueMultiplier, valueMultiplier);
             MaxCoinDropAttempts = Mathf.Max(MaxCoinDropAttempts, maxDropAttempts);
 
-            AdditionalCoinDropChance = Mathf.Max(AdditionalCoinDropChance, additionalCoinDropChance);
-            AdditionalCoinDropCount = Mathf.Max(AdditionalCoinDropCount, additionalCoinDropCount);
-            AdditionalCoinType = additionalCoinType;
+            AdditionalCoinDropChance = Mathf.Max(
+                AdditionalCoinDropChance,
+                additionalCoinDropChance
+            );
 
+            AdditionalCoinDropCount = Mathf.Max(
+                AdditionalCoinDropCount,
+                additionalCoinDropCount
+            );
+
+            AdditionalCoinType = additionalCoinType;
             DebugGoldRush = DebugGoldRush || debugGoldRush;
+        }
+
+        public static bool ShouldForceGoldRushCoinDrop(bool isEliteMonster)
+        {
+            if (!ForceGoldRushCoinDrop)
+            {
+                return false;
+            }
+
+            if (ForcedGoldRushCoinCount <= 0)
+            {
+                return false;
+            }
+
+            if (ForceGoldRushOnlyNormalMonsters && isEliteMonster)
+            {
+                return false;
+            }
+
+            return true;
         }
 
         public static int GetCoinDropAttemptCount()
         {
             float multiplier = Mathf.Max(1f, CoinDropAttemptMultiplier);
-
             int guaranteedAttempts = Mathf.FloorToInt(multiplier);
             float fractionalChance = multiplier - guaranteedAttempts;
 
@@ -93,6 +155,7 @@ namespace Vampire
         public static int ApplyCoinValueMultiplier(int baseValue)
         {
             float multiplier = Mathf.Max(1f, CoinValueMultiplier);
+
             return Mathf.Max(1, Mathf.RoundToInt(baseValue * multiplier));
         }
     }

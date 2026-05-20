@@ -501,20 +501,49 @@ namespace Vampire
                 entityManager.SpawnExpGem((Vector2)transform.position, gemType);
             }
 
-            TryDropCoinsWithStageEventModifier(lootBlueprint);
+            TryDropCoinsWithStageEventModifier();
             TryDropEliteExtraCoins();
         }
 
-        private void TryDropCoinsWithStageEventModifier(MonsterBlueprint lootBlueprint)
+        private void TryDropCoinsWithStageEventModifier()
         {
+            bool isEliteMonster = monsterBlueprint is EliteMonsterBlueprint;
+
+            if (StageEventRuntimeModifiers.ShouldForceGoldRushCoinDrop(isEliteMonster))
+            {
+                int forcedCoinCount = Mathf.Max(1, StageEventRuntimeModifiers.ForcedGoldRushCoinCount);
+
+                for (int i = 0; i < forcedCoinCount; i++)
+                {
+                    entityManager.SpawnCoin(
+                        (Vector2)transform.position,
+                        StageEventRuntimeModifiers.ForcedGoldRushCoinType
+                    );
+                }
+
+                if (StageEventRuntimeModifiers.DebugGoldRush)
+                {
+                    Debug.Log(
+                        $"[GoldRush] Forced coin dropped | " +
+                        $"type={StageEventRuntimeModifiers.ForcedGoldRushCoinType} | " +
+                        $"count={forcedCoinCount} | " +
+                        $"monster={monsterBlueprint.name}"
+                    );
+                }
+
+                if (StageEventRuntimeModifiers.SuppressOriginalCoinDropsDuringGoldRush)
+                {
+                    return;
+                }
+            }
+
             int dropAttempts = StageEventRuntimeModifiers.GetCoinDropAttemptCount();
             int droppedCoinCount = 0;
 
             for (int i = 0; i < dropAttempts; i++)
             {
-                if (lootBlueprint != null &&
-                    lootBlueprint.coinLootTable != null &&
-                    lootBlueprint.coinLootTable.TryDropLoot(out CoinType coinType))
+                if (monsterBlueprint.coinLootTable != null &&
+                    monsterBlueprint.coinLootTable.TryDropLoot(out CoinType coinType))
                 {
                     entityManager.SpawnCoin((Vector2)transform.position, coinType);
                     droppedCoinCount++;
@@ -539,7 +568,6 @@ namespace Vampire
                 Debug.Log($"[GoldRush] Coin dropped | count={droppedCoinCount}");
             }
         }
-
         private void TryDropEliteExtraCoins()
         {
             EliteMonsterBlueprint eliteBlueprint = monsterBlueprint as EliteMonsterBlueprint;
