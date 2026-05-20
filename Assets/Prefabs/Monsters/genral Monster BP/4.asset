@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: 4
   m_EditorClassIdentifier: 
   name: 4
-  hp: 200
+  hp: 250
   atk: 5
   recovery: 0
   armor: 0
@@ -23,24 +23,27 @@ MonoBehaviour:
   gemLootTable:
     lootTable:
     - item: 2
-      dropChance: 0.3
+      dropChance: 0.6
+      coinType: 1
+    - item: 10
+      dropChance: 0.4
       coinType: 1
   coinLootTable:
     lootTable:
     - item: 1
-      dropChance: 0.15
+      dropChance: 0
       coinType: 1
     - item: 2
-      dropChance: 0.03
+      dropChance: 0.2
       coinType: 1
     - item: 5
-      dropChance: 0.01
+      dropChance: 0.8
       coinType: 1
   walkSpriteSequence:
-  - {fileID: 917104541, guid: d6a1eaefc567d4af7931ddc84b58ffa8, type: 3}
-  - {fileID: -1159827789, guid: d6a1eaefc567d4af7931ddc84b58ffa8, type: 3}
-  - {fileID: -1498753039, guid: d6a1eaefc567d4af7931ddc84b58ffa8, type: 3}
-  - {fileID: -1711853846, guid: d6a1eaefc567d4af7931ddc84b58ffa8, type: 3}
+  - {fileID: -793115464, guid: 84a0dbcfc80889744be3a850543b1514, type: 3}
+  - {fileID: -769479820, guid: 84a0dbcfc80889744be3a850543b1514, type: 3}
+  - {fileID: -278130288, guid: 84a0dbcfc80889744be3a850543b1514, type: 3}
+  - {fileID: 186094837, guid: 84a0dbcfc80889744be3a850543b1514, type: 3}
   walkFrameTime: 0.2
   meleeLayer:
     serializedVersion: 2

@@ -11,7 +11,6 @@ namespace Vampire
     public class SugarCubeMonster : MeleeMonster
     {
         private SugarCubeMonsterBlueprint sugarCubeBlueprint;
-
         private Vector3 originalLocalScale = Vector3.one;
         private float lastHpBuff = 0f;
         private bool splitSpawned = false;
@@ -42,7 +41,9 @@ namespace Vampire
 
             if (incomingSugarCubeBlueprint != null)
             {
-                float scaleMultiplier = Mathf.Max(0.05f, incomingSugarCubeBlueprint.visualScaleMultiplier);
+                float scaleMultiplier =
+                    Mathf.Max(0.05f, incomingSugarCubeBlueprint.visualScaleMultiplier);
+
                 transform.localScale = originalLocalScale * scaleMultiplier;
             }
             else
@@ -59,13 +60,15 @@ namespace Vampire
             if (sugarCubeBlueprint == null)
             {
                 Debug.LogError(
-                    "[SugarCubeMonster] SugarCubeMonsterBlueprint가 연결되지 않았습니다. " +
+                    "[SugarCubeMonster] SugarCubeMonsterBlueprint가 연결되지 않았습니다.\n" +
                     "SugarCubeMonster 프리팹에는 Sugar Cube Monster Blueprint를 넣어야 합니다.",
                     this
                 );
 
                 return;
             }
+
+            ApplySugarCubeWalkAnimation();
 
             if (sugarCubeBlueprint.debugLog)
             {
@@ -83,7 +86,6 @@ namespace Vampire
         public override IEnumerator Killed(bool killedByPlayer = true)
         {
             TrySpawnSplitChildren(killedByPlayer);
-
             yield return base.Killed(killedByPlayer);
         }
 
@@ -95,6 +97,82 @@ namespace Vampire
             }
 
             base.DropLoot();
+        }
+
+        private void ApplySugarCubeWalkAnimation()
+        {
+            if (sugarCubeBlueprint == null)
+            {
+                return;
+            }
+
+            Sprite[] sprites = sugarCubeBlueprint.GetEffectiveWalkSpriteSequence();
+            float frameTime = sugarCubeBlueprint.GetEffectiveWalkFrameTime();
+
+            if (sprites == null || sprites.Length == 0)
+            {
+                return;
+            }
+
+            Sprite firstSprite = GetFirstValidSprite(sprites);
+
+            if (firstSprite == null)
+            {
+                return;
+            }
+
+            if (monsterSpriteRenderer != null)
+            {
+                monsterSpriteRenderer.sprite = firstSprite;
+            }
+
+            if (monsterSpriteAnimator != null)
+            {
+                monsterSpriteAnimator.Init(sprites, frameTime, true);
+                monsterSpriteAnimator.StartAnimating(true);
+            }
+
+            RefreshColliderSizeFromSprite();
+        }
+
+        private Sprite GetFirstValidSprite(Sprite[] sprites)
+        {
+            if (sprites == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < sprites.Length; i++)
+            {
+                if (sprites[i] != null)
+                {
+                    return sprites[i];
+                }
+            }
+
+            return null;
+        }
+
+        private void RefreshColliderSizeFromSprite()
+        {
+            if (monsterHitbox != null && monsterSpriteRenderer != null)
+            {
+                monsterHitbox.enabled = true;
+                monsterHitbox.size = monsterSpriteRenderer.bounds.size;
+                monsterHitbox.offset = Vector2.up * monsterHitbox.size.y / 2f;
+            }
+
+            if (monsterLegsCollider != null && monsterHitbox != null)
+            {
+                monsterLegsCollider.radius =
+                    Mathf.Max(0.05f, monsterHitbox.size.x / 2.5f);
+            }
+
+            if (centerTransform != null && monsterHitbox != null)
+            {
+                centerTransform.position =
+                    transform.position + (Vector3)monsterHitbox.offset;
+            }
         }
 
         private void TrySpawnSplitChildren(bool killedByPlayer)
@@ -121,7 +199,11 @@ namespace Vampire
 
             if (entityManager == null)
             {
-                Debug.LogWarning("[SugarCubeMonster] EntityManager가 없어 분열체를 생성하지 못했습니다.", this);
+                Debug.LogWarning(
+                    "[SugarCubeMonster] EntityManager가 없어 분열체를 생성하지 못했습니다.",
+                    this
+                );
+
                 return;
             }
 
@@ -129,19 +211,17 @@ namespace Vampire
 
             Vector2 origin = transform.position;
             int childCount = Mathf.Max(1, sugarCubeBlueprint.splitChildCount);
-
             float angleOffset = Random.Range(0f, 360f);
 
             for (int i = 0; i < childCount; i++)
             {
                 float angle = angleOffset + (360f / childCount) * i;
                 Vector2 direction = DegreeToVector2(angle);
-
                 Vector2 spawnPosition =
-                    origin +
-                    direction * Mathf.Max(0f, sugarCubeBlueprint.splitSpawnRadius);
+                    origin + direction * Mathf.Max(0f, sugarCubeBlueprint.splitSpawnRadius);
 
-                float childHpBuff = sugarCubeBlueprint.childIgnoresParentHpBuff ? 0f : lastHpBuff;
+                float childHpBuff =
+                    sugarCubeBlueprint.childIgnoresParentHpBuff ? 0f : lastHpBuff;
 
                 Monster childMonster = entityManager.SpawnMonster(
                     monsterIndex,

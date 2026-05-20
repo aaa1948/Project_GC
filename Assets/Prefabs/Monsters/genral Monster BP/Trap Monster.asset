@@ -21,19 +21,34 @@ MonoBehaviour:
   movespeed: 0
   acceleration: 0
   gemLootTable:
-    lootTable: []
+    lootTable:
+    - item: 1
+      dropChance: 0.8
+      coinType: 0
+    - item: 2
+      dropChance: 0.2
+      coinType: 0
   coinLootTable:
-    lootTable: []
+    lootTable:
+    - item: 1
+      dropChance: 0.6
+      coinType: 0
+    - item: 2
+      dropChance: 0.3
+      coinType: 0
+    - item: 5
+      dropChance: 0.1
+      coinType: 0
   walkSpriteSequence: []
   walkFrameTime: 0
-  activeHealth: 30
-  tickDamage: 5
+  activeHealth: 25
+  tickDamage: 3
   tickInterval: 0.5
   bindDuration: 4
   bindPlayerOnActivate: 1
   spawnNearPlayerForTest: 0
-  spawnMinDistanceFromPlayer: 2
-  spawnMaxDistanceFromPlayer: 4
+  spawnMinDistanceFromPlayer: 6
+  spawnMaxDistanceFromPlayer: 15
   dormantSprites:
   - {fileID: 21300000, guid: c5164ffb826f3469db584349ea8fb550, type: 3}
   activeSprites:

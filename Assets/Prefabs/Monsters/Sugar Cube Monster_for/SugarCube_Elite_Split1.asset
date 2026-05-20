@@ -37,5 +37,12 @@ MonoBehaviour:
   splitScatterKnockback: 1.5
   splitOnlyWhenKilledByPlayer: 1
   childIgnoresParentHpBuff: 1
+  useSugarCubeWalkAnimationOverride: 1
+  sugarCubeWalkSpriteSequence:
+  - {fileID: 1517186369, guid: fd57655cf7a00af4a82eaa9bf8aa4bbe, type: 3}
+  - {fileID: 1643529210, guid: fd57655cf7a00af4a82eaa9bf8aa4bbe, type: 3}
+  - {fileID: -634353464, guid: fd57655cf7a00af4a82eaa9bf8aa4bbe, type: 3}
+  - {fileID: 855244484, guid: fd57655cf7a00af4a82eaa9bf8aa4bbe, type: 3}
+  sugarCubeWalkFrameTime: 0.12
   dropLootOnDeath: 0
   debugLog: 0

@@ -10347,10 +10347,10 @@ MonoBehaviour:
   trapMonsterBlueprint: {fileID: 11400000, guid: f5484c90eb7bae64ab5daa68b3d0e47d, type: 2}
   maxActiveTraps: 4
   respawnDelay: 60
-  spawnOnStart: 1
+  spawnOnStart: 0
   minDistanceFromPlayer: 4
   maxDistanceFromPlayer: 8
-  minDistanceBetweenTraps: 2.5
+  minDistanceBetweenTraps: 12
   spawnPositionTryCount: 20
   debugLog: 0
 --- !u!4 &1228875797
@@ -16260,7 +16260,7 @@ MonoBehaviour:
   maxSpawnDistanceFromPlayer: 14
   minDistanceBetweenSpawnedObjects: 5
   maxPositionAttempts: 30
-  maxActiveObjects: 20
+  maxActiveObjects: 6
   destroyInactiveSpawnedObjects: 1
   debugLog: 0
 --- !u!1 &1627267661
@@ -21420,9 +21420,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   selectionCount: 3
-  baseGeneralChance: 55
-  baseSpecialChance: 35
-  baseLegendaryChance: 10
+  baseGeneralChance: 70
+  baseSpecialChance: 25
+  baseLegendaryChance: 5
   specialChancePerLuck: 2
   legendaryChancePerLuck: 1
 --- !u!1 &1736393772
@@ -22921,7 +22921,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   levelManager: {fileID: 0}
   playerCharacter: {fileID: 0}
-  spawnAfterSeconds: 1200
+  spawnAfterSeconds: 900
   spawnOnlyOnce: 1
   useRealtimeForDebug: 1
   spawnRelativeToPlayer: 1

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   name: "\uBD88\uB2ED"
   hp: 120
-  atk: 5
+  atk: 10
   recovery: 0
   armor: 0
   atkspeed: 2
@@ -23,24 +23,27 @@ MonoBehaviour:
   gemLootTable:
     lootTable:
     - item: 2
-      dropChance: 0.3
+      dropChance: 0.9
+      coinType: 1
+    - item: 10
+      dropChance: 0.1
       coinType: 1
   coinLootTable:
     lootTable:
     - item: 1
-      dropChance: 0.15
+      dropChance: 0.1
       coinType: 1
     - item: 2
-      dropChance: 0.03
+      dropChance: 0.4
       coinType: 1
     - item: 5
-      dropChance: 0.01
+      dropChance: 0.5
       coinType: 1
   walkSpriteSequence:
-  - {fileID: 917104541, guid: d6a1eaefc567d4af7931ddc84b58ffa8, type: 3}
-  - {fileID: -1159827789, guid: d6a1eaefc567d4af7931ddc84b58ffa8, type: 3}
-  - {fileID: -1498753039, guid: d6a1eaefc567d4af7931ddc84b58ffa8, type: 3}
-  - {fileID: -1711853846, guid: d6a1eaefc567d4af7931ddc84b58ffa8, type: 3}
+  - {fileID: 1373663924, guid: b1f4f5abd91b61f4385ece53883ee436, type: 3}
+  - {fileID: 893327442, guid: b1f4f5abd91b61f4385ece53883ee436, type: 3}
+  - {fileID: 358636293, guid: b1f4f5abd91b61f4385ece53883ee436, type: 3}
+  - {fileID: 489165985, guid: b1f4f5abd91b61f4385ece53883ee436, type: 3}
   walkFrameTime: 0.2
   meleeLayer:
     serializedVersion: 2

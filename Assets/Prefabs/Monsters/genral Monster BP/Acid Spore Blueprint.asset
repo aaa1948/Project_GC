@@ -18,22 +18,34 @@ MonoBehaviour:
   recovery: 0
   armor: 0
   atkspeed: 1
-  movespeed: 15
+  movespeed: 8
   acceleration: 120
   gemLootTable:
-    lootTable: []
+    lootTable:
+    - item: 2
+      dropChance: 1
+      coinType: 0
   coinLootTable:
-    lootTable: []
+    lootTable:
+    - item: 1
+      dropChance: 0.3
+      coinType: 0
+    - item: 2
+      dropChance: 0.4
+      coinType: 0
+    - item: 5
+      dropChance: 0.3
+      coinType: 0
   walkSpriteSequence: []
   walkFrameTime: 0
   playerLayer:
     serializedVersion: 2
     m_Bits: 0
-  explosionDamage: 45
+  explosionDamage: 30
   explosionRadius: 0.55
-  explosionKnockback: 0
+  explosionKnockback: 1
   armDelay: 0.25
-  warningDistance: 2.2
+  warningDistance: 2
   warningBlinkSpeed: 12
   rewardOnSelfExplosion: 0
   debugLog: 1

@@ -42,16 +42,65 @@ namespace Vampire
         [Tooltip("true면 부모에게 적용된 HP Buff를 자식에게 넘기지 않습니다. 설탕큐브처럼 단계별 HP가 고정일 때 true 추천.")]
         public bool childIgnoresParentHpBuff = true;
 
+        [Header("Sugar Cube Animation / 설탕 큐브 애니메이션")]
+        [Tooltip("체크하면 아래 설탕 큐브 전용 걷기 스프라이트 4장을 사용합니다.")]
+        public bool useSugarCubeWalkAnimationOverride = true;
+
+        [Tooltip("96x24 이미지를 24x24 크기로 4장 Slice한 뒤 Element 0~3에 순서대로 넣으세요.")]
+        public Sprite[] sugarCubeWalkSpriteSequence = new Sprite[4];
+
+        [Tooltip("설탕 큐브 전용 걷기 애니메이션 프레임 간격입니다. 값이 작을수록 빠르게 움직입니다.")]
+        public float sugarCubeWalkFrameTime = 0.12f;
+
         [Header("Loot / 보상")]
         [Tooltip("이 단계의 설탕 큐브가 죽었을 때 경험치/코인을 드랍할지 여부입니다.")]
         public bool dropLootOnDeath = true;
 
         [Header("Debug")]
+        [Tooltip("체크하면 설탕 큐브 스폰/분열 로그를 Console에 출력합니다.")]
         public bool debugLog = false;
 
         public bool CanSplit()
         {
             return splitChildBlueprint != null && splitChildCount > 0;
+        }
+
+        public Sprite[] GetEffectiveWalkSpriteSequence()
+        {
+            if (useSugarCubeWalkAnimationOverride && HasValidSugarCubeWalkSpriteSequence())
+            {
+                return sugarCubeWalkSpriteSequence;
+            }
+
+            return walkSpriteSequence;
+        }
+
+        public float GetEffectiveWalkFrameTime()
+        {
+            if (useSugarCubeWalkAnimationOverride && HasValidSugarCubeWalkSpriteSequence())
+            {
+                return Mathf.Max(0.01f, sugarCubeWalkFrameTime);
+            }
+
+            return Mathf.Max(0.01f, walkFrameTime);
+        }
+
+        private bool HasValidSugarCubeWalkSpriteSequence()
+        {
+            if (sugarCubeWalkSpriteSequence == null || sugarCubeWalkSpriteSequence.Length == 0)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < sugarCubeWalkSpriteSequence.Length; i++)
+            {
+                if (sugarCubeWalkSpriteSequence[i] != null)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

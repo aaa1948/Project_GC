@@ -13,17 +13,32 @@ MonoBehaviour:
   m_Name: Sniper Monster
   m_EditorClassIdentifier: 
   name: Sniper Monster Blueprint
-  hp: 30
-  atk: 10
+  hp: 50
+  atk: 15
   recovery: 0
   armor: 0
   atkspeed: 0
   movespeed: 0
   acceleration: 0
   gemLootTable:
-    lootTable: []
+    lootTable:
+    - item: 2
+      dropChance: 0.95
+      coinType: 0
+    - item: 10
+      dropChance: 0.05
+      coinType: 0
   coinLootTable:
-    lootTable: []
+    lootTable:
+    - item: 1
+      dropChance: 0.4
+      coinType: 0
+    - item: 2
+      dropChance: 0.3
+      coinType: 0
+    - item: 5
+      dropChance: 0.3
+      coinType: 0
   walkSpriteSequence: []
   walkFrameTime: 0
   projectilePrefab: {fileID: 1717462325660897561, guid: 8ec71fd61cbf6d842a5033e3311461ac, type: 3}
@@ -31,12 +46,12 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   projectileSpeed: 18
-  aimDuration: 1.4
-  lockDuration: 0.35
-  attackCooldown: 1.8
-  firstAttackDelay: 0.6
+  aimDuration: 1.5
+  lockDuration: 0.4
+  attackCooldown: 5
+  firstAttackDelay: 0.5
   enforceSpawnDistance: 1
-  spawnDistanceFromPlayer: 9
+  spawnDistanceFromPlayer: 14
   laserWidth: 0.04
   aimingLaserColor: {r: 1, g: 0, b: 0, a: 0.45}
   lockedLaserColor: {r: 1, g: 0, b: 0, a: 0.95}

@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b94449d710f83429796c060423fde854, type: 3}
   m_Name: Level 1
   m_EditorClassIdentifier: 
-  levelTime: 1200
+  levelTime: 900
   backgroundTexture: {fileID: 2800000, guid: 42b11be826072496a9d57814c0ca6576, type: 3}
   abilityPrefabs:
   - {fileID: 7378740072262091319, guid: 9757fae3764f6e1488b23a8ff2e6c349, type: 3}
@@ -56,7 +56,7 @@ MonoBehaviour:
   - monstersPrefab: {fileID: 8960830493049914446, guid: 12adb3a92ed404612906d2c1fe4b586e, type: 3}
     monsterBlueprints:
     - {fileID: 11400000, guid: 784dd4ef41fcc754291fad20a5410c14, type: 2}
-    - {fileID: 11400000, guid: 0d5ebf868a8ec5042969b8cc098bdfbf, type: 2}
+    - {fileID: 0}
     - {fileID: 11400000, guid: f4dab74aec78875478f41a2021c36fa2, type: 2}
     - {fileID: 11400000, guid: c73eb4bd38da09d4d8442ac98248540c, type: 2}
     - {fileID: 11400000, guid: 97f87d6abaec70f4cafe586d915eb003, type: 2}
@@ -116,10 +116,14 @@ MonoBehaviour:
       - 0
       - 0
       - 0
+      - 0
+      - 0
     - t: 0.05
       spawnChances:
       - 0.8067485
       - 0.19325152
+      - 0
+      - 0
       - 0
       - 0
       - 0
@@ -154,6 +158,8 @@ MonoBehaviour:
       - 0
       - 0
       - 0
+      - 0
+      - 0
     - t: 0.15
       spawnChances:
       - 0.484472
@@ -161,6 +167,8 @@ MonoBehaviour:
       - 0.09627329
       - 0
       - 0.04347826
+      - 0
+      - 0
       - 0
       - 0
       - 0
@@ -192,6 +200,8 @@ MonoBehaviour:
       - 0
       - 0
       - 0
+      - 0
+      - 0
     - t: 0.25
       spawnChances:
       - 0.26125
@@ -210,6 +220,8 @@ MonoBehaviour:
       - 0
       - 0
       - 0.021875001
+      - 0
+      - 0
       - 0
     - t: 0.3
       spawnChances:
@@ -230,6 +242,8 @@ MonoBehaviour:
       - 0
       - 0.05
       - 0
+      - 0
+      - 0
     - t: 0.4
       spawnChances:
       - 0.12
@@ -248,6 +262,8 @@ MonoBehaviour:
       - 0
       - 0
       - 0.1
+      - 0
+      - 0
       - 0
     - t: 0.5
       spawnChances:
@@ -268,6 +284,8 @@ MonoBehaviour:
       - 0
       - 0.15000002
       - 0
+      - 0
+      - 0
     - t: 0.6
       spawnChances:
       - 0.05
@@ -286,6 +304,8 @@ MonoBehaviour:
       - 0
       - 0
       - 0.2
+      - 0
+      - 0
       - 0
     - t: 0.75
       spawnChances:
@@ -306,6 +326,8 @@ MonoBehaviour:
       - 0
       - 0.25
       - 0
+      - 0
+      - 0
     - t: 0.9
       spawnChances:
       - 0.05
@@ -325,6 +347,8 @@ MonoBehaviour:
       - 0
       - 0.3
       - 0
+      - 0
+      - 0
     - t: 1
       spawnChances:
       - 0.05
@@ -343,6 +367,8 @@ MonoBehaviour:
       - 0
       - 0
       - 0.3
+      - 0
+      - 0
       - 0
     hpMultiplierKeyframes:
     - t: 0
@@ -364,6 +390,8 @@ MonoBehaviour:
       - 0
       - 0
       - 0
+      - 0
+      - 0
     - t: 0.5
       healthBuffs:
       - 0
@@ -383,8 +411,12 @@ MonoBehaviour:
       - 0
       - 0
       - 0
+      - 0
+      - 0
     - t: 1
       healthBuffs:
+      - 0
+      - 0
       - 0
       - 0
       - 0
