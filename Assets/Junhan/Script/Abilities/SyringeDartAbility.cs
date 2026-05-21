@@ -865,7 +865,61 @@ namespace Vampire
             // 분신 피해 증가 일반 증강은 SyringeCloneController 쪽에서 별도로 곱해진다.
             return GetEffectiveDamage();
         }
+        public float GetAcupunctureFormationDamage()
+        {
+            // 침술진은 특수/전설 증강 효과를 제외하고,
+            // 일반 스탯 기반 데미지 강화만 반영한다.
+            float multiplier = 1f;
 
+            if (playerCharacter != null)
+            {
+                multiplier *= playerCharacter.DamageMultiplier;
+            }
+
+            return damage.Value * multiplier;
+        }
+
+        public float GetAcupunctureFormationKnockback()
+        {
+            return knockback.Value;
+        }
+
+        public float GetAcupunctureFormationSpeed()
+        {
+            // 침술진은 특수 증강 효과 없이 일반 투사체 속도 강화만 반영한다.
+            float multiplier = 1f;
+
+            if (playerCharacter != null)
+            {
+                multiplier *= playerCharacter.ProjectileSpeedMultiplier;
+            }
+
+            return speed.Value * multiplier;
+        }
+
+        public int GetAcupunctureFormationProjectileCount()
+        {
+            // 생명연소 같은 전설 추가 투사체는 제외하고,
+            // 기본 무기 성장 + 일반 추가 투사체만 반영한다.
+            int totalCount = projectileCount.Value;
+
+            if (playerCharacter != null)
+            {
+                totalCount += playerCharacter.AdditionalProjectiles;
+            }
+
+            return Mathf.Max(1, totalCount);
+        }
+
+        public float GetAcupunctureFormationProjectileSizeMultiplier()
+        {
+            return GetPlayerProjectileSizeMultiplier();
+        }
+
+        public float GetAcupunctureFormationMaxDistance()
+        {
+            return Mathf.Max(0.1f, baseSyringeMaxDistance) * GetPlayerRangeMultiplier();
+        }
         public float GetCloneKnockback()
         {
             return GetEffectiveKnockback();

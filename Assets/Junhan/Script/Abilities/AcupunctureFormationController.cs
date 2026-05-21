@@ -5,9 +5,9 @@ namespace Vampire
     // 특수 증강: 침술진
     //
     // 수정 내용:
-    // - 대쉬 시작 위치에 분신 이미지를 생성하지 않는다.
-    // - 대쉬 시작 위치에서 360도 원형으로 침만 발사한다.
-    // - 아이템/일반 증강/전설 증강으로 증가한 발사체 수를 침술진 발사 수에도 반영한다.
+    // - 대쉬 시작 위치에서 360도 원형으로 침을 발사한다.
+    // - 침술진 발사 침에는 다른 특수 증강 효과를 적용하지 않는다.
+    // - 일반 스탯 강화: 데미지, 투사체 속도, 투사체 수, 크기, 사거리만 반영한다.
     public class AcupunctureFormationController : MonoBehaviour
     {
         private Character sourceCharacter;
@@ -25,6 +25,7 @@ namespace Vampire
         private Vector3 previousPlayerPosition;
 
         [Header("Debug")]
+        [Tooltip("체크하면 침술진 발사 로그를 Console에 출력합니다.")]
         [SerializeField] private bool debugLog = false;
 
         public static AcupunctureFormationController Create(
@@ -82,13 +83,15 @@ namespace Vampire
 
             if (debugLog)
             {
-                Debug.Log("[침술진] 컨트롤러 생성 완료 - 분신 이미지 없이 원형 발사만 사용");
+                Debug.Log("[침술진] 컨트롤러 생성 완료 - 특수 증강 제외, 일반 스탯만 반영");
             }
         }
 
         private void Update()
         {
-            if (sourceCharacter == null || entityManager == null || sourceNeedleAbility == null)
+            if (sourceCharacter == null ||
+                entityManager == null ||
+                sourceNeedleAbility == null)
             {
                 Destroy(gameObject);
                 return;
@@ -109,13 +112,14 @@ namespace Vampire
 
         private void FireRadialNeedles(Vector3 origin)
         {
-            SyringeSpecialRuntime runtime = sourceNeedleAbility.GetCurrentSpecialRuntime();
-
             int finalNeedleCount = GetFinalNeedleCount();
 
             if (debugLog)
             {
-                Debug.Log($"[침술진] 원형 침 발사 | 발사 수 {finalNeedleCount}");
+                Debug.Log(
+                    $"[침술진] 원형 침 발사 | " +
+                    $"발사 수 {finalNeedleCount} | 특수 증강 적용 안 함"
+                );
             }
 
             for (int i = 0; i < finalNeedleCount; i++)
@@ -126,9 +130,9 @@ namespace Vampire
                 Projectile projectile = entityManager.SpawnProjectile(
                     projectilePoolIndex,
                     origin,
-                    sourceNeedleAbility.GetEffectiveDamage() * damageMultiplier,
-                    sourceNeedleAbility.GetEffectiveKnockback(),
-                    sourceNeedleAbility.GetEffectiveSpeed(),
+                    sourceNeedleAbility.GetAcupunctureFormationDamage() * damageMultiplier,
+                    sourceNeedleAbility.GetAcupunctureFormationKnockback(),
+                    sourceNeedleAbility.GetAcupunctureFormationSpeed(),
                     monsterLayer
                 );
 
@@ -138,14 +142,17 @@ namespace Vampire
                 }
 
                 projectile.transform.localScale =
-                    Vector3.one * sourceCharacter.ProjectileSizeMultiplier * 0.85f;
+                    Vector3.one *
+                    sourceNeedleAbility.GetAcupunctureFormationProjectileSizeMultiplier() *
+                    0.85f;
 
-                projectile.maxDistance *= sourceCharacter.RangeMultiplier;
+                projectile.maxDistance =
+                    sourceNeedleAbility.GetAcupunctureFormationMaxDistance();
 
-                if (projectile is SyringeProjectile syringeProjectile)
-                {
-                    syringeProjectile.ConfigureSpecials(runtime);
-                }
+                // 중요:
+                // 여기서 SyringeProjectile.ConfigureSpecials(...)를 호출하지 않는다.
+                // Projectile.Setup()에서 SyringeProjectile의 specials는 default로 초기화되므로
+                // 독/폭발/유도/관통/꿀/모기/침귀환 같은 특수 효과가 적용되지 않는다.
 
                 projectile.OnHitDamageable.AddListener(sourceCharacter.OnDealDamage.Invoke);
                 projectile.Launch(direction);
@@ -159,8 +166,10 @@ namespace Vampire
             if (sourceNeedleAbility != null)
             {
                 // 기본 발사체 수 1개는 침술진의 기본 needleCount에 이미 포함되어 있다고 보고,
-                // 추가 발사체 증가분만 침술진 발사 수에 더한다.
-                int projectileBonus = Mathf.Max(0, sourceNeedleAbility.GetEffectiveProjectileCount() - 1);
+                // 일반/기본 발사체 증가분만 침술진 발사 수에 더한다.
+                int projectileBonus =
+                    Mathf.Max(0, sourceNeedleAbility.GetAcupunctureFormationProjectileCount() - 1);
+
                 finalCount += projectileBonus;
             }
 

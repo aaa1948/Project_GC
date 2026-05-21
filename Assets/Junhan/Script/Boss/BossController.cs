@@ -71,8 +71,7 @@ namespace Vampire
             float patternGapMultiplier,
             bool ignoreDistanceAndUseRandomPattern,
             float transitionPauseSeconds,
-            bool invincibleDuringTransition
-        )
+            bool invincibleDuringTransition)
         {
             this.phaseName = phaseName;
             this.enterHpRatio = enterHpRatio;
@@ -128,7 +127,7 @@ namespace Vampire
         [Tooltip("보스 기본 공격 탄환 프리팹입니다.")]
         [SerializeField] private GameObject basicAttackBulletPrefab;
 
-        [Tooltip("기본 공격 발사 간격입니다. 실제 간격은 페이즈의 Basic Attack Cooldown Multiplier가 곱해집니다.")]
+        [Tooltip("기본 공격 묶음 사이의 쿨타임입니다. 실제 쿨타임은 페이즈 Basic Attack Cooldown Multiplier가 곱해집니다.")]
         [SerializeField] private float basicAttackCooldown = 1.6f;
 
         [Tooltip("기본 공격 데미지입니다. 실제 데미지는 페이즈 데미지 배율이 곱해집니다.")]
@@ -140,8 +139,24 @@ namespace Vampire
         [Tooltip("보스 중심에서 탄환을 얼마나 앞쪽에 생성할지 결정합니다.")]
         [SerializeField] private float basicAttackMuzzleOffset = 1.2f;
 
-        [Tooltip("체크하면 특수 패턴 사용 중에도 기본 공격을 계속 발사합니다.")]
+        [Tooltip("예전 옵션입니다. 현재 연발 기본탄은 특수 패턴과 섞이지 않도록 패턴 중에는 발사하지 않습니다.")]
         [SerializeField] private bool basicAttackWhileUsingPattern = false;
+
+        [Header("Basic Attack Burst")]
+        [Tooltip("1페이즈에서 기본 공격 한 묶음으로 연속 발사할 탄환 수입니다.")]
+        [SerializeField] private int basicAttackBurstCountPhase1 = 4;
+
+        [Tooltip("2페이즈에서 기본 공격 한 묶음으로 연속 발사할 탄환 수입니다.")]
+        [SerializeField] private int basicAttackBurstCountPhase2 = 5;
+
+        [Tooltip("3페이즈에서 기본 공격 한 묶음으로 연속 발사할 탄환 수입니다.")]
+        [SerializeField] private int basicAttackBurstCountPhase3 = 7;
+
+        [Tooltip("기본 공격 연발 중 다음 탄환을 발사하기까지의 내부 간격입니다. 이 값은 특수 패턴 쿨타임이나 패턴 간격에는 영향을 주지 않습니다.")]
+        [SerializeField] private float basicAttackBurstInterval = 0.2f;
+
+        [Tooltip("체크하면 연발 탄환마다 플레이어 위치를 다시 조준합니다. 이동 중인 플레이어에게 흩뿌리는 느낌을 줄 수 있습니다.")]
+        [SerializeField] private bool reAimEachBasicBurstShot = true;
 
         [Header("Basic Attack Aim")]
         [Tooltip("체크하면 플레이어 현재 위치가 아니라 이동 방향 앞쪽을 예측 조준합니다.")]
@@ -211,54 +226,25 @@ namespace Vampire
         [Header("Phase Settings")]
         [Tooltip("1페이즈 설정입니다. 기본 배율은 100%입니다.")]
         [SerializeField]
-        private BossPhaseSettings phase1Settings = new BossPhaseSettings(
-            "Phase 1",
-            1f,
-            1f,
-            1f,
-            1f,
-            1f,
-            1f,
-            1f,
-            1f,
-            false,
-            0f,
-            false
-        );
+        private BossPhaseSettings phase1Settings =
+            new BossPhaseSettings("Phase 1", 1f, 1f, 1f, 1f, 1f, 1f, 1f, 1f, false, 0f, false);
 
         [Tooltip("2페이즈 설정입니다. 기본값은 HP 50% 이하에서 시작하며, 데미지/탄속/이동속도 150%입니다.")]
         [SerializeField]
-        private BossPhaseSettings phase2Settings = new BossPhaseSettings(
-            "Phase 2",
-            0.5f,
-            1.5f,
-            1.5f,
-            1.5f,
-            1f,
-            1f,
-            1f,
-            1f,
-            false,
-            2f,
-            true
-        );
+        private BossPhaseSettings phase2Settings =
+            new BossPhaseSettings("Phase 2", 0.5f, 1.5f, 1.5f, 1.5f, 1f, 1f, 1f, 1f, false, 2f, true);
 
         [Tooltip("3페이즈 설정입니다. 기본값은 HP 20% 이하에서 시작하며, 데미지/탄속/이동속도 200%, 거리 무시 랜덤 패턴, 쿨타임 단축입니다.")]
         [SerializeField]
-        private BossPhaseSettings phase3Settings = new BossPhaseSettings(
-            "Phase 3",
-            0.2f,
-            2f,
-            2f,
-            2f,
-            0.5f,
-            0.5f,
-            0.5f,
-            0.5f,
-            true,
-            2f,
-            true
-        );
+        private BossPhaseSettings phase3Settings =
+            new BossPhaseSettings("Phase 3", 0.2f, 2f, 2f, 2f, 0.5f, 0.5f, 0.5f, 0.5f, true, 2f, true);
+
+        [Header("Incoming Damage Reduction")]
+        [Tooltip("체크하면 3페이즈 동안 보스가 플레이어 공격으로 받는 피해를 줄입니다.")]
+        [SerializeField] private bool reduceIncomingDamageInPhase3 = true;
+
+        [Tooltip("3페이즈 동안 보스가 실제로 받는 피해 배율입니다. 0.7이면 들어오는 피해의 70%만 받습니다.")]
+        [SerializeField, Range(0.01f, 1f)] private float phase3IncomingDamageMultiplier = 0.7f;
 
         [Header("Debug")]
         [Tooltip("체크하면 보스 이동 관련 로그를 출력합니다.")]
@@ -280,14 +266,15 @@ namespace Vampire
         private bool healthInitializedFromMonster = false;
 
         private int currentPhase = 1;
-
         private float lastContactDamageTime = -999f;
-        private Vector2 smoothMoveVelocity;
 
+        private Vector2 smoothMoveVelocity;
         private bool externalMovementLock = false;
         private bool suppressContactDamage = false;
 
         private float basicAttackTimer = 0f;
+        private bool isBasicAttackBursting = false;
+
         private float nextPatternTime = 0f;
 
         private Vector2 lastPlayerPosition;
@@ -296,6 +283,7 @@ namespace Vampire
         private Coroutine patternLoopCoroutine;
         private Coroutine activePatternCoroutine;
         private Coroutine phaseTransitionCoroutine;
+        private Coroutine basicAttackBurstCoroutine;
 
         public float NearDistanceThreshold => nearDistanceThreshold;
         public float MidDistanceThreshold => midDistanceThreshold;
@@ -354,6 +342,7 @@ namespace Vampire
             isInvincibleByPhase = false;
 
             StopPatternLoop();
+            StopBasicAttackBurst();
             StopMovementVelocity();
 
             if (debugPhase)
@@ -395,6 +384,17 @@ namespace Vampire
         public float GetModifiedPatternCooldown(float baseCooldown)
         {
             return Mathf.Max(0.05f, baseCooldown * GetCurrentPhaseSettings().patternCooldownMultiplier);
+        }
+
+        public float GetModifiedIncomingDamage(float incomingDamage)
+        {
+            if (reduceIncomingDamageInPhase3 && currentPhase >= 3)
+            {
+                float multiplier = Mathf.Clamp(phase3IncomingDamageMultiplier, 0.01f, 1f);
+                return incomingDamage * multiplier;
+            }
+
+            return incomingDamage;
         }
 
         public bool ShouldIgnoreDistanceForPatternSelection()
@@ -440,6 +440,7 @@ namespace Vampire
                 patterns.Clear();
 
                 BossPatternBase[] foundPatterns = GetComponentsInChildren<BossPatternBase>(true);
+
                 foreach (BossPatternBase pattern in foundPatterns)
                 {
                     if (pattern != null)
@@ -466,6 +467,8 @@ namespace Vampire
             }
 
             basicAttackTimer = 0f;
+            isBasicAttackBursting = false;
+
             ScheduleNextPattern(firstPatternDelay);
             StartPatternLoop();
 
@@ -478,6 +481,7 @@ namespace Vampire
         private void OnDisable()
         {
             StopPatternLoop();
+            StopBasicAttackBurst();
         }
 
         private void Update()
@@ -516,13 +520,23 @@ namespace Vampire
                 return;
             }
 
-            if (isUsingPattern && !basicAttackWhileUsingPattern)
+            if (basicAttackBulletPrefab == null)
             {
                 return;
             }
 
-            if (basicAttackBulletPrefab == null)
+            if (isBasicAttackBursting)
             {
+                return;
+            }
+
+            if (isUsingPattern)
+            {
+                if (basicAttackWhileUsingPattern && debugBasicAttack)
+                {
+                    Debug.Log("[BossController] Basic Attack While Using Pattern 옵션이 켜져 있지만, 연발 기본탄 충돌 방지를 위해 패턴 중 기본탄은 보류됩니다.");
+                }
+
                 return;
             }
 
@@ -536,11 +550,73 @@ namespace Vampire
             if (basicAttackTimer >= finalCooldown)
             {
                 basicAttackTimer = 0f;
-                FireBasicAttack();
+                StartBasicAttackBurst();
             }
         }
 
-        private void FireBasicAttack()
+        private void StartBasicAttackBurst()
+        {
+            if (basicAttackBurstCoroutine != null)
+            {
+                StopCoroutine(basicAttackBurstCoroutine);
+            }
+
+            basicAttackBurstCoroutine = StartCoroutine(BasicAttackBurstRoutine());
+        }
+
+        private IEnumerator BasicAttackBurstRoutine()
+        {
+            isBasicAttackBursting = true;
+
+            int burstCount = GetCurrentPhaseBasicAttackBurstCount();
+            burstCount = Mathf.Max(1, burstCount);
+
+            Vector2 lockedDirection = Vector2.right;
+
+            if (!reAimEachBasicBurstShot)
+            {
+                lockedDirection = GetBasicAttackDirection();
+            }
+
+            for (int i = 0; i < burstCount; i++)
+            {
+                if (isDead || isPhaseTransitioning || playerCharacter == null || basicAttackBulletPrefab == null)
+                {
+                    break;
+                }
+
+                Vector2 direction = reAimEachBasicBurstShot
+                    ? GetBasicAttackDirection()
+                    : lockedDirection;
+
+                FireSingleBasicAttackBullet(direction, i + 1, burstCount);
+
+                if (i < burstCount - 1)
+                {
+                    yield return new WaitForSeconds(Mathf.Max(0.01f, basicAttackBurstInterval));
+                }
+            }
+
+            isBasicAttackBursting = false;
+            basicAttackBurstCoroutine = null;
+        }
+
+        private int GetCurrentPhaseBasicAttackBurstCount()
+        {
+            if (currentPhase >= 3)
+            {
+                return basicAttackBurstCountPhase3;
+            }
+
+            if (currentPhase == 2)
+            {
+                return basicAttackBurstCountPhase2;
+            }
+
+            return basicAttackBurstCountPhase1;
+        }
+
+        private Vector2 GetBasicAttackDirection()
         {
             Vector2 origin = BossCenterPosition;
             Vector2 aimPosition = GetBasicAttackAimPosition();
@@ -557,9 +633,23 @@ namespace Vampire
                 direction = RotateVector(direction, randomAngle);
             }
 
-            Vector3 spawnPosition = (Vector3)origin + (Vector3)(direction * basicAttackMuzzleOffset);
+            return direction.normalized;
+        }
 
-            GameObject bullet = Instantiate(basicAttackBulletPrefab, spawnPosition, Quaternion.identity);
+        private void FireSingleBasicAttackBullet(Vector2 direction, int shotIndex, int burstCount)
+        {
+            if (direction == Vector2.zero)
+            {
+                direction = Vector2.right;
+            }
+
+            Vector3 spawnPosition = BossCenterPosition + (Vector3)(direction * basicAttackMuzzleOffset);
+
+            GameObject bullet = Instantiate(
+                basicAttackBulletPrefab,
+                spawnPosition,
+                Quaternion.identity
+            );
 
             float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
             bullet.transform.rotation = Quaternion.Euler(0f, 0f, angle);
@@ -567,6 +657,7 @@ namespace Vampire
             ApplyBulletSortingOrder(bullet, basicBulletSortingOrder);
 
             BossSimpleBullet simpleBullet = bullet.GetComponent<BossSimpleBullet>();
+
             if (simpleBullet == null)
             {
                 simpleBullet = bullet.GetComponentInChildren<BossSimpleBullet>();
@@ -585,8 +676,22 @@ namespace Vampire
 
             if (debugBasicAttack)
             {
-                Debug.Log($"[BossController] Basic Attack Fired / phase={currentPhase}, speed={finalSpeed}, damage={finalDamage}");
+                Debug.Log(
+                    $"[BossController] Basic Burst Shot {shotIndex}/{burstCount} / " +
+                    $"phase={currentPhase}, speed={finalSpeed}, damage={finalDamage}"
+                );
             }
+        }
+
+        private void StopBasicAttackBurst()
+        {
+            if (basicAttackBurstCoroutine != null)
+            {
+                StopCoroutine(basicAttackBurstCoroutine);
+                basicAttackBurstCoroutine = null;
+            }
+
+            isBasicAttackBursting = false;
         }
 
         private Vector2 GetBasicAttackAimPosition()
@@ -614,6 +719,7 @@ namespace Vampire
             }
 
             SpriteRenderer[] renderers = bullet.GetComponentsInChildren<SpriteRenderer>(true);
+
             foreach (SpriteRenderer renderer in renderers)
             {
                 renderer.sortingOrder = sortingOrder;
@@ -764,7 +870,11 @@ namespace Vampire
         {
             while (!isDead)
             {
-                if (!isPhaseTransitioning && !isUsingPattern && playerCharacter != null && Time.time >= nextPatternTime)
+                if (!isPhaseTransitioning &&
+                    !isUsingPattern &&
+                    !isBasicAttackBursting &&
+                    playerCharacter != null &&
+                    Time.time >= nextPatternTime)
                 {
                     BossPatternBase selectedPattern = SelectPattern();
 
@@ -927,6 +1037,8 @@ namespace Vampire
                 return;
             }
 
+            damage = GetModifiedIncomingDamage(damage);
+
             currentHp -= damage;
             currentHp = Mathf.Max(0f, currentHp);
 
@@ -978,6 +1090,7 @@ namespace Vampire
             currentPhase = targetPhase;
 
             StopPatternLoop();
+            StopBasicAttackBurst();
             StopMovementVelocity();
 
             externalMovementLock = true;
@@ -987,14 +1100,16 @@ namespace Vampire
 
             if (debugPhase)
             {
-                Debug.Log($"[BossController] {targetSettings.phaseName} Start / pause={targetSettings.transitionPauseSeconds}, invincible={isInvincibleByPhase}");
+                Debug.Log(
+                    $"[BossController] {targetSettings.phaseName} Start / " +
+                    $"pause={targetSettings.transitionPauseSeconds}, invincible={isInvincibleByPhase}"
+                );
             }
 
             yield return new WaitForSeconds(Mathf.Max(0f, targetSettings.transitionPauseSeconds));
 
             isInvincibleByPhase = false;
             isPhaseTransitioning = false;
-
             externalMovementLock = false;
             suppressContactDamage = false;
 
