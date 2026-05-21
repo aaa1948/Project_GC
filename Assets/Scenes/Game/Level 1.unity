@@ -122,6 +122,17 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!114 &9950557 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4627093610777812072, guid: 3ad6441bf307ca14d9b29ce4429105d4, type: 3}
+  m_PrefabInstance: {fileID: 1892469443}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &23237559
 GameObject:
   m_ObjectHideFlags: 0
@@ -9301,6 +9312,17 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1bf8fcdb981004237a1ed92c0317b4a9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!114 &1043593209 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 527220328932564438, guid: 3ad6441bf307ca14d9b29ce4429105d4, type: 3}
+  m_PrefabInstance: {fileID: 1892469443}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e29b1a8efbd4b44bb3f3716e73f07ff, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1045477370
 GameObject:
   m_ObjectHideFlags: 0
@@ -9680,13 +9702,33 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
+      propertyPath: rerollCost
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
       propertyPath: closeButton
       value: 
       objectReference: {fileID: 1892469447}
     - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
+      propertyPath: rerollButton
+      value: 
+      objectReference: {fileID: 1043593209}
+    - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
+      propertyPath: baseRerollCost
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
+      propertyPath: rerollCostText
+      value: 
+      objectReference: {fileID: 9950557}
+    - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
       propertyPath: shopUIContainer
       value: 
       objectReference: {fileID: 1892469448}
+    - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
+      propertyPath: rerollCostIncrease
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
       propertyPath: itemButtons.Array.size
       value: 3
