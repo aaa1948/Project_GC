@@ -3898,12 +3898,41 @@ MonoBehaviour:
   invincibilityTimeBonus: 0
   hasAntibioticBomb: 0
   enableDash: 1
-  dashDistance: 3.5
-  dashDuration: 0.14
-  dashRechargeTime: 1.2
+  dashDistance: 2.4
+  dashDuration: 0.25
+  dashRechargeTime: 2
   maxDashCharges: 1
   invincibleDuringDash: 1
   stopVelocityAfterDash: 1
+  dashMovementCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 0
+      outSlope: 0
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0
+      outWeight: 0
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  useDashMovementCurve: 1
+  useDashSprite: 1
+  dashSprite: {fileID: 1658229422, guid: 4a9825874034d4671b1dc9f6c8707eca, type: 3}
+  dashSpriteFacesRight: 1
+  restartWalkAnimationAfterDash: 1
   passThroughCollidersDuringDash: 1
   includeTriggerCollidersInDashGhost: 0
   debugDashLog: 0

@@ -45,13 +45,13 @@ namespace Vampire
         [SerializeField] private bool randomizeFirstZigzagSide = true;
 
         [Header("Charge Distance")]
-        [Tooltip("1페이즈에서 보스가 돌진하는 거리입니다.")]
+        [Tooltip("1페이즈에서 보스가 무조건 돌진하는 거리입니다. 플레이어와 충돌해도 이 거리만큼 이동합니다.")]
         [SerializeField] private float chargeDistancePhase1 = 6f;
 
-        [Tooltip("2페이즈에서 보스가 돌진하는 거리입니다.")]
+        [Tooltip("2페이즈에서 보스가 무조건 돌진하는 거리입니다. 플레이어와 충돌해도 이 거리만큼 이동합니다.")]
         [SerializeField] private float chargeDistancePhase2 = 8f;
 
-        [Tooltip("3페이즈에서 보스가 돌진하는 거리입니다.")]
+        [Tooltip("3페이즈에서 보스가 무조건 돌진하는 거리입니다. 플레이어와 충돌해도 이 거리만큼 이동합니다.")]
         [SerializeField] private float chargeDistancePhase3 = 9f;
 
         [Header("Charge Speed")]
@@ -78,14 +78,20 @@ namespace Vampire
         [SerializeField] private float endLag = 0.4f;
 
         [Header("Hit Settings")]
-        [Tooltip("돌진 중 플레이어를 맞추는 히트박스 크기입니다.")]
-        [SerializeField] private Vector2 hitboxSize = new Vector2(1.2f, 1.2f);
+        [Tooltip("돌진 중 플레이어를 맞추는 히트박스 크기입니다. X는 돌진 방향 앞뒤 판정 여유, Y는 돌진 경로의 좌우 폭입니다.")]
+        [SerializeField] private Vector2 hitboxSize = new Vector2(1.6f, 1.6f);
 
         [Tooltip("플레이어가 속한 레이어입니다. 돌진 히트 판정에 사용됩니다. Player 레이어를 지정하세요.")]
         [SerializeField] private LayerMask playerLayer;
 
         [Tooltip("체크하면 한 번의 돌진 패턴 안에서 플레이어가 돌진마다 각각 한 번씩 맞을 수 있습니다.")]
         [SerializeField] private bool canHitPlayerOncePerCharge = true;
+
+        [Tooltip("체크하면 돌진 중 보스와 플레이어의 물리 충돌을 잠시 무시합니다. 돌진이 플레이어 몸에 막히지 않게 하려면 켜두세요.")]
+        [SerializeField] private bool ignorePlayerPhysicsCollisionDuringCharge = true;
+
+        [Tooltip("체크하면 Rigidbody2D.MovePosition이 아니라 위치를 직접 갱신해서 돌진 거리를 강제로 보장합니다.")]
+        [SerializeField] private bool forceExactChargeMovement = true;
 
         [Tooltip("체크하면 Scene 뷰에서 돌진 히트박스 크기를 Gizmo로 표시합니다.")]
         [SerializeField] private bool showDebugHitbox = false;
@@ -94,11 +100,12 @@ namespace Vampire
         [Tooltip("체크하면 돌진 패턴 실행, 속도, 데미지 로그를 Console에 출력합니다.")]
         [SerializeField] private bool debugCharge = false;
 
+        private readonly List<Collider2D> ignoredBossColliders = new List<Collider2D>();
+        private readonly List<Collider2D> ignoredPlayerColliders = new List<Collider2D>();
+
         protected override IEnumerator ExecutePattern()
         {
-            if (bossController == null ||
-                bossController.PlayerCharacter == null ||
-                bossController.IsDead)
+            if (bossController == null || bossController.PlayerCharacter == null || bossController.IsDead)
             {
                 yield break;
             }
@@ -106,72 +113,91 @@ namespace Vampire
             bossController.SetExternalMovementLock(true);
             bossController.SetSuppressContactDamage(true);
 
-            int chargeCount = Mathf.Max(1, GetPhaseChargeCount());
-            float chargeDistance = GetPhaseChargeDistance();
-            float chargeSpeed = bossController.GetModifiedMovementSpeed(GetPhaseChargeSpeed());
-            float chargeDamage = bossController.GetModifiedDamage(GetPhaseChargeDamage());
-
-            int firstZigzagSide = randomizeFirstZigzagSide && Random.value < 0.5f ? -1 : 1;
-
-            HashSet<Character> sharedHitTargets = new HashSet<Character>();
-
-            for (int i = 0; i < chargeCount; i++)
+            try
             {
-                if (bossController == null ||
-                    bossController.PlayerCharacter == null ||
-                    bossController.IsDead ||
-                    bossController.IsPhaseTransitioning)
+                int chargeCount = Mathf.Max(1, GetPhaseChargeCount());
+                float chargeDistance = Mathf.Max(0f, GetPhaseChargeDistance());
+                float chargeSpeed = Mathf.Max(0.01f, bossController.GetModifiedMovementSpeed(GetPhaseChargeSpeed()));
+                float chargeDamage = bossController.GetModifiedDamage(GetPhaseChargeDamage());
+
+                int firstZigzagSide = randomizeFirstZigzagSide && Random.value < 0.5f ? -1 : 1;
+                HashSet<Character> sharedHitTargets = new HashSet<Character>();
+
+                for (int i = 0; i < chargeCount; i++)
                 {
-                    break;
-                }
+                    if (bossController == null ||
+                        bossController.PlayerCharacter == null ||
+                        bossController.IsDead ||
+                        bossController.IsPhaseTransitioning)
+                    {
+                        break;
+                    }
 
-                Vector2 startPosition = bossController.BossCenterPosition;
-                Vector2 direction = GetChargeDirection(startPosition, i, chargeCount, firstZigzagSide);
+                    Vector2 startPosition = bossController.BossCenterPosition;
+                    Vector2 direction = GetChargeDirection(startPosition, i, chargeCount, firstZigzagSide);
+                    float telegraphTime = i == 0 ? warningTime : GetPhaseBetweenChargeDelay();
 
-                float telegraphTime = i == 0
-                    ? warningTime
-                    : GetPhaseBetweenChargeDelay();
+                    GameObject warningObject = CreateWarningLine(startPosition, direction, chargeDistance);
 
-                GameObject warningObject = CreateWarningLine(startPosition, direction, chargeDistance);
+                    if (telegraphTime > 0f)
+                    {
+                        yield return new WaitForSeconds(telegraphTime);
+                    }
 
-                if (telegraphTime > 0f)
-                {
-                    yield return new WaitForSeconds(telegraphTime);
-                }
+                    if (warningObject != null)
+                    {
+                        Destroy(warningObject);
+                    }
 
-                if (warningObject != null)
-                {
-                    Destroy(warningObject);
-                }
+                    HashSet<Character> hitTargets = canHitPlayerOncePerCharge
+                        ? new HashSet<Character>()
+                        : sharedHitTargets;
 
-                HashSet<Character> hitTargets = canHitPlayerOncePerCharge
-                    ? new HashSet<Character>()
-                    : sharedHitTargets;
+                    if (ignorePlayerPhysicsCollisionDuringCharge)
+                    {
+                        SetPlayerCollisionIgnore(true);
+                    }
 
-                yield return StartCoroutine(
-                    ChargeForward(
-                        direction,
-                        chargeDistance,
-                        chargeSpeed,
-                        chargeDamage,
-                        hitTargets
-                    )
-                );
-
-                if (debugCharge)
-                {
-                    Debug.Log(
-                        $"[BossChargePattern] Charge {i + 1}/{chargeCount} complete / " +
-                        $"phase={bossController.CurrentPhase}, " +
-                        $"speed={chargeSpeed}, damage={chargeDamage}"
+                    yield return StartCoroutine(
+                        ChargeForward(
+                            direction,
+                            chargeDistance,
+                            chargeSpeed,
+                            chargeDamage,
+                            hitTargets
+                        )
                     );
+
+                    if (ignorePlayerPhysicsCollisionDuringCharge)
+                    {
+                        SetPlayerCollisionIgnore(false);
+                    }
+
+                    if (debugCharge)
+                    {
+                        Debug.Log(
+                            $"[BossChargePattern] Charge {i + 1}/{chargeCount} complete / " +
+                            $"phase={bossController.CurrentPhase}, " +
+                            $"distance={chargeDistance}, speed={chargeSpeed}, damage={chargeDamage}"
+                        );
+                    }
+                }
+
+                if (endLag > 0f)
+                {
+                    yield return new WaitForSeconds(endLag);
                 }
             }
+            finally
+            {
+                SetPlayerCollisionIgnore(false);
 
-            yield return new WaitForSeconds(endLag);
-
-            bossController.SetSuppressContactDamage(false);
-            bossController.SetExternalMovementLock(false);
+                if (bossController != null)
+                {
+                    bossController.SetSuppressContactDamage(false);
+                    bossController.SetExternalMovementLock(false);
+                }
+            }
         }
 
         private int GetPhaseChargeCount()
@@ -300,6 +326,7 @@ namespace Vampire
             float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
             float bossBodyOffset = 0.9f;
             float visualLength = Mathf.Max(0.1f, chargeDistance - bossBodyOffset);
+
             Vector2 visualStart = startPosition + direction * bossBodyOffset;
             Vector2 centerPosition = visualStart + direction * (visualLength * 0.5f);
 
@@ -335,13 +362,27 @@ namespace Vampire
             HashSet<Character> hitTargets)
         {
             Rigidbody2D rb = bossController.Rigidbody;
+
             float traveledDistance = 0f;
+            Vector2 chargeStartPosition = rb != null
+                ? rb.position
+                : (Vector2)bossController.transform.position;
+
+            Vector2 exactEndPosition = chargeStartPosition + direction * chargeDistance;
+            Vector2 previousPosition = chargeStartPosition;
 
             while (traveledDistance < chargeDistance &&
+                   bossController != null &&
                    !bossController.IsDead &&
                    !bossController.IsPhaseTransitioning)
             {
-                float step = chargeSpeed * Time.fixedDeltaTime;
+                float remainingDistance = chargeDistance - traveledDistance;
+                float step = Mathf.Min(chargeSpeed * Time.fixedDeltaTime, remainingDistance);
+
+                if (step <= 0f)
+                {
+                    break;
+                }
 
                 Vector2 currentPosition = rb != null
                     ? rb.position
@@ -349,24 +390,110 @@ namespace Vampire
 
                 Vector2 nextPosition = currentPosition + direction * step;
 
-                if (rb != null)
+                if (forceExactChargeMovement)
                 {
-                    rb.MovePosition(nextPosition);
+                    ForceMoveBossTo(nextPosition);
                 }
                 else
                 {
-                    bossController.transform.position = nextPosition;
+                    if (rb != null)
+                    {
+                        rb.MovePosition(nextPosition);
+                    }
+                    else
+                    {
+                        bossController.transform.position = nextPosition;
+                    }
                 }
 
-                traveledDistance += step;
+                CheckChargePathHit(previousPosition, nextPosition, chargeDamage, hitTargets);
 
-                CheckChargeHit(nextPosition, chargeDamage, hitTargets);
+                previousPosition = nextPosition;
+                traveledDistance += step;
 
                 yield return new WaitForFixedUpdate();
             }
+
+            if (bossController != null &&
+                !bossController.IsDead &&
+                !bossController.IsPhaseTransitioning &&
+                forceExactChargeMovement)
+            {
+                Vector2 currentPosition = rb != null
+                    ? rb.position
+                    : (Vector2)bossController.transform.position;
+
+                if (Vector2.Distance(currentPosition, exactEndPosition) > 0.001f)
+                {
+                    ForceMoveBossTo(exactEndPosition);
+                    CheckChargePathHit(currentPosition, exactEndPosition, chargeDamage, hitTargets);
+                }
+            }
+
+            if (rb != null)
+            {
+                rb.velocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+            }
         }
 
-        private void CheckChargeHit(
+        private void ForceMoveBossTo(Vector2 position)
+        {
+            if (bossController == null)
+            {
+                return;
+            }
+
+            Rigidbody2D rb = bossController.Rigidbody;
+
+            if (rb != null)
+            {
+                rb.velocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+                rb.position = position;
+            }
+
+            Vector3 worldPosition = bossController.transform.position;
+            worldPosition.x = position.x;
+            worldPosition.y = position.y;
+            bossController.transform.position = worldPosition;
+
+            Physics2D.SyncTransforms();
+        }
+
+        private void CheckChargePathHit(
+            Vector2 fromPosition,
+            Vector2 toPosition,
+            float damage,
+            HashSet<Character> hitTargets)
+        {
+            Vector2 segment = toPosition - fromPosition;
+            float segmentLength = segment.magnitude;
+
+            if (segmentLength <= 0.001f)
+            {
+                CheckChargeHitAtPosition(toPosition, damage, hitTargets);
+                return;
+            }
+
+            Vector2 direction = segment.normalized;
+            Vector2 center = (fromPosition + toPosition) * 0.5f;
+            float angle = Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg;
+
+            Vector2 boxSize = new Vector2(
+                Mathf.Max(hitboxSize.x, segmentLength + hitboxSize.x),
+                Mathf.Max(0.05f, hitboxSize.y)
+            );
+
+            Collider2D[] hits = Physics2D.OverlapBoxAll(center, boxSize, angle, playerLayer);
+
+            for (int i = 0; i < hits.Length; i++)
+            {
+                TryDamagePlayerFromCollider(hits[i], damage, hitTargets);
+            }
+        }
+
+        private void CheckChargeHitAtPosition(
             Vector2 center,
             float damage,
             HashSet<Character> hitTargets)
@@ -375,31 +502,112 @@ namespace Vampire
 
             for (int i = 0; i < hits.Length; i++)
             {
-                Character character = hits[i].GetComponentInParent<Character>();
+                TryDamagePlayerFromCollider(hits[i], damage, hitTargets);
+            }
+        }
 
-                if (character == null)
+        private void TryDamagePlayerFromCollider(
+            Collider2D hit,
+            float damage,
+            HashSet<Character> hitTargets)
+        {
+            if (hit == null || bossController == null)
+            {
+                return;
+            }
+
+            Character character = hit.GetComponentInParent<Character>();
+
+            if (character == null)
+            {
+                return;
+            }
+
+            if (character != bossController.PlayerCharacter)
+            {
+                return;
+            }
+
+            if (hitTargets.Contains(character))
+            {
+                return;
+            }
+
+            hitTargets.Add(character);
+            character.TakeDamage(damage);
+
+            if (debugCharge)
+            {
+                Debug.Log($"[BossChargePattern] Player hit by charge / damage={damage}");
+            }
+        }
+
+        private void SetPlayerCollisionIgnore(bool ignore)
+        {
+            if (!ignore)
+            {
+                RestoreIgnoredPlayerCollisions();
+                return;
+            }
+
+            RestoreIgnoredPlayerCollisions();
+
+            if (bossController == null || bossController.PlayerCharacter == null)
+            {
+                return;
+            }
+
+            Collider2D[] bossColliders = bossController.GetComponentsInChildren<Collider2D>(true);
+            Collider2D[] playerColliders = bossController.PlayerCharacter.GetComponentsInChildren<Collider2D>(true);
+
+            for (int i = 0; i < bossColliders.Length; i++)
+            {
+                Collider2D bossCollider = bossColliders[i];
+
+                if (bossCollider == null)
                 {
                     continue;
                 }
 
-                if (character != bossController.PlayerCharacter)
+                for (int j = 0; j < playerColliders.Length; j++)
                 {
-                    continue;
-                }
+                    Collider2D playerCollider = playerColliders[j];
 
-                if (hitTargets.Contains(character))
-                {
-                    continue;
-                }
+                    if (playerCollider == null)
+                    {
+                        continue;
+                    }
 
-                hitTargets.Add(character);
-                character.TakeDamage(damage);
+                    if (Physics2D.GetIgnoreCollision(bossCollider, playerCollider))
+                    {
+                        continue;
+                    }
 
-                if (debugCharge)
-                {
-                    Debug.Log($"[BossChargePattern] Player hit / damage={damage}");
+                    Physics2D.IgnoreCollision(bossCollider, playerCollider, true);
+
+                    ignoredBossColliders.Add(bossCollider);
+                    ignoredPlayerColliders.Add(playerCollider);
                 }
             }
+        }
+
+        private void RestoreIgnoredPlayerCollisions()
+        {
+            int pairCount = Mathf.Min(ignoredBossColliders.Count, ignoredPlayerColliders.Count);
+
+            for (int i = 0; i < pairCount; i++)
+            {
+                Collider2D bossCollider = ignoredBossColliders[i];
+                Collider2D playerCollider = ignoredPlayerColliders[i];
+
+                if (bossCollider != null && playerCollider != null)
+                {
+                    Physics2D.IgnoreCollision(bossCollider, playerCollider, false);
+                }
+            }
+
+            ignoredBossColliders.Clear();
+            ignoredPlayerColliders.Clear();
         }
 
         private Vector2 RotateVector(Vector2 vector, float angleDegrees)

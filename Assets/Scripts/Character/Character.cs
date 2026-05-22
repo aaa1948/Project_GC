@@ -38,7 +38,7 @@ namespace Vampire
         [Header("Upgradeable Systems")]
         [SerializeField] protected UpgradeableMovementSpeed movementSpeed;
         [SerializeField] protected UpgradeableArmor armor;
-        [SerializeField] protected float rangeMultiplier = 1.0f; // 기본 1배
+        [SerializeField] protected float rangeMultiplier = 1.0f;
 
         [Header("Combat Stat Pockets")]
         [SerializeField] protected float attackSpeedMultiplier = 1.0f;
@@ -53,24 +53,56 @@ namespace Vampire
         [SerializeField] protected float luckMultiplier = 1.0f;
         [SerializeField] protected float lifeSteal = 0f;
         [SerializeField] protected float healOnKill = 0f;
-        [SerializeField] protected float projectileSizeMultiplier = 1.0f; // 기본 크기 1배
-
+        [SerializeField] protected float projectileSizeMultiplier = 1.0f;
 
         [Header("Special Ability Flags")]
         [SerializeField] protected int additionalProjectiles = 0;
         [SerializeField] protected bool hasShield = false;
         [SerializeField] protected int reviveCount = 0;
         [SerializeField] protected float invincibilityTimeBonus = 0f;
-        [SerializeField] private bool hasAntibioticBomb = false; //  항생제 폭탄 스위치
+        [SerializeField] private bool hasAntibioticBomb = false;
 
         [Header("Dash Settings")]
+        [Tooltip("체크하면 Shift 키로 대쉬를 사용할 수 있습니다.")]
         [SerializeField] protected bool enableDash = true;
+
+        [Tooltip("대쉬로 이동하는 거리입니다. 값이 클수록 더 멀리 대쉬합니다.")]
         [SerializeField] protected float dashDistance = 3.5f;
-        [SerializeField] protected float dashDuration = 0.14f;
+
+        [Tooltip("대쉬가 완료되기까지 걸리는 시간입니다. 낮으면 순간이동처럼 보이고, 높이면 더 부드럽게 미끄러지는 느낌이 납니다.")]
+        [SerializeField] protected float dashDuration = 0.22f;
+
+        [Tooltip("대쉬 1회가 다시 충전되기까지 걸리는 시간입니다.")]
         [SerializeField] protected float dashRechargeTime = 1.2f;
+
+        [Tooltip("최대 대쉬 보유 횟수입니다.")]
         [SerializeField] protected int maxDashCharges = 1;
+
+        [Tooltip("체크하면 대쉬 중 피해를 받지 않습니다.")]
         [SerializeField] protected bool invincibleDuringDash = true;
+
+        [Tooltip("체크하면 대쉬 종료 시 Rigidbody 속도를 0으로 초기화합니다.")]
         [SerializeField] protected bool stopVelocityAfterDash = true;
+
+        [Header("Dash Feel")]
+        [Tooltip("대쉬 이동 곡선입니다. X축은 시간, Y축은 이동 진행도입니다. 직선에 가까우면 일정 속도, 완만한 곡선이면 더 부드러운 대쉬가 됩니다.")]
+        [SerializeField] protected AnimationCurve dashMovementCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
+
+        [Tooltip("체크하면 Dash Movement Curve를 사용합니다. 꺼두면 일정한 속도로 대쉬합니다.")]
+        [SerializeField] protected bool useDashMovementCurve = true;
+
+        [Header("Dash Sprite")]
+        [Tooltip("체크하면 대쉬 중 걷기 애니메이션을 멈추고 대쉬 전용 스프라이트로 교체합니다.")]
+        [SerializeField] protected bool useDashSprite = true;
+
+        [Tooltip("대쉬 중에 표시할 전용 스프라이트입니다. 앞으로 숙인 질주자세 같은 이미지를 넣으면 됩니다.")]
+        [SerializeField] protected Sprite dashSprite;
+
+        [Tooltip("체크하면 대쉬 스프라이트가 오른쪽을 바라보는 기준 이미지라고 판단합니다. 보통 오른쪽을 보고 있는 이미지를 넣고 체크해두면 됩니다.")]
+        [SerializeField] protected bool dashSpriteFacesRight = true;
+
+        [Tooltip("체크하면 대쉬가 끝난 뒤 이동 중일 때 걷기 애니메이션을 다시 시작합니다.")]
+        [SerializeField] protected bool restartWalkAnimationAfterDash = true;
 
         [Header("Dash Collision")]
         [Tooltip("체크하면 대쉬 중 플레이어의 일반 충돌 콜라이더를 Trigger로 바꿔 몬스터를 밀지 않고 관통합니다.")]
@@ -80,28 +112,28 @@ namespace Vampire
         [SerializeField] protected bool includeTriggerCollidersInDashGhost = false;
 
         [Header("Dash Debug")]
+        [Tooltip("체크하면 대쉬 관련 로그를 Console에 출력합니다.")]
         [SerializeField] protected bool debugDashLog = false;
 
         [Header("Recovery Stats")]
-        [SerializeField] protected float healOnIdlePerSecond = 0f; // 정지 시 초당 회복량
-        
+        [SerializeField] protected float healOnIdlePerSecond = 0f;
+
         [Header("Legendary Utility Stats")]
-        [SerializeField] protected bool autoCollectItems = false; // 기본값은 꺼짐
+        [SerializeField] protected bool autoCollectItems = false;
 
         [Header("Debuff Stats")]
-        [SerializeField] private float slowChance = 0f; // 기본 둔화 확률 0% (0.0f)
+        [SerializeField] private float slowChance = 0f;
 
         [Header("Utility Combat Stats")]
-        [SerializeField] private int additionalPierce = 0; // 기본 추가 관통 0회
-
-        [SerializeField] private float burnChance = 0f; // 기본 화상 확률 0%
+        [SerializeField] private int additionalPierce = 0;
+        [SerializeField] private float burnChance = 0f;
 
         [Header("Rare Item Flags")]
         [SerializeField] private bool hasGinsengStick = false;
         [SerializeField] private float antibioticBombChance = 0f;
-        [SerializeField] private bool hasThermometer = false; // 전자체온계
-        [SerializeField] private int mouthwashCount = 0;//구강청결제
-        [SerializeField] private int reflexHammerCount = 0; // 반사신경망치
+        [SerializeField] private bool hasThermometer = false;
+        [SerializeField] private int mouthwashCount = 0;
+        [SerializeField] private int reflexHammerCount = 0;
 
         protected SpriteRenderer spriteRenderer;
         protected SpriteAnimator spriteAnimator;
@@ -121,6 +153,9 @@ namespace Vampire
         protected Coroutine dashCoroutine = null;
         protected Coroutine dashRechargeCoroutine = null;
 
+        private Sprite cachedSpriteBeforeDash;
+        private bool dashSpriteApplied = false;
+
         private readonly List<Collider2D> dashGhostedColliders = new List<Collider2D>();
         private readonly Dictionary<Collider2D, bool> originalTriggerStateByCollider = new Dictionary<Collider2D, bool>();
 
@@ -130,6 +165,7 @@ namespace Vampire
             {
                 return lookDirection;
             }
+
             set
             {
                 if (value != Vector2.zero)
@@ -141,12 +177,10 @@ namespace Vampire
 
         public Transform CenterTransform => centerTransform;
         public Collider2D CollectableCollider => collectableCollider;
-
         public float Luck => characterBlueprint.luck * luckMultiplier;
         public int CurrentLevel => currentLevel;
-
         public bool HasThermometer => hasThermometer;
-       //전자체온계 공속 스택
+
         private int thermometerStacks = 0;
         private float thermometerStackTimer = 0f;
         private float thermometerMoveAccumulator = 0f;
@@ -157,16 +191,15 @@ namespace Vampire
             {
                 float finalSpeed = attackSpeedMultiplier;
 
-                // 전자체온계를 보유하고 있다면 스택당 공격 속도 증가!
                 if (hasThermometer)
                 {
-                    finalSpeed += (thermometerStacks * 0.03f);; //  스택당 공속 +3% (기획에 맞게 조절 가능)
+                    finalSpeed += thermometerStacks * 0.03f;
                 }
 
                 return finalSpeed;
             }
         }
-        //까지 공속스택
+
         public int MouthwashCount => mouthwashCount;
         public float ProjectileSpeedMultiplier => projectileSpeedMultiplier;
         public float BurnChance => burnChance;
@@ -185,15 +218,11 @@ namespace Vampire
         public UnityEvent<float> OnDealDamage { get; } = new UnityEvent<float>();
         public UnityEvent OnDeath { get; } = new UnityEvent();
         public float SlowChance => slowChance;
-
         public int AdditionalPierce => additionalPierce;
         public CharacterBlueprint Blueprint => characterBlueprint;
         public Vector2 Velocity => rb != null ? rb.velocity : Vector2.zero;
-
         public bool HasAntibioticBomb => hasAntibioticBomb;
 
-        
-        // Spatial Hash Grid Client Interface
         public Vector2 Position => transform.position;
         public Vector2 Size => meleeHitboxCollider.bounds.size;
         public Dictionary<int, int> ListIndexByCellIndex { get; set; }
@@ -205,13 +234,13 @@ namespace Vampire
             zPositioner = gameObject.AddComponent<ZPositioner>();
             spriteAnimator = GetComponentInChildren<SpriteAnimator>();
             spriteRenderer = spriteAnimator.GetComponent<SpriteRenderer>();
-
             characterBlueprint = CrossSceneData.CharacterBlueprint;
         }
 
         private void OnDisable()
         {
             RestoreDashCollisionGhost();
+            RestoreDashSpriteVisual();
         }
 
         public virtual void Init(EntityManager entityManager, AbilityManager abilityManager, StatsManager statsManager)
@@ -222,7 +251,6 @@ namespace Vampire
 
             OnDealDamage.AddListener(statsManager.IncreaseDamageDealt);
 
-            // 2.  [추가된 진짜 흡혈 로직!] 데미지를 줄 때마다 흡혈 수치만큼 체력 회복
             OnDealDamage.AddListener((damage) =>
             {
                 if (lifeSteal > 0)
@@ -236,7 +264,6 @@ namespace Vampire
 
             currentHealth = characterBlueprint.hp;
             healthBar.Setup(currentHealth, 0, GetMaxHealth());
-
             expBar.Setup(currentExp, 0, nextLevelExp);
 
             currentLevel = 1;
@@ -262,18 +289,15 @@ namespace Vampire
         protected virtual void Update()
         {
             UpdateDashInput();
-
-            //  [추가] 정지 시 회복 로직 호출
             HandleHealOnIdle();
-
-            HandleThermometerMovementAndDecay();//체온계 지속시간 실시간 감시
+            HandleThermometerMovementAndDecay();
 
             if (lookIndicator != null)
             {
                 lookIndicator.transform.localPosition = lookDirection * lookIndicatorRadius;
             }
 
-            if (spriteRenderer != null)
+            if (spriteRenderer != null && !dashSpriteApplied)
             {
                 spriteRenderer.flipX = lookDirection.x < 0;
             }
@@ -281,15 +305,12 @@ namespace Vampire
 
         private void HandleHealOnIdle()
         {
-            // 회복량이 설정되어 있고, 캐릭터가 멈춰있을 때 (속도가 거의 0일 때)
             if (healOnIdlePerSecond > 0 && Velocity.magnitude < 0.1f)
             {
-                //  고정 수치 대신 최대 체력(GetMaxHealth())의 퍼센트 비율로 회복하게 만듭니다!
                 float healAmount = GetMaxHealth() * healOnIdlePerSecond;
                 GainHealth(healAmount * Time.deltaTime);
             }
         }
-
 
         protected virtual void FixedUpdate()
         {
@@ -435,6 +456,7 @@ namespace Vampire
         private IEnumerator DashCoroutine(Vector2 dashDirection)
         {
             isDashing = true;
+
             ApplyDashCollisionGhost();
 
             if (rb != null)
@@ -442,7 +464,12 @@ namespace Vampire
                 rb.velocity = Vector2.zero;
             }
 
-            StartWalkAnimation();
+            if (dashDirection != Vector2.zero)
+            {
+                lookDirection = dashDirection.normalized;
+            }
+
+            ApplyDashSpriteVisual(dashDirection);
 
             Vector2 startPosition = rb != null ? rb.position : (Vector2)transform.position;
             Vector2 targetPosition = startPosition + dashDirection.normalized * dashDistance;
@@ -452,9 +479,15 @@ namespace Vampire
 
             while (elapsed < safeDuration)
             {
-                float t = elapsed / safeDuration;
-                float easedT = 1f - Mathf.Pow(1f - t, 3f);
-                Vector2 nextPosition = Vector2.Lerp(startPosition, targetPosition, easedT);
+                float normalizedTime = Mathf.Clamp01(elapsed / safeDuration);
+                float moveT = normalizedTime;
+
+                if (useDashMovementCurve && dashMovementCurve != null)
+                {
+                    moveT = Mathf.Clamp01(dashMovementCurve.Evaluate(normalizedTime));
+                }
+
+                Vector2 nextPosition = Vector2.LerpUnclamped(startPosition, targetPosition, moveT);
 
                 if (rb != null)
                 {
@@ -486,6 +519,7 @@ namespace Vampire
             yield return new WaitForFixedUpdate();
 
             RestoreDashCollisionGhost();
+            RestoreDashSpriteVisual();
 
             isDashing = false;
             dashCoroutine = null;
@@ -494,6 +528,69 @@ namespace Vampire
             {
                 Debug.Log("[Dash] 대쉬 종료");
             }
+        }
+
+        private void ApplyDashSpriteVisual(Vector2 dashDirection)
+        {
+            if (!useDashSprite)
+            {
+                return;
+            }
+
+            if (dashSprite == null)
+            {
+                return;
+            }
+
+            if (spriteRenderer == null)
+            {
+                return;
+            }
+
+            cachedSpriteBeforeDash = spriteRenderer.sprite;
+            dashSpriteApplied = true;
+
+            StopWalkAnimation();
+
+            spriteRenderer.sprite = dashSprite;
+
+            if (dashDirection.x != 0f)
+            {
+                if (dashSpriteFacesRight)
+                {
+                    spriteRenderer.flipX = dashDirection.x < 0f;
+                }
+                else
+                {
+                    spriteRenderer.flipX = dashDirection.x > 0f;
+                }
+            }
+        }
+
+        private void RestoreDashSpriteVisual()
+        {
+            if (!dashSpriteApplied)
+            {
+                return;
+            }
+
+            dashSpriteApplied = false;
+
+            if (restartWalkAnimationAfterDash && moveDirection != Vector2.zero)
+            {
+                StartWalkAnimation();
+            }
+            else
+            {
+                StopWalkAnimation();
+
+                if (spriteRenderer != null && cachedSpriteBeforeDash != null)
+                {
+                    spriteRenderer.sprite = cachedSpriteBeforeDash;
+                }
+            }
+
+            cachedSpriteBeforeDash = null;
         }
 
         private void ApplyDashCollisionGhost()
@@ -528,7 +625,6 @@ namespace Vampire
 
                 originalTriggerStateByCollider[targetCollider] = targetCollider.isTrigger;
                 dashGhostedColliders.Add(targetCollider);
-
                 targetCollider.isTrigger = true;
             }
 
@@ -611,19 +707,15 @@ namespace Vampire
             while (currentExp + exp >= nextLevelExp)
             {
                 float expDiff = nextLevelExp - currentExp;
-
                 currentExp += expDiff;
                 exp -= expDiff;
-
                 expBar.Setup(currentExp, 0, nextLevelExp);
 
                 yield return LevelUpCoroutine();
 
                 float prevLevelExp = nextLevelExp;
-
                 expToNextLevel += characterBlueprint.LevelToExpIncrease(currentLevel);
                 nextLevelExp += expToNextLevel;
-
                 expBar.Setup(currentExp, prevLevelExp, nextLevelExp);
             }
 
@@ -706,17 +798,11 @@ namespace Vampire
 
             healthBar.SubtractPoints(damage);
             currentHealth -= damage;
-
             rb.velocity += knockback * Mathf.Sqrt(rb.drag);
-
             statsManager.IncreaseDamageTaken(damage);
 
-            // ---------------------------------------------------------------------------------
-            //  [추가] 반사신경 망치 로직: 아픈 데미지가 들어왔을 때 주변 적들을 사방으로 날려버립니다!
-            // ---------------------------------------------------------------------------------
             if (reflexHammerCount > 0 && damage > 0f)
             {
-                // 💡 1개면 0.005(0.5%), 2개면 0.01(1%), 10개면 0.05(5%)
                 float finalHammerChance = reflexHammerCount * 0.005f;
 
                 if (UnityEngine.Random.value < finalHammerChance)
@@ -749,23 +835,22 @@ namespace Vampire
         private IEnumerator HitAnimation()
         {
             isInvincible = true;
-
             spriteRenderer.sharedMaterial = hitMaterial;
 
             yield return new WaitForSeconds(0.15f + invincibilityTimeBonus);
 
             spriteRenderer.sharedMaterial = defaultMaterial;
-
             isInvincible = false;
         }
 
         private IEnumerator DeathAnimation()
         {
             alive = false;
+
             RestoreDashCollisionGhost();
+            RestoreDashSpriteVisual();
 
             spriteRenderer.sharedMaterial = deathMaterial;
-
             abilityManager.DestroyActiveAbilities();
             StopWalkAnimation();
             deathParticles.Play();
@@ -778,7 +863,6 @@ namespace Vampire
                 spriteRenderer.sharedMaterial = deathMaterial;
                 deathParticles.transform.position = transform.position + Vector3.up * height * (1 - t);
                 deathMaterial.SetFloat("_Wipe", t);
-
                 t += Time.deltaTime;
 
                 yield return null;
@@ -795,7 +879,6 @@ namespace Vampire
         private void Revive()
         {
             reviveCount--;
-
             currentHealth = GetMaxHealth() * 0.5f;
             healthBar.Setup(currentHealth, 0, GetMaxHealth());
 
@@ -829,6 +912,7 @@ namespace Vampire
         {
             rb.drag = characterBlueprint.acceleration / (movementSpeed.Value * movementSpeed.Value);
         }
+
         public void AddHealOnIdle(float amount)
         {
             healOnIdlePerSecond += amount;
@@ -846,7 +930,7 @@ namespace Vampire
 
         public void StartWalkAnimation()
         {
-            if (alive)
+            if (alive && spriteAnimator != null)
             {
                 spriteAnimator.StartAnimating();
             }
@@ -870,27 +954,20 @@ namespace Vampire
             return characterBlueprint.hp + maxHealthBonus;
         }
 
-        // =====================================================================
-        // Lobby Carry Item / Shop Item 효과 적용용 공식 메서드
-        // =====================================================================
-
         public void AddAttackSpeed(float amount)
         {
             attackSpeedMultiplier += amount;
         }
 
-        
         public float DamageMultiplier
         {
             get
             {
-                // 원래 적용되던 기본 공격력 배율 변수
                 float finalMultiplier = damageMultiplier;
 
-                
                 if (hasGinsengStick && (currentHealth / GetMaxHealth()) <= 0.3f)
                 {
-                    finalMultiplier += 0.5f; // 공격력 +50% 증가
+                    finalMultiplier += 0.5f;
                 }
 
                 return finalMultiplier;
@@ -915,10 +992,12 @@ namespace Vampire
 
             healthBar.Setup(currentHealth, 0, maxHealth);
         }
+
         public void EnableThermometer()
         {
             hasThermometer = true;
         }
+
         public void AddMoveSpeedBoost(float amount)
         {
             if (movementSpeed == null)
@@ -929,6 +1008,7 @@ namespace Vampire
             movementSpeed.Value += amount;
             UpdateMoveSpeed();
         }
+
         public void AddRangeBoost(float amount)
         {
             rangeMultiplier += amount;
@@ -943,61 +1023,62 @@ namespace Vampire
         {
             expMultiplier += amount;
         }
+
         public void AddAdditionalPierce(int amount)
         {
             additionalPierce += amount;
         }
-        // 인공눈물과 치실이 사거리를 늘릴 때 사용할 함수입니다.
+
         public void AddRangeMultiplier(float amount)
         {
-           
             rangeMultiplier += amount;
         }
+
         public void AddCritChance(float amount)
         {
             critChance += amount;
         }
-        // 주사기가 적을 맞힐 때마다 플레이어의 체온(공속 스택)을 올립니다.
+
         public void AddThermometerStack()
         {
-            if (!hasThermometer) return;
-
-            if (thermometerStacks < 10) //  최대 10스택 제한 (최대 공속 +50%)
+            if (!hasThermometer)
             {
-                thermometerStacks++;
-                Debug.Log($"<color=cyan>[체온계 스택]</color> 적중 완료! 현재 스택: <b>{thermometerStacks}</b> (공속 +{thermometerStacks * 5}%)");
+                return;
             }
 
-            thermometerStackTimer = 3.0f; //  3초 동안 공격 안 하면 스택 초기화 (지속 시간)
+            if (thermometerStacks < 10)
+            {
+                thermometerStacks++;
+                Debug.Log($"[체온계 스택] 적중 완료! 현재 스택: {thermometerStacks} (공속 +{thermometerStacks * 5}%)");
+            }
+
+            thermometerStackTimer = 3.0f;
         }
 
-        //  매 프레임마다 타이머를 깎아서 스택을 식히는 최적화 함수
         private void HandleThermometerMovementAndDecay()
         {
-            if (!hasThermometer) return;
+            if (!hasThermometer)
+            {
+                return;
+            }
 
-            //  [상황 A] 플레이어가 이동 중일 때 (예열)
             if (moveDirection != Vector2.zero)
             {
                 thermometerStackTimer = 0f;
                 thermometerMoveAccumulator += Time.deltaTime;
 
-                // 0.25초 연속 이동 시 1스택 충전
                 if (thermometerMoveAccumulator >= 0.25f)
                 {
                     thermometerMoveAccumulator = 0f;
+
                     if (thermometerStacks < 10)
                     {
                         thermometerStacks++;
-
-                        //  스택이 올라갔으니 화면 UI를 갱신합니다.
-                        UpdateThermometerDisplay(); //  [UI 갱신 추가]
-
-                        Debug.Log($"<color=cyan>[체온계 예열]</color> 이동 중! 스택: <b>{thermometerStacks}</b> (공속 +{thermometerStacks * 3}%)");
+                        UpdateThermometerDisplay();
+                        Debug.Log($"[체온계 예열] 이동 중! 스택: {thermometerStacks} (공속 +{thermometerStacks * 3}%)");
                     }
                 }
             }
-            //  [상황 B] 플레이어가 제자리에 멈췄을 때 (즉시 실시간 냉각)
             else
             {
                 thermometerMoveAccumulator = 0f;
@@ -1009,19 +1090,16 @@ namespace Vampire
                     if (thermometerStackTimer <= 0f)
                     {
                         thermometerStacks--;
-
-                        // 2️⃣ [여기에 추가!] 스택이 깎였으니 화면 UI를 실시간으로 갱신합니다.
-                        UpdateThermometerDisplay(); //  [UI 갱신 추가]
-
+                        UpdateThermometerDisplay();
                         thermometerStackTimer = 0.15f;
 
                         if (thermometerStacks == 0)
                         {
-                            Debug.Log("<color=gray>[체온계 냉각]</color> 완전히 냉각되었습니다. 공속 초기화.");
+                            Debug.Log("[체온계 냉각] 완전히 냉각되었습니다. 공속 초기화.");
                         }
                         else
                         {
-                            Debug.Log($"<color=gray>[체온계 냉각]</color> 정지 상태! 체온 저하 중... 남은 스택: <b>{thermometerStacks}</b> (공속 +{thermometerStacks * 3}%)");
+                            Debug.Log($"[체온계 냉각] 정지 상태! 체온 저하 중... 남은 스택: {thermometerStacks} (공속 +{thermometerStacks * 3}%)");
                         }
                     }
                 }
@@ -1030,59 +1108,58 @@ namespace Vampire
 
         private void UpdateThermometerDisplay()
         {
-            if (thermometerText == null) return;
+            if (thermometerText == null)
+            {
+                return;
+            }
 
-            // 체온계가 없거나 0스택(정상 상태)이면 화면에서 깔끔하게 숨김
             if (!hasThermometer || thermometerStacks == 0)
             {
                 thermometerText.text = "";
                 return;
             }
 
-            //  1. 데이터 실시간 계산
-            float displayTemp = 36.5f + thermometerStacks;            // 36.5도에서 스택당 1도씩 상승
-            int bonusAttackSpeed = thermometerStacks * 3;              // [레버 2]: 스택당 공속 3% 증가
-            string maxLabel = thermometerStacks >= 10 ? " <color=red>[MAX]</color>" : "";
+            float displayTemp = 36.5f + thermometerStacks;
+            int bonusAttackSpeed = thermometerStacks * 3;
+            string maxLabel = thermometerStacks >= 10 ? " [MAX]" : "";
 
-            //  2. 상현님이 요청하신 콤팩트하고 화려한 형식으로 문자열 조합!
-            // 출력 예시 ➔ 🌡️ 온도 스택: 5 (41.5°C | 공속 +15%)
-            thermometerText.text = $"<color=orange>🌡️ 온도 스택: {thermometerStacks}</color> ({displayTemp:0.0}°C | 공속 +{bonusAttackSpeed}%){maxLabel}";
+            thermometerText.text = $"️ 온도 스택: {thermometerStacks} ({displayTemp:0.0}°C | 공속 +{bonusAttackSpeed}%){maxLabel}";
         }
 
-        // 피격 시 주변 적들을 탐색해 강력한 물리 넉백을 선사하는 함수
         private void TriggerReflexHammer()
         {
-            float pushRadius = 3.5f;     //  넉백 충격파 반경
-            float strongForce = 15.0f;   //  적들을 날려버릴 강력한 힘
+            float pushRadius = 3.5f;
+            float strongForce = 15.0f;
 
-            // 내 주변 반경 내의 모든 콜라이더 탐색
             Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, pushRadius);
 
             foreach (Collider2D hit in hits)
             {
-                // 몬스터 컴포넌트 추출
                 Monster monster = hit.GetComponentInParent<Monster>();
-                if (monster == null) continue;
+
+                if (monster == null)
+                {
+                    continue;
+                }
 
                 IDamageable damageable = monster as IDamageable;
+
                 if (damageable != null)
                 {
-                    // 내 중심에서 몬스터를 바라보는 바깥 방향 벡터 계산
                     Vector2 pushDirection = (monster.transform.position - transform.position).normalized;
 
-                    // 완전히 겹쳐있다면 랜덤 방향으로 보정
                     if (pushDirection == Vector2.zero)
                     {
                         pushDirection = Random.insideUnitCircle.normalized;
                     }
 
-                    //  데미지는 0, 강력한 넉백 힘과 방향을 타겟에게 전달합니다!
                     damageable.TakeDamage(0f, pushDirection * strongForce);
                 }
             }
 
-            Debug.Log("<color=red>[반사신경 망치]</color> 쾅! 반사 신경 작동, 주변 적들을 격퇴했습니다.");
+            Debug.Log("[반사신경 망치] 쾅! 반사 신경 작동, 주변 적들을 격퇴했습니다.");
         }
+
         public void AddLuck(float amount)
         {
             luckMultiplier += amount;
@@ -1092,12 +1169,12 @@ namespace Vampire
         {
             hasGinsengStick = true;
         }
-        //전자체온계
+
         public void AddMouthwash()
         {
             mouthwashCount++;
         }
-        //반사신경망치
+
         public void AddReflexHammer()
         {
             reflexHammerCount++;
@@ -1105,7 +1182,6 @@ namespace Vampire
 
         public void EnableAntibioticBomb()
         {
-            // 한 번 살 때마다 폭발 확률 5%(0.05)씩 누적!
             antibioticBombChance += 0.05f;
         }
 
@@ -1118,26 +1194,32 @@ namespace Vampire
         {
             healOnKill += amount;
         }
+
         public void AddProjectileSize(float amount)
         {
             projectileSizeMultiplier += amount;
         }
+
         public void AddDamageMultiplier(float amount)
         {
             damageMultiplier += amount;
         }
+
         public void AddProjectileCount(int count)
         {
             additionalProjectiles += count;
         }
+
         public void EnableAutoCollect()
         {
             autoCollectItems = true;
         }
+
         public void AddSlowChance(float amount)
         {
             slowChance += amount;
         }
+
         public void EnableShield()
         {
             hasShield = true;
@@ -1152,11 +1234,6 @@ namespace Vampire
         {
             invincibilityTimeBonus += amount;
         }
-
-        // =====================================================================
-        // Dash 확장용 메서드
-        // 나중에 증강/아이템에서 호출해서 대쉬 횟수나 성능을 늘릴 수 있음
-        // =====================================================================
 
         public void AddDashCharge(int amount)
         {
