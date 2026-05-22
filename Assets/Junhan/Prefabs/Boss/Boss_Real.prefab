@@ -5303,6 +5303,8 @@ MonoBehaviour:
     invincibleDuringTransition: 1
     phaseSprite: {fileID: 0}
     phaseTransitionEffectPrefab: {fileID: 0}
+  reduceIncomingDamageInPhase3: 1
+  phase3IncomingDamageMultiplier: 0.7
   debugMovement: 0
   debugPattern: 1
   debugBasicAttack: 0
