@@ -5245,8 +5245,8 @@ MonoBehaviour:
   forceBasicBulletSortingOrder: 1
   basicBulletSortingOrder: 500
   enableMovement: 1
-  baseMoveSpeed: 1
-  stopDistanceFromPlayer: 2
+  baseMoveSpeed: 0.8
+  stopDistanceFromPlayer: 1
   moveWhileUsingPattern: 1
   patternMoveSpeedMultiplier: 0.4
   movementSmoothTime: 0.2
@@ -5276,9 +5276,9 @@ MonoBehaviour:
   phase2Settings:
     phaseName: Phase 2
     enterHpRatio: 0.6
-    damageMultiplier: 1.5
-    projectileSpeedMultiplier: 1.5
-    movementSpeedMultiplier: 1.5
+    damageMultiplier: 1.2
+    projectileSpeedMultiplier: 1.2
+    movementSpeedMultiplier: 1.2
     basicAttackCooldownMultiplier: 1.5
     patternCooldownMultiplier: 0.7
     patternIntervalMultiplier: 0.7
@@ -5291,9 +5291,9 @@ MonoBehaviour:
   phase3Settings:
     phaseName: Phase 3
     enterHpRatio: 0.2
-    damageMultiplier: 2
-    projectileSpeedMultiplier: 2
-    movementSpeedMultiplier: 2
+    damageMultiplier: 1.4
+    projectileSpeedMultiplier: 1.4
+    movementSpeedMultiplier: 1.3
     basicAttackCooldownMultiplier: 0.5
     patternCooldownMultiplier: 0.4
     patternIntervalMultiplier: 0.4
@@ -5334,7 +5334,7 @@ MonoBehaviour:
   farWeightPhase3: 6
   warningCirclePrefab: {fileID: 6326675434172693389, guid: f5088ef85aadd1c4eb438815cf7627c4, type: 3}
   warningDuration: 1.5
-  explosionRadius: 2
+  explosionRadius: 1.5
   explosionDamage: 15
   bombCountPhase1: 1
   bombCountPhase2: 2
@@ -5405,7 +5405,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 252d5806f61827f4b945816f539e8a05, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  patternName: "\uBC1C\uC0AC\uCCB4 \uBC1C\uC0AC"
+  patternName: "\uBD80\uCC44\uAF34\uBC1C\uC0AC"
   cooldown: 3
   nearWeightPhase1: 2
   midWeightPhase1: 6
@@ -5417,11 +5417,11 @@ MonoBehaviour:
   midWeightPhase3: 6
   farWeightPhase3: 8
   bulletPrefab: {fileID: 2434312293593349568, guid: 76661a6e6373fae4e9bcd9a73322111f, type: 3}
-  bulletSpeed: 5
+  bulletSpeed: 4
   bulletDamage: 10
-  bulletCountPhase1: 7
-  bulletCountPhase2: 11
-  bulletCountPhase3: 13
+  bulletCountPhase1: 6
+  bulletCountPhase2: 7
+  bulletCountPhase3: 8
   totalSpreadAngle: 90
   burstCountPhase1: 1
   burstCountPhase2: 2
@@ -5455,15 +5455,15 @@ MonoBehaviour:
   midWeightPhase3: 8
   farWeightPhase3: 6
   bulletPrefab: {fileID: 2434312293593349568, guid: 76661a6e6373fae4e9bcd9a73322111f, type: 3}
-  bulletSpeed: 4
+  bulletSpeed: 3
   bulletDamage: 10
-  bulletCountPhase1: 12
-  bulletCountPhase2: 20
-  bulletCountPhase3: 24
+  bulletCountPhase1: 8
+  bulletCountPhase2: 10
+  bulletCountPhase3: 12
   ringCountPhase1: 1
   ringCountPhase2: 1
   ringCountPhase3: 2
-  ringInterval: 0.4
+  ringInterval: 0.6
   forceBulletSortingOrder: 1
   bulletSortingOrder: 550
   debugShot: 0
@@ -5482,13 +5482,13 @@ MonoBehaviour:
   patternName: "\uC720\uB3C4\uD0C4"
   cooldown: 3
   nearWeightPhase1: 0
-  midWeightPhase1: 10
+  midWeightPhase1: 6
   farWeightPhase1: 10
   nearWeightPhase2: 0
-  midWeightPhase2: 10
+  midWeightPhase2: 6
   farWeightPhase2: 10
   nearWeightPhase3: 0
-  midWeightPhase3: 10
+  midWeightPhase3: 6
   farWeightPhase3: 10
   missilePrefab: {fileID: 79574699671740622, guid: e45b96cccb487f34ba156a57101ef984, type: 3}
   missileCountPhase1: 4
@@ -5497,11 +5497,11 @@ MonoBehaviour:
   totalSpreadAngle: 90
   missileSpeed: 4
   missileDamage: 15
-  missileLifeTime: 20
+  missileLifeTime: 30
   turnSpeed: 3
   laneOffsetDistance: 1.4
   laneFadeDistance: 2.2
-  initialSpreadDuration: 0.5
+  initialSpreadDuration: 0.2
   muzzleOffsetFromBoss: 0.9
   burstCountPhase1: 1
   burstCountPhase2: 1
@@ -5590,7 +5590,7 @@ MonoBehaviour:
   spawnDistanceMax: 9
   spawnAngleJitter: 20
   minionHp: 20
-  minionMoveSpeed: 1.5
+  minionMoveSpeed: 2.5
   healAmountPerMinion: 100
   absorbDistance: 0.5
   maxPatternDuration: 18
