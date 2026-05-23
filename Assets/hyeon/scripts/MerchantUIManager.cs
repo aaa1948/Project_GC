@@ -42,16 +42,16 @@ namespace Vampire
 
         private MerchantNPC currentInteractingNPC;
 
+        // 게임 한 판 전체에서 공유되는 리롤 값
+        private int globalRerollCount = 0;
         private int currentRerollCost;
-        private int rerollCount;
-
-        private List<MerchantItemBlueprint> currentShopItems = new List<MerchantItemBlueprint>();
-        private bool hasGeneratedShopItems = false;
 
         private void Awake()
         {
             if (Instance == null) Instance = this;
             else Destroy(gameObject);
+
+            currentRerollCost = baseRerollCost;
 
             shopUIContainer.SetActive(false);
 
@@ -59,6 +59,13 @@ namespace Vampire
 
             if (rerollButton != null)
                 rerollButton.onClick.AddListener(OnClickRerollItems);
+        }
+        private void Update()
+        {
+            if (shopUIContainer.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+            {
+                CloseShop();
+            }
         }
 
         public void OpenShop(MerchantNPC npc)
@@ -68,45 +75,46 @@ namespace Vampire
 
             Time.timeScale = 0f;
 
-            if (!hasGeneratedShopItems)
+            if (!npc.HasGeneratedShopItems())
             {
-                rerollCount = 0;
-                currentRerollCost = baseRerollCost;
+                List<MerchantItemBlueprint> generatedItems =
+                    GenerateNewShopItems(false, globalRerollCount);
 
-                GenerateNewShopItems(false);
-                hasGeneratedShopItems = true;
+                npc.SetShopItems(generatedItems);
             }
 
             UpdateRerollCostText();
             DisplayCurrentShopItems();
         }
 
-        private void GenerateNewShopItems(bool useRerollBonus)
+        private List<MerchantItemBlueprint> GenerateNewShopItems(bool useRerollBonus, int rerollCount)
         {
-            currentShopItems.Clear();
+            List<MerchantItemBlueprint> generatedItems = new List<MerchantItemBlueprint>();
 
             int safetyCount = 0;
 
-            while (currentShopItems.Count < itemButtons.Count && safetyCount < 100)
+            while (generatedItems.Count < itemButtons.Count && safetyCount < 100)
             {
                 safetyCount++;
 
                 MerchantItemBlueprint.Rarity selectedRarity = useRerollBonus
-                    ? GetRandomRarityWithRerollBonus()
+                    ? GetRandomRarityWithRerollBonus(rerollCount)
                     : GetRandomRarity();
 
                 MerchantItemBlueprint selectedItem = GetRandomItemByRarity(selectedRarity);
 
-                if (selectedItem != null && !currentShopItems.Contains(selectedItem))
+                if (selectedItem != null && !generatedItems.Contains(selectedItem))
                 {
-                    currentShopItems.Add(selectedItem);
+                    generatedItems.Add(selectedItem);
                 }
             }
 
-            if (currentShopItems.Count < itemButtons.Count)
+            if (generatedItems.Count < itemButtons.Count)
             {
-                FillRemainingItemsRandomly();
+                FillRemainingItemsRandomly(generatedItems);
             }
+
+            return generatedItems;
         }
 
         private MerchantItemBlueprint.Rarity GetRandomRarity()
@@ -114,7 +122,7 @@ namespace Vampire
             return RollRarity(commonWeight, uncommonWeight, rareWeight, legendaryWeight);
         }
 
-        private MerchantItemBlueprint.Rarity GetRandomRarityWithRerollBonus()
+        private MerchantItemBlueprint.Rarity GetRandomRarityWithRerollBonus(int rerollCount)
         {
             int rareBonus = Mathf.Min(rerollCount * rareBonusPerReroll, maxRareBonus);
             int legendaryBonus = Mathf.Min(rerollCount * legendaryBonusPerReroll, maxLegendaryBonus);
@@ -163,32 +171,37 @@ namespace Vampire
             return candidates[Random.Range(0, candidates.Count)];
         }
 
-        private void FillRemainingItemsRandomly()
+        private void FillRemainingItemsRandomly(List<MerchantItemBlueprint> targetItems)
         {
             List<MerchantItemBlueprint> remainingItems = new List<MerchantItemBlueprint>();
 
             foreach (MerchantItemBlueprint item in allAvailableItems)
             {
-                if (!currentShopItems.Contains(item))
+                if (!targetItems.Contains(item))
                     remainingItems.Add(item);
             }
 
-            while (currentShopItems.Count < itemButtons.Count && remainingItems.Count > 0)
+            while (targetItems.Count < itemButtons.Count && remainingItems.Count > 0)
             {
                 int randomIndex = Random.Range(0, remainingItems.Count);
-                currentShopItems.Add(remainingItems[randomIndex]);
+                targetItems.Add(remainingItems[randomIndex]);
                 remainingItems.RemoveAt(randomIndex);
             }
         }
 
         private void DisplayCurrentShopItems()
         {
+            if (currentInteractingNPC == null)
+                return;
+
+            List<MerchantItemBlueprint> shopItems = currentInteractingNPC.GetShopItems();
+
             for (int i = 0; i < itemButtons.Count; i++)
             {
-                if (i < currentShopItems.Count)
+                if (i < shopItems.Count)
                 {
                     itemButtons[i].gameObject.SetActive(true);
-                    itemButtons[i].Setup(currentShopItems[i]);
+                    itemButtons[i].Setup(shopItems[i]);
                 }
                 else
                 {
@@ -199,19 +212,26 @@ namespace Vampire
 
         public void OnClickRerollItems()
         {
+            if (currentInteractingNPC == null)
+                return;
+
             if (ProcessPayment(currentRerollCost))
             {
-                rerollCount++;
+                globalRerollCount++;
 
-                GenerateNewShopItems(true);
-                DisplayCurrentShopItems();
+                List<MerchantItemBlueprint> newItems =
+                    GenerateNewShopItems(true, globalRerollCount);
+
+                currentInteractingNPC.SetShopItems(newItems);
 
                 PlayRerollSound();
 
-                currentRerollCost = baseRerollCost + (rerollCostIncrease * rerollCount);
-                UpdateRerollCostText();
+                currentRerollCost = baseRerollCost + (rerollCostIncrease * globalRerollCount);
 
-                Debug.Log($"[상점] 리롤 성공! 리롤 횟수: {rerollCount}, 다음 리롤 비용: {currentRerollCost}G");
+                UpdateRerollCostText();
+                DisplayCurrentShopItems();
+
+                Debug.Log($"[상점] 리롤 성공! 전체 리롤 횟수: {globalRerollCount}, 다음 리롤 비용: {currentRerollCost}G");
             }
             else
             {
@@ -238,7 +258,6 @@ namespace Vampire
         public void CloseShop()
         {
             shopUIContainer.SetActive(false);
-
             Time.timeScale = 1f;
 
             if (currentInteractingNPC != null)
@@ -253,15 +272,13 @@ namespace Vampire
             if (ProcessPayment(itemToBuy.cost))
             {
                 ShopStatApplier statApplier = FindObjectOfType<ShopStatApplier>();
+
                 if (statApplier != null)
                 {
                     statApplier.ApplyStats(itemToBuy);
                 }
 
                 MerchantNPC npcToDestroy = currentInteractingNPC;
-
-                hasGeneratedShopItems = false;
-                currentShopItems.Clear();
 
                 CloseShop();
 

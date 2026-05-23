@@ -10808,8 +10808,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   merchantPrefab: {fileID: 6348425182223770041, guid: 9b627b99eca044f4ab813359e84cfc72, type: 3}
-  spawnInterval: 10
-  maxMerchants: 1
+  spawnInterval: 15
+  maxMerchants: 4
   baseSpawnChance: 0.25
   maxSpawnChance: 0.65
   chanceIncreasePerMinute: 0.03
