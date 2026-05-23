@@ -85,6 +85,13 @@ MonoBehaviour:
   cooldown:
     value: 0.5
     upgrades: []
+  useProjectileSpawnOffset: 1
+  projectileSpawnForwardOffset: 0.28
+  projectileSpawnDownOffset: 0.1
+  projectileSpawnPoint: {fileID: 0}
+  useSpreadDirectionForSpawnOffset: 0
+  spreadAngle: 30
+  debugProjectileLog: 0
   projectileCount:
     value: 2
     upgrades: 01000000010000000100000001000000
@@ -136,12 +143,18 @@ MonoBehaviour:
   hedgehogDamageMultiplier: 0.45
   heavySnipeEnabled: 0
   useRightMouseForHeavySnipe: 1
-  heavyMaxChargeTime: 1.5
+  heavyMaxChargeTime: 2
+  heavyFireAutomaticallyOnFullCharge: 1
   heavyDamageAt0: 1
   heavyDamageAt30: 1.3
   heavyDamageAt50: 1.7
   heavyDamageAt70: 2
   heavyDamageAt100: 3
+  heavySpeedAt0: 1.3
+  heavySpeedAt30: 1.5
+  heavySpeedAt50: 1.7
+  heavySpeedAt70: 2
+  heavySpeedAt100: 2.5
   heavyPierceAt0: 0
   heavyPierceAt30: 5
   heavyPierceAt50: 10
@@ -159,6 +172,12 @@ MonoBehaviour:
   heavyRangeBonusAt100: 8
   heavyKnockbackMultiplierAt0: 1
   heavyKnockbackMultiplierAt100: 2
+  showHeavyChargePreview: 1
+  heavyChargePreviewSprite: {fileID: 0}
+  heavyChargePreviewAngleOffset: 180
+  heavyChargePreviewScaleMultiplier: 1
+  heavyChargePreviewAlpha: 0.9
+  heavyChargePreviewSortingOrderBonus: 30
   debugHeavySnipe: 1
   cursorControlEnabled: 0
   cursorNeedleFollowSpeed: 8

@@ -9,14 +9,19 @@ namespace Vampire
     {
         [Header("Syringe Dart Stats")]
         [SerializeField] protected UpgradeableProjectileCount projectileCount;
+
+        [Tooltip("침 여러 발을 연속으로 쏠 때 각 침 사이의 발사 간격입니다.")]
         [SerializeField] protected float syringeDelay = 0.08f;
 
         [Header("Syringe Range")]
-        [Tooltip("기본 침 최대 사거리입니다. 이제 Shuriken.prefab의 Max Distance 대신 이 값을 기준으로 사용합니다.")]
+        [Tooltip("기본 침 최대 사거리입니다. Shuriken.prefab의 Max Distance 대신 이 값을 기준으로 사용합니다.")]
         [SerializeField] private float baseSyringeMaxDistance = 6f;
 
         [Header("Spread Settings")]
+        [Tooltip("여러 발 발사 시 각 침 사이의 기본 각도입니다.")]
         [SerializeField] private float angleBetweenProjectiles = 8f;
+
+        [Tooltip("여러 발 발사 시 전체 부채꼴이 최대로 벌어질 수 있는 각도입니다.")]
         [SerializeField] private float maxTotalSpreadAngle = 120f;
 
         [Header("Active Special Augments")]
@@ -37,6 +42,7 @@ namespace Vampire
         [Header("Explosion Settings")]
         [SerializeField] private float explosionRadius = 1.5f;
         [SerializeField] private float explosionDamage = 2f;
+
         [Tooltip("폭발침 특수증강을 먹었을 때 폭발이 발생할 확률입니다. 1이면 100% 확률로 폭발합니다.")]
         [SerializeField, Range(0f, 1f)] private float specialExplosionChance = 1f;
 
@@ -131,6 +137,9 @@ namespace Vampire
         [Tooltip("100% 풀차지까지 걸리는 시간")]
         [SerializeField] private float heavyMaxChargeTime = 1.5f;
 
+        [Tooltip("체크하면 대물침이 100% 충전되는 순간 자동으로 발사됩니다. 끄면 버튼을 떼기 전까지 최대 충전 상태를 유지합니다.")]
+        [SerializeField] private bool heavyFireAutomaticallyOnFullCharge = true;
+
         [Header("Heavy Snipe Damage By Charge")]
         [Tooltip("0% 차지 피해 배율. 1이면 현재 데미지 100%")]
         [SerializeField] private float heavyDamageAt0 = 1f;
@@ -146,6 +155,22 @@ namespace Vampire
 
         [Tooltip("100% 차지 피해 배율. 3.0이면 현재 데미지 300%")]
         [SerializeField] private float heavyDamageAt100 = 3f;
+
+        [Header("Heavy Snipe Speed By Charge")]
+        [Tooltip("0% 차지 대물침 속도 배율. 기본 침 속도에 곱해집니다. 기본침/다른 증강에는 영향 없음.")]
+        [SerializeField] private float heavySpeedAt0 = 1.1f;
+
+        [Tooltip("30% 차지 대물침 속도 배율. 기본 침 속도에 곱해집니다.")]
+        [SerializeField] private float heavySpeedAt30 = 1.35f;
+
+        [Tooltip("50% 차지 대물침 속도 배율. 기본 침 속도에 곱해집니다.")]
+        [SerializeField] private float heavySpeedAt50 = 1.65f;
+
+        [Tooltip("70% 차지 대물침 속도 배율. 기본 침 속도에 곱해집니다.")]
+        [SerializeField] private float heavySpeedAt70 = 2.0f;
+
+        [Tooltip("100% 차지 대물침 속도 배율. 기본 침 속도에 곱해집니다.")]
+        [SerializeField] private float heavySpeedAt100 = 2.5f;
 
         [Header("Heavy Snipe Pierce By Charge")]
         [SerializeField] private int heavyPierceAt0 = 0;
@@ -192,11 +217,33 @@ namespace Vampire
         [SerializeField] private float heavyKnockbackMultiplierAt0 = 1f;
         [SerializeField] private float heavyKnockbackMultiplierAt100 = 2f;
 
+        [Header("Heavy Snipe Charge Preview / 대물침 차징 표시")]
+        [Tooltip("체크하면 대물침 차징 중 캐릭터 앞에 커지는 침 이미지를 표시합니다.")]
+        [SerializeField] private bool showHeavyChargePreview = true;
+
+        [Tooltip("차징 중 보여줄 침 스프라이트입니다. 비워두면 Projectile Prefab 안의 SpriteRenderer 스프라이트를 자동으로 사용합니다.")]
+        [SerializeField] private Sprite heavyChargePreviewSprite;
+
+        [Tooltip("차징 미리보기 침의 회전 보정 각도입니다. 현재 침 이미지가 왼쪽을 향한 원본이면 180부터 테스트하세요.")]
+        [SerializeField] private float heavyChargePreviewAngleOffset = 180f;
+
+        [Tooltip("차징 미리보기 침의 전체 크기 배율입니다. 실제 발사체 크기에 추가로 곱해집니다.")]
+        [SerializeField] private float heavyChargePreviewScaleMultiplier = 1f;
+
+        [Tooltip("차징 미리보기 침의 투명도입니다.")]
+        [SerializeField, Range(0f, 1f)] private float heavyChargePreviewAlpha = 0.9f;
+
+        [Tooltip("차징 미리보기 침이 기존 투사체보다 앞에 보이도록 더해줄 Sorting Order 값입니다.")]
+        [SerializeField] private int heavyChargePreviewSortingOrderBonus = 30;
+
         [Header("Heavy Snipe Debug")]
         [SerializeField] private bool debugHeavySnipe = true;
 
         private bool isHeavyCharging = false;
         private float heavyChargeTimer = 0f;
+
+        private GameObject heavyChargePreviewObject;
+        private SpriteRenderer heavyChargePreviewRenderer;
 
         // 이기어침 + 대물침 조합에서 사용하는 현재 차지율
         private float cursorHeavyChargeRatio = 0f;
@@ -236,7 +283,7 @@ namespace Vampire
         [SerializeField] private float cursorNeedleBackDisplayScale = 0.8f;
 
         private CursorControlledNeedleController cursorControlledNeedleController;
-        
+
         public GameObject ProjectilePrefab => projectilePrefab;
         public LayerMask MonsterLayer => monsterLayer;
 
@@ -263,11 +310,18 @@ namespace Vampire
                     return;
                 }
 
+                HideHeavySnipeChargePreview();
                 base.Update();
                 return;
             }
 
+            HideHeavySnipeChargePreview();
             base.Update();
+        }
+
+        private void OnDisable()
+        {
+            DestroyHeavySnipeChargePreview();
         }
 
         protected override void Attack()
@@ -280,7 +334,6 @@ namespace Vampire
             int totalProjectileCount = GetEffectiveProjectileCount();
 
             Vector2 baseDirection = playerCharacter.LookDirection;
-
             if (baseDirection == Vector2.zero)
             {
                 baseDirection = Vector2.right;
@@ -299,20 +352,26 @@ namespace Vampire
 
         private void LaunchSyringeProjectile(Vector2 direction)
         {
+            Vector2 spawnPosition = GetProjectileSpawnPosition(direction);
+
             Projectile projectile = entityManager.SpawnProjectile(
                 projectileIndex,
-                playerCharacter.CenterTransform.position,
+                spawnPosition,
                 GetEffectiveDamage(),
                 GetEffectiveKnockback(),
                 GetEffectiveSpeed(),
                 monsterLayer
             );
 
+            if (projectile == null)
+            {
+                return;
+            }
+
             if (playerCharacter != null)
             {
                 projectile.transform.localScale = Vector3.one * GetPlayerProjectileSizeMultiplier();
 
-                // 핵심 수정:
                 // Shuriken.prefab의 Max Distance를 곱해서 쓰지 않고,
                 // SyringeDartAbility의 baseSyringeMaxDistance를 기준으로 명확하게 세팅한다.
                 projectile.maxDistance = GetEffectiveSyringeMaxDistance();
@@ -342,6 +401,7 @@ namespace Vampire
                 cursorHeavyChargeRatio = 0f;
                 isHeavyCharging = false;
                 heavyChargeTimer = 0f;
+                HideHeavySnipeChargePreview();
                 return;
             }
 
@@ -367,7 +427,10 @@ namespace Vampire
                 if (cursorHeavyChargeRatio >= 1f)
                 {
                     heavyChargeTimer = heavyMaxChargeTime;
+                    cursorHeavyChargeRatio = 1f;
                 }
+
+                UpdateHeavySnipeChargePreview(cursorHeavyChargeRatio, GetAimDirectionFromMouseOrLookDirection());
             }
             else
             {
@@ -386,6 +449,7 @@ namespace Vampire
                 isHeavyCharging = false;
                 heavyChargeTimer = 0f;
                 cursorHeavyChargeRatio = 0f;
+                HideHeavySnipeChargePreview();
             }
         }
 
@@ -422,8 +486,17 @@ namespace Vampire
             float chargeRatio = Mathf.Clamp01(heavyChargeTimer / Mathf.Max(0.01f, heavyMaxChargeTime));
             bool reachedFullCharge = heavyChargeTimer >= heavyMaxChargeTime;
 
-            // 우클릭을 떼거나 풀차지가 되면 발사
-            if (!commandHeld || reachedFullCharge)
+            if (reachedFullCharge)
+            {
+                heavyChargeTimer = heavyMaxChargeTime;
+                chargeRatio = 1f;
+            }
+
+            UpdateHeavySnipeChargePreview(chargeRatio, GetAimDirectionFromMouseOrLookDirection());
+
+            bool shouldFire = !commandHeld || (heavyFireAutomaticallyOnFullCharge && reachedFullCharge);
+
+            if (shouldFire)
             {
                 float finalChargeRatio = reachedFullCharge ? 1f : chargeRatio;
 
@@ -433,10 +506,13 @@ namespace Vampire
                 isHeavyCharging = false;
                 heavyChargeTimer = 0f;
 
+                HideHeavySnipeChargePreview();
+
                 if (debugHeavySnipe)
                 {
                     Debug.Log(
-                        $"[대물침] 발사 완료 | 차지 {finalChargeRatio * 100f:0}% - 기본 공격 재개"
+                        $"[대물침] 발사 완료 | " +
+                        $"차지 {finalChargeRatio * 100f:0}% - 기본 공격 재개"
                     );
                 }
             }
@@ -486,21 +562,29 @@ namespace Vampire
             runtime.pierceCount = stats.unlimitedPierce ? int.MaxValue : stats.pierceCount;
             runtime.rangeBonus += stats.rangeBonus;
 
+            Vector2 spawnPosition = GetProjectileSpawnPosition(aimDirection);
+
             Projectile projectile = entityManager.SpawnProjectile(
                 projectileIndex,
-                playerCharacter.CenterTransform.position,
+                spawnPosition,
                 GetEffectiveDamage() * stats.damageMultiplier,
                 GetEffectiveKnockback() * stats.knockbackMultiplier,
-                GetEffectiveSpeed(),
+                GetEffectiveSpeed() * stats.speedMultiplier,
                 monsterLayer
             );
+
+            if (projectile == null)
+            {
+                return;
+            }
 
             if (playerCharacter != null)
             {
                 projectile.transform.localScale =
-                    Vector3.one * GetPlayerProjectileSizeMultiplier() * stats.sizeMultiplier;
+                    Vector3.one *
+                    GetPlayerProjectileSizeMultiplier() *
+                    stats.sizeMultiplier;
 
-                // 핵심 수정:
                 // 대물침도 기본 사거리는 SyringeDartAbility에서 관리하고,
                 // 차지 사거리 보너스는 runtime.rangeBonus로 SyringeProjectile에서 더해진다.
                 projectile.maxDistance = GetEffectiveSyringeMaxDistance();
@@ -513,6 +597,17 @@ namespace Vampire
 
             projectile.OnHitDamageable.AddListener(playerCharacter.OnDealDamage.Invoke);
             projectile.Launch(aimDirection);
+
+            if (debugHeavySnipe)
+            {
+                Debug.Log(
+                    $"[대물침] 발사 | " +
+                    $"차지 {chargeRatio * 100f:0}% | " +
+                    $"속도 배율 x{stats.speedMultiplier:0.00} | " +
+                    $"크기 x{stats.sizeMultiplier:0.00} | " +
+                    $"관통 {(stats.unlimitedPierce ? "무제한" : stats.pierceCount.ToString())}"
+                );
+            }
         }
 
         private Vector2 GetAimDirectionFromMouseOrLookDirection()
@@ -523,9 +618,7 @@ namespace Vampire
                 Vector3 mouseWorldPosition = Camera.main.ScreenToWorldPoint(mouseScreenPosition);
                 mouseWorldPosition.z = playerCharacter.CenterTransform.position.z;
 
-                Vector2 direction =
-                    (Vector2)mouseWorldPosition -
-                    (Vector2)playerCharacter.CenterTransform.position;
+                Vector2 direction = (Vector2)mouseWorldPosition - (Vector2)playerCharacter.CenterTransform.position;
 
                 if (direction.sqrMagnitude > 0.0001f)
                 {
@@ -554,6 +647,15 @@ namespace Vampire
                 heavyDamageAt50,
                 heavyDamageAt70,
                 heavyDamageAt100
+            );
+
+            stats.speedMultiplier = EvaluateChargeFloat(
+                chargeRatio,
+                heavySpeedAt0,
+                heavySpeedAt30,
+                heavySpeedAt50,
+                heavySpeedAt70,
+                heavySpeedAt100
             );
 
             stats.sizeMultiplier = EvaluateChargeFloat(
@@ -588,7 +690,6 @@ namespace Vampire
             else
             {
                 stats.unlimitedPierce = false;
-
                 stats.pierceCount = EvaluateChargeInt(
                     chargeRatio,
                     heavyPierceAt0,
@@ -600,6 +701,137 @@ namespace Vampire
             }
 
             return stats;
+        }
+
+        private void UpdateHeavySnipeChargePreview(float chargeRatio, Vector2 aimDirection)
+        {
+            if (!showHeavyChargePreview || playerCharacter == null)
+            {
+                HideHeavySnipeChargePreview();
+                return;
+            }
+
+            if (aimDirection.sqrMagnitude <= 0.0001f)
+            {
+                aimDirection = Vector2.right;
+            }
+
+            aimDirection.Normalize();
+
+            EnsureHeavySnipeChargePreview();
+
+            if (heavyChargePreviewRenderer == null)
+            {
+                return;
+            }
+
+            HeavySnipeChargeStats stats = CalculateHeavySnipeChargeStats(chargeRatio);
+
+            Vector2 spawnPosition = GetProjectileSpawnPosition(aimDirection);
+            heavyChargePreviewObject.transform.position = spawnPosition;
+
+            float angle = Mathf.Atan2(aimDirection.y, aimDirection.x) * Mathf.Rad2Deg;
+            heavyChargePreviewObject.transform.rotation =
+                Quaternion.Euler(0f, 0f, angle + heavyChargePreviewAngleOffset);
+
+            float previewScale =
+                GetPlayerProjectileSizeMultiplier() *
+                stats.sizeMultiplier *
+                Mathf.Max(0.01f, heavyChargePreviewScaleMultiplier);
+
+            heavyChargePreviewObject.transform.localScale = Vector3.one * previewScale;
+
+            Color color = heavyChargePreviewRenderer.color;
+            color.a = heavyChargePreviewAlpha;
+            heavyChargePreviewRenderer.color = color;
+
+            if (!heavyChargePreviewObject.activeSelf)
+            {
+                heavyChargePreviewObject.SetActive(true);
+            }
+        }
+
+        private void EnsureHeavySnipeChargePreview()
+        {
+            if (heavyChargePreviewObject != null && heavyChargePreviewRenderer != null)
+            {
+                return;
+            }
+
+            Sprite previewSprite = GetHeavyChargePreviewSprite();
+
+            if (previewSprite == null)
+            {
+                return;
+            }
+
+            heavyChargePreviewObject = new GameObject("Heavy Snipe Charge Preview");
+            heavyChargePreviewRenderer = heavyChargePreviewObject.AddComponent<SpriteRenderer>();
+            heavyChargePreviewRenderer.sprite = previewSprite;
+
+            SpriteRenderer sourceRenderer = GetProjectilePrefabSpriteRenderer();
+
+            if (sourceRenderer != null)
+            {
+                heavyChargePreviewRenderer.flipX = sourceRenderer.flipX;
+                heavyChargePreviewRenderer.flipY = sourceRenderer.flipY;
+                heavyChargePreviewRenderer.sortingLayerID = sourceRenderer.sortingLayerID;
+                heavyChargePreviewRenderer.sortingOrder =
+                    sourceRenderer.sortingOrder + Mathf.Max(1, heavyChargePreviewSortingOrderBonus);
+
+                heavyChargePreviewRenderer.color = sourceRenderer.color;
+            }
+            else
+            {
+                heavyChargePreviewRenderer.sortingOrder = heavyChargePreviewSortingOrderBonus;
+            }
+
+            heavyChargePreviewObject.SetActive(false);
+        }
+
+        private Sprite GetHeavyChargePreviewSprite()
+        {
+            if (heavyChargePreviewSprite != null)
+            {
+                return heavyChargePreviewSprite;
+            }
+
+            SpriteRenderer sourceRenderer = GetProjectilePrefabSpriteRenderer();
+
+            if (sourceRenderer != null)
+            {
+                return sourceRenderer.sprite;
+            }
+
+            return null;
+        }
+
+        private SpriteRenderer GetProjectilePrefabSpriteRenderer()
+        {
+            if (projectilePrefab == null)
+            {
+                return null;
+            }
+
+            return projectilePrefab.GetComponentInChildren<SpriteRenderer>(true);
+        }
+
+        private void HideHeavySnipeChargePreview()
+        {
+            if (heavyChargePreviewObject != null)
+            {
+                heavyChargePreviewObject.SetActive(false);
+            }
+        }
+
+        private void DestroyHeavySnipeChargePreview()
+        {
+            if (heavyChargePreviewObject != null)
+            {
+                Destroy(heavyChargePreviewObject);
+                heavyChargePreviewObject = null;
+                heavyChargePreviewRenderer = null;
+            }
         }
 
         private float EvaluateChargeFloat(
@@ -661,14 +893,8 @@ namespace Vampire
         private SyringeSpecialRuntime BuildSpecialRuntime()
         {
             float additionalPierceFromCharacter = GetPublicFloatProperty(playerCharacter, "AdditionalPierce", 0f);
-
-            int bonusPierce = pierceEnabled
-                ? Mathf.RoundToInt(additionalPierceFromCharacter)
-                : 0;
-
-            int totalPierceCount = pierceEnabled
-                ? Mathf.Max(0, pierceCount + bonusPierce)
-                : 0;
+            int bonusPierce = pierceEnabled ? Mathf.RoundToInt(additionalPierceFromCharacter) : 0;
+            int totalPierceCount = pierceEnabled ? Mathf.Max(0, pierceCount + bonusPierce) : 0;
 
             float antibioticBombChance = 0f;
 
@@ -710,7 +936,6 @@ namespace Vampire
                 homingRange = homingRange,
                 homingLerpSpeed = homingLerpSpeed,
 
-                // 핵심 수정:
                 // 관통침 증강을 먹었을 때만 기본 침이 관통한다.
                 // 기본 pierceCount가 2여도 pierceEnabled가 false면 관통하지 않는다.
                 pierceEnabled = pierceEnabled && totalPierceCount > 0,
@@ -865,6 +1090,7 @@ namespace Vampire
             // 분신 피해 증가 일반 증강은 SyringeCloneController 쪽에서 별도로 곱해진다.
             return GetEffectiveDamage();
         }
+
         public float GetAcupunctureFormationDamage()
         {
             // 침술진은 특수/전설 증강 효과를 제외하고,
@@ -920,6 +1146,7 @@ namespace Vampire
         {
             return Mathf.Max(0.1f, baseSyringeMaxDistance) * GetPlayerRangeMultiplier();
         }
+
         public float GetCloneKnockback()
         {
             return GetEffectiveKnockback();
@@ -1112,6 +1339,8 @@ namespace Vampire
             heavyChargeTimer = 0f;
             cursorHeavyChargeRatio = 0f;
 
+            HideHeavySnipeChargePreview();
+
             Debug.Log("[대물침] 전설 증강 활성화.");
         }
 
@@ -1235,6 +1464,7 @@ namespace Vampire
         private struct HeavySnipeChargeStats
         {
             public float damageMultiplier;
+            public float speedMultiplier;
             public int pierceCount;
             public bool unlimitedPierce;
             public float sizeMultiplier;
