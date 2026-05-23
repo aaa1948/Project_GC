@@ -44,7 +44,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: db873aea2f1b3f846883a0cc077b9000, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  image: {fileID: 21300000, guid: 9b662b30a49435643b5e4645acb300ae, type: 3}
+  image: {fileID: 21300000, guid: 54bdd2e16f59bbb4faeb51d2d10ef0e2, type: 3}
   localizedName:
     m_TableReference:
       m_TableCollectionName: GUID:7293f9ffd63774eb1b5120a3e14cb7f5
@@ -106,6 +106,7 @@ MonoBehaviour:
   poisonTickDamage: 2
   explosionRadius: 1.5
   explosionDamage: 2
+  specialExplosionChance: 1
   homingRange: 6
   homingLerpSpeed: 8
   pierceCount: 1

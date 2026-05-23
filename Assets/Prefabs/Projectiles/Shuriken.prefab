@@ -208,11 +208,15 @@ MonoBehaviour:
   returnNeedleCurveForwardHandle: 0.9
   returnNeedleCurveSideOffset: 1.2
   returnNeedleCurveReturnPull: 0.7
+  useLaunchForwardOffset: 1
+  launchForwardOffset: 0.45
+  clearTrailsAfterLaunchOffset: 1
   enableStuckNeedleVisual: 1
   stuckNeedleLifetime: 2.5
   stuckNeedleScaleMultiplier: 0.85
   stuckNeedleAlpha: 0.9
   stuckNeedleSortingOrderBonus: 5
+  explosionEffectPrefab: {fileID: 0}
 --- !u!1 &7721683133008659187
 GameObject:
   m_ObjectHideFlags: 0
@@ -240,7 +244,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.75, y: 0.75, z: 1}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1961317459387710786}
@@ -286,7 +290,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 21300000, guid: 9b662b30a49435643b5e4645acb300ae, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 54bdd2e16f59bbb4faeb51d2d10ef0e2, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0

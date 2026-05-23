@@ -41,12 +41,35 @@ namespace Vampire
         private Vector2 returnCurveEnd;
 
         [Header("Needle Flight / 침 비행")]
+        [Tooltip("침 스프라이트가 실제 이동 방향과 맞지 않을 때 보정하는 각도입니다. 새 창 이미지처럼 기본 방향이 왼쪽을 향하면 180을 먼저 테스트하세요.")]
         [SerializeField] private float visualForwardAngleOffset = 135f;
+
+        [Tooltip("침귀환 발동 시, 적중 지점에서 기존 방향으로 한 번 더 앞으로 지나가는 거리입니다.")]
         [SerializeField] private float returnNeedleForwardPassDistance = 0.65f;
+
+        [Tooltip("침귀환이 물방울 형태 곡선을 그리며 플레이어 쪽으로 돌아오기까지 걸리는 시간입니다.")]
         [SerializeField] private float returnNeedleCurveDuration = 0.35f;
+
+        [Tooltip("침귀환 곡선 시작 부분이 기존 진행 방향으로 얼마나 길게 뻗을지 정합니다.")]
         [SerializeField] private float returnNeedleCurveForwardHandle = 0.9f;
+
+        [Tooltip("침귀환 곡선이 옆으로 얼마나 크게 휘어질지 정합니다.")]
         [SerializeField] private float returnNeedleCurveSideOffset = 1.2f;
+
+        [Tooltip("침귀환 곡선이 플레이어 쪽으로 얼마나 강하게 당겨질지 정합니다.")]
         [SerializeField] private float returnNeedleCurveReturnPull = 0.7f;
+
+        [Header("Launch Offset / 발사 위치 보정")]
+        [Tooltip("체크하면 침이 플레이어 중심이 아니라 발사 방향 앞쪽에서 시작합니다.")]
+        [SerializeField] private bool useLaunchForwardOffset = true;
+
+        [Tooltip("플레이어 중심에서 발사 방향으로 얼마나 앞에서 침이 생성될지 정합니다.")]
+        [SerializeField] private float launchForwardOffset = 0.45f;
+
+        [Tooltip("발사 위치 보정 직후 TrailRenderer 잔상을 초기화합니다. 투사체 풀링 사용 시 잔상이 튀는 것을 방지합니다.")]
+        [SerializeField] private bool clearTrailsAfterLaunchOffset = true;
+
+        private bool hasAppliedLaunchForwardOffset = false;
 
         [Header("Stuck Needle Visual / 꽂힌 침 연출")]
         [SerializeField] private bool enableStuckNeedleVisual = true;
@@ -83,7 +106,10 @@ namespace Vampire
 
             specials = default;
             remainingPierces = 0;
+            remainingReflects = 0;
             hitTargetIds.Clear();
+
+            hasAppliedLaunchForwardOffset = false;
 
             flightState = NeedleFlightState.Normal;
             returnTimer = 0f;
@@ -116,9 +142,57 @@ namespace Vampire
             }
 
             this.direction = direction.normalized;
+
+            ApplyLaunchForwardOffsetIfNeeded();
             ApplyVisualRotationToDirection(this.direction);
 
             moveCoroutine = StartCoroutine(Move());
+        }
+
+        private void ApplyLaunchForwardOffsetIfNeeded()
+        {
+            if (!useLaunchForwardOffset)
+            {
+                return;
+            }
+
+            if (hasAppliedLaunchForwardOffset)
+            {
+                return;
+            }
+
+            if (direction == Vector2.zero)
+            {
+                return;
+            }
+
+            float offset = Mathf.Max(0f, launchForwardOffset);
+            if (offset <= 0f)
+            {
+                hasAppliedLaunchForwardOffset = true;
+                return;
+            }
+
+            transform.position += (Vector3)(direction.normalized * offset);
+            hasAppliedLaunchForwardOffset = true;
+
+            if (clearTrailsAfterLaunchOffset)
+            {
+                ClearTrailRenderers();
+            }
+        }
+
+        private void ClearTrailRenderers()
+        {
+            TrailRenderer[] trailRenderers = GetComponentsInChildren<TrailRenderer>(true);
+
+            for (int i = 0; i < trailRenderers.Length; i++)
+            {
+                if (trailRenderers[i] != null)
+                {
+                    trailRenderers[i].Clear();
+                }
+            }
         }
 
         public override IEnumerator Move()
@@ -510,7 +584,6 @@ namespace Vampire
                 return;
             }
 
-            
             //  구강 청결제 중첩 반사 로직: 남은 반사 횟수가 있다면 깎으면서 또 튕깁니다!
             // ---------------------------------------------------------------------------------
             if (remainingReflects > 0)

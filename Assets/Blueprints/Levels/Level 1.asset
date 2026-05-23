@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Level 1
   m_EditorClassIdentifier: 
   levelTime: 900
-  backgroundTexture: {fileID: 2800000, guid: 42b11be826072496a9d57814c0ca6576, type: 3}
+  backgroundTexture: {fileID: 2800000, guid: afc1aca3130305f49bbe18449e497697, type: 3}
   abilityPrefabs:
   - {fileID: 7378740072262091319, guid: 9757fae3764f6e1488b23a8ff2e6c349, type: 3}
   - {fileID: 7378740072262091319, guid: 9a6cb5bbd9c72f14c9567c769a71c7ef, type: 3}

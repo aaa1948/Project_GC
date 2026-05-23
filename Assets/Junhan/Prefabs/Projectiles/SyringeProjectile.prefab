@@ -73,7 +73,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 50
-  m_Sprite: {fileID: 21300000, guid: 9b662b30a49435643b5e4645acb300ae, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 54bdd2e16f59bbb4faeb51d2d10ef0e2, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -165,7 +165,7 @@ TrailRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7669521032070789568}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -283,15 +283,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   projectileSpriteRenderer: {fileID: 5428722869725882917}
-  maxDistance: 10
+  maxDistance: 8
   rotationSpeed: 4
   airResistance: 0
   destructionParticleSystem: {fileID: 1480910369272600104}
+  visualForwardAngleOffset: 180
+  returnNeedleForwardPassDistance: 0.65
+  returnNeedleCurveDuration: 0.5
+  returnNeedleCurveForwardHandle: 0.9
+  returnNeedleCurveSideOffset: 1.2
+  returnNeedleCurveReturnPull: 0.7
+  useLaunchForwardOffset: 1
+  launchForwardOffset: 0.45
+  clearTrailsAfterLaunchOffset: 1
   enableStuckNeedleVisual: 1
   stuckNeedleLifetime: 2.5
   stuckNeedleScaleMultiplier: 0.85
   stuckNeedleAlpha: 0.9
   stuckNeedleSortingOrderBonus: 1
+  explosionEffectPrefab: {fileID: 0}
 --- !u!1 &7721683133008659187
 GameObject:
   m_ObjectHideFlags: 0
