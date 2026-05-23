@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Mini Boss
   m_EditorClassIdentifier: 
   name: Shotgun Boss
-  hp: 250
+  hp: 220
   atk: 10
   recovery: 0
   armor: 0

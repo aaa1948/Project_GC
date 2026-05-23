@@ -19,9 +19,22 @@ namespace Vampire
         [SerializeField] private List<ShopItemButton> itemButtons;
         [SerializeField] private List<MerchantItemBlueprint> allAvailableItems;
 
+        [Header("Base Rarity Chance")]
+        [SerializeField] private int commonWeight = 55;
+        [SerializeField] private int uncommonWeight = 32;
+        [SerializeField] private int rareWeight = 11;
+        [SerializeField] private int legendaryWeight = 2;
+
+        [Header("Reroll Rarity Bonus")]
+        [SerializeField] private int rareBonusPerReroll = 2;
+        [SerializeField] private int legendaryBonusPerReroll = 1;
+        [SerializeField] private int maxRareBonus = 8;
+        [SerializeField] private int maxLegendaryBonus = 4;
+        [SerializeField] private int minCommonWeight = 20;
+
         [Header("Reroll Settings")]
-        [SerializeField] private int baseRerollCost = 50;
-        [SerializeField] private int rerollCostIncrease = 25;
+        [SerializeField] private int baseRerollCost = 10;
+        [SerializeField] private int rerollCostIncrease = 5;
 
         [Header("Sound Settings")]
         [SerializeField] private AudioSource audioSource;
@@ -60,7 +73,7 @@ namespace Vampire
                 rerollCount = 0;
                 currentRerollCost = baseRerollCost;
 
-                GenerateNewShopItems();
+                GenerateNewShopItems(false);
                 hasGeneratedShopItems = true;
             }
 
@@ -68,23 +81,103 @@ namespace Vampire
             DisplayCurrentShopItems();
         }
 
-        private void GenerateNewShopItems()
+        private void GenerateNewShopItems(bool useRerollBonus)
         {
             currentShopItems.Clear();
 
-            List<MerchantItemBlueprint> shuffledItems = new List<MerchantItemBlueprint>(allAvailableItems);
+            int safetyCount = 0;
 
-            for (int i = 0; i < shuffledItems.Count; i++)
+            while (currentShopItems.Count < itemButtons.Count && safetyCount < 100)
             {
-                MerchantItemBlueprint temp = shuffledItems[i];
-                int randomIndex = Random.Range(i, shuffledItems.Count);
-                shuffledItems[i] = shuffledItems[randomIndex];
-                shuffledItems[randomIndex] = temp;
+                safetyCount++;
+
+                MerchantItemBlueprint.Rarity selectedRarity = useRerollBonus
+                    ? GetRandomRarityWithRerollBonus()
+                    : GetRandomRarity();
+
+                MerchantItemBlueprint selectedItem = GetRandomItemByRarity(selectedRarity);
+
+                if (selectedItem != null && !currentShopItems.Contains(selectedItem))
+                {
+                    currentShopItems.Add(selectedItem);
+                }
             }
 
-            for (int i = 0; i < itemButtons.Count && i < shuffledItems.Count; i++)
+            if (currentShopItems.Count < itemButtons.Count)
             {
-                currentShopItems.Add(shuffledItems[i]);
+                FillRemainingItemsRandomly();
+            }
+        }
+
+        private MerchantItemBlueprint.Rarity GetRandomRarity()
+        {
+            return RollRarity(commonWeight, uncommonWeight, rareWeight, legendaryWeight);
+        }
+
+        private MerchantItemBlueprint.Rarity GetRandomRarityWithRerollBonus()
+        {
+            int rareBonus = Mathf.Min(rerollCount * rareBonusPerReroll, maxRareBonus);
+            int legendaryBonus = Mathf.Min(rerollCount * legendaryBonusPerReroll, maxLegendaryBonus);
+
+            int adjustedCommon = Mathf.Max(minCommonWeight, commonWeight - rareBonus - legendaryBonus);
+            int adjustedUncommon = uncommonWeight;
+            int adjustedRare = rareWeight + rareBonus;
+            int adjustedLegendary = legendaryWeight + legendaryBonus;
+
+            return RollRarity(adjustedCommon, adjustedUncommon, adjustedRare, adjustedLegendary);
+        }
+
+        private MerchantItemBlueprint.Rarity RollRarity(int common, int uncommon, int rare, int legendary)
+        {
+            int total = common + uncommon + rare + legendary;
+
+            if (total <= 0)
+                return MerchantItemBlueprint.Rarity.Common;
+
+            int roll = Random.Range(0, total);
+
+            if (roll < common)
+                return MerchantItemBlueprint.Rarity.Common;
+
+            roll -= common;
+
+            if (roll < uncommon)
+                return MerchantItemBlueprint.Rarity.Uncommon;
+
+            roll -= uncommon;
+
+            if (roll < rare)
+                return MerchantItemBlueprint.Rarity.Rare;
+
+            return MerchantItemBlueprint.Rarity.Legendary;
+        }
+
+        private MerchantItemBlueprint GetRandomItemByRarity(MerchantItemBlueprint.Rarity rarity)
+        {
+            List<MerchantItemBlueprint> candidates =
+                allAvailableItems.FindAll(item => item.itemRarity == rarity);
+
+            if (candidates.Count == 0)
+                return null;
+
+            return candidates[Random.Range(0, candidates.Count)];
+        }
+
+        private void FillRemainingItemsRandomly()
+        {
+            List<MerchantItemBlueprint> remainingItems = new List<MerchantItemBlueprint>();
+
+            foreach (MerchantItemBlueprint item in allAvailableItems)
+            {
+                if (!currentShopItems.Contains(item))
+                    remainingItems.Add(item);
+            }
+
+            while (currentShopItems.Count < itemButtons.Count && remainingItems.Count > 0)
+            {
+                int randomIndex = Random.Range(0, remainingItems.Count);
+                currentShopItems.Add(remainingItems[randomIndex]);
+                remainingItems.RemoveAt(randomIndex);
             }
         }
 
@@ -108,16 +201,17 @@ namespace Vampire
         {
             if (ProcessPayment(currentRerollCost))
             {
-                GenerateNewShopItems();
+                rerollCount++;
+
+                GenerateNewShopItems(true);
                 DisplayCurrentShopItems();
 
                 PlayRerollSound();
 
-                rerollCount++;
                 currentRerollCost = baseRerollCost + (rerollCostIncrease * rerollCount);
                 UpdateRerollCostText();
 
-                Debug.Log($"[상점] 리롤 성공! 다음 리롤 비용: {currentRerollCost}G");
+                Debug.Log($"[상점] 리롤 성공! 리롤 횟수: {rerollCount}, 다음 리롤 비용: {currentRerollCost}G");
             }
             else
             {
