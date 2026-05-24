@@ -65,6 +65,7 @@ MonoBehaviour:
     m_LocalVariables: []
   rarity: 50
   augmentTier: 0
+  canAppearAsOwnedUpgrade: 0
   projectilePrefab: {fileID: 7669521032070789568, guid: 68f7014b50b1cda4d9353b50ee68fe5d, type: 3}
   monsterLayer:
     serializedVersion: 2

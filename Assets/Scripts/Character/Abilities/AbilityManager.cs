@@ -52,70 +52,9 @@ namespace Vampire
 
             ownedAbilities = new WeightedAbilities();
 
-            if (playerCharacter == null)
-            {
-                Debug.LogError("[AbilityManager] playerCharacter가 null입니다.");
-                return;
-            }
-
-            if (playerCharacter.Blueprint == null)
-            {
-                Debug.LogError("[AbilityManager] playerCharacter.Blueprint가 null입니다. Character에 Blueprint가 연결되어 있는지 확인하세요.");
-                return;
-            }
-
-            if (playerCharacter.Blueprint.startingAbilities != null)
-            {
-                foreach (GameObject abilityPrefab in playerCharacter.Blueprint.startingAbilities)
-                {
-                    if (abilityPrefab == null)
-                    {
-                        Debug.LogWarning("[AbilityManager] startingAbilities 안에 null 프리팹이 있습니다.");
-                        continue;
-                    }
-
-                    Ability ability = Instantiate(abilityPrefab, transform).GetComponent<Ability>();
-
-                    if (ability == null)
-                    {
-                        Debug.LogWarning($"[AbilityManager] {abilityPrefab.name} 프리팹에 Ability 컴포넌트가 없습니다.");
-                        continue;
-                    }
-
-                    ability.Init(abilityManager, entityManager, playerCharacter);
-                    ability.Select();
-                    ownedAbilities.Add(ability);
-                }
-            }
-            else
-            {
-                Debug.LogWarning("[AbilityManager] Character Blueprint의 startingAbilities가 null입니다.");
-            }
-
-            newAbilities = new WeightedAbilities();
-
-            if (levelBlueprint == null)
-            {
-                Debug.LogError("[AbilityManager] levelBlueprint가 null입니다.");
-                return;
-            }
-
-            if (levelBlueprint.abilityPrefabs == null)
-            {
-                Debug.LogWarning("[AbilityManager] LevelBlueprint의 abilityPrefabs가 null입니다.");
-                return;
-            }
-
-            foreach (GameObject abilityPrefab in levelBlueprint.abilityPrefabs)
+            foreach (GameObject abilityPrefab in playerCharacter.Blueprint.startingAbilities)
             {
                 if (abilityPrefab == null)
-                {
-                    Debug.LogWarning("[AbilityManager] levelBlueprint.abilityPrefabs 안에 null 프리팹이 있습니다.");
-                    continue;
-                }
-
-                if (playerCharacter.Blueprint.startingAbilities != null &&
-                    playerCharacter.Blueprint.startingAbilities.Contains(abilityPrefab))
                 {
                     continue;
                 }
@@ -124,7 +63,35 @@ namespace Vampire
 
                 if (ability == null)
                 {
-                    Debug.LogWarning($"[AbilityManager] {abilityPrefab.name} 프리팹에 Ability 컴포넌트가 없습니다.");
+                    Debug.LogWarning($"[AbilityManager] Starting Ability Prefab에 Ability 컴포넌트가 없습니다: {abilityPrefab.name}");
+                    continue;
+                }
+
+                ability.Init(abilityManager, entityManager, playerCharacter);
+                ability.Select();
+
+                ownedAbilities.Add(ability);
+            }
+
+            newAbilities = new WeightedAbilities();
+
+            foreach (GameObject abilityPrefab in levelBlueprint.abilityPrefabs)
+            {
+                if (abilityPrefab == null)
+                {
+                    continue;
+                }
+
+                if (playerCharacter.Blueprint.startingAbilities.Contains(abilityPrefab))
+                {
+                    continue;
+                }
+
+                Ability ability = Instantiate(abilityPrefab, transform).GetComponent<Ability>();
+
+                if (ability == null)
+                {
+                    Debug.LogWarning($"[AbilityManager] LevelBlueprint Ability Prefab에 Ability 컴포넌트가 없습니다: {abilityPrefab.name}");
                     continue;
                 }
 
@@ -135,6 +102,11 @@ namespace Vampire
 
         public void RegisterUpgradeableValue(IUpgradeableValue upgradeableValue, bool inUse = false)
         {
+            if (upgradeableValue == null)
+            {
+                return;
+            }
+
             upgradeableValue.Register(this);
             registeredUpgradeableValues.Add(upgradeableValue);
 
@@ -191,8 +163,18 @@ namespace Vampire
 
         public void ReturnAbilities(List<Ability> abilities)
         {
+            if (abilities == null)
+            {
+                return;
+            }
+
             foreach (Ability ability in abilities)
             {
+                if (ability == null)
+                {
+                    continue;
+                }
+
                 if (ability.Owned)
                 {
                     ownedAbilities.Add(ability);
@@ -208,7 +190,10 @@ namespace Vampire
         {
             foreach (Ability ability in ownedAbilities)
             {
-                Destroy(ability.gameObject);
+                if (ability != null)
+                {
+                    Destroy(ability.gameObject);
+                }
             }
         }
 
@@ -216,6 +201,16 @@ namespace Vampire
         {
             foreach (Ability ability in ownedAbilities)
             {
+                if (ability == null)
+                {
+                    continue;
+                }
+
+                if (!ability.CanAppearAsOwnedUpgrade)
+                {
+                    continue;
+                }
+
                 if (ability.RequirementsMet())
                 {
                     return true;
@@ -224,6 +219,11 @@ namespace Vampire
 
             foreach (Ability ability in newAbilities)
             {
+                if (ability == null)
+                {
+                    continue;
+                }
+
                 if (ability.RequirementsMet())
                 {
                     return true;
@@ -239,6 +239,16 @@ namespace Vampire
 
             foreach (Ability ability in abilities)
             {
+                if (ability == null)
+                {
+                    continue;
+                }
+
+                if (ability.Owned && !ability.CanAppearAsOwnedUpgrade)
+                {
+                    continue;
+                }
+
                 if (ability.RequirementsMet())
                 {
                     availableAbilities.Add(ability);
@@ -260,6 +270,7 @@ namespace Vampire
             foreach (Ability.AugmentTier tier in GetFallbackOrder(rolledTier))
             {
                 Ability ability = PullRandomAbilityByTier(availableOwnedAbilities, availableNewAbilities, tier);
+
                 if (ability != null)
                 {
                     return ability;
@@ -278,7 +289,7 @@ namespace Vampire
 
             foreach (Ability ability in availableOwnedAbilities)
             {
-                if (ability.Tier == tier)
+                if (ability != null && ability.Tier == tier)
                 {
                     candidates.Add(ability);
                 }
@@ -286,7 +297,7 @@ namespace Vampire
 
             foreach (Ability ability in availableNewAbilities)
             {
-                if (ability.Tier == tier)
+                if (ability != null && ability.Tier == tier)
                 {
                     candidates.Add(ability);
                 }
@@ -317,12 +328,18 @@ namespace Vampire
 
             foreach (Ability ability in availableOwnedAbilities)
             {
-                candidates.Add(ability);
+                if (ability != null)
+                {
+                    candidates.Add(ability);
+                }
             }
 
             foreach (Ability ability in availableNewAbilities)
             {
-                candidates.Add(ability);
+                if (ability != null)
+                {
+                    candidates.Add(ability);
+                }
             }
 
             if (candidates.Count == 0)
@@ -357,6 +374,7 @@ namespace Vampire
             legendaryChance = Mathf.Max(0f, legendaryChance);
 
             float total = generalChance + specialChance + legendaryChance;
+
             if (total <= 0f)
             {
                 return Ability.AugmentTier.General;
@@ -416,11 +434,21 @@ namespace Vampire
 
             public void Add(Ability ability)
             {
+                if (ability == null)
+                {
+                    return;
+                }
+
                 abilities.Add(ability);
             }
 
             public void Remove(Ability ability)
             {
+                if (ability == null)
+                {
+                    return;
+                }
+
                 abilities.Remove(ability);
             }
 
