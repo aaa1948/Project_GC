@@ -234,7 +234,7 @@ namespace Vampire
                 Debug.Log($"[BossHealColaBottle] 투사체 직접 감지 / projectile={projectile.name}, damage={finalDamage}");
             }
 
-            TakeDamage(finalDamage, finalKnockback);
+            TakeDamage(finalDamage, finalKnockback, false);
 
             if (consumeProjectileOnHit)
             {
@@ -242,7 +242,10 @@ namespace Vampire
             }
         }
 
-        public override void TakeDamage(float damage, Vector2 knockback = default(Vector2))
+        public override void TakeDamage(
+    float damage,
+    Vector2 knockback = default(Vector2),
+    bool isCritical = false)
         {
             if (isDestroyed)
             {

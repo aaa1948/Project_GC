@@ -759,7 +759,10 @@ namespace Vampire
             rb.velocity += knockback * Mathf.Sqrt(rb.drag);
         }
 
-        public override void TakeDamage(float damage, Vector2 knockback = default(Vector2))
+        public override void TakeDamage(
+    float damage,
+    Vector2 knockback = default(Vector2),
+    bool isCritical = false)
         {
             if (!alive)
             {
@@ -1153,7 +1156,7 @@ namespace Vampire
                         pushDirection = Random.insideUnitCircle.normalized;
                     }
 
-                    damageable.TakeDamage(0f, pushDirection * strongForce);
+                    damageable.TakeDamage(0f, pushDirection * strongForce, false);
                 }
             }
 

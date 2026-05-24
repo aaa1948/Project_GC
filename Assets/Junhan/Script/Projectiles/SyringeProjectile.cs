@@ -818,7 +818,7 @@ namespace Vampire
                 finalKnockback *= statRuntime.KnockbackMultiplier;
             }
 
-            damageable.TakeDamage(finalDamage, finalKnockback * direction);
+            damageable.TakeDamage(finalDamage, finalKnockback * direction, isCritical);
             OnHitDamageable?.Invoke(finalDamage);
 
             if (isCritical) Debug.Log($"[치명타] 침 공격 치명타 발생 | 피해 {finalDamage:0.##}");

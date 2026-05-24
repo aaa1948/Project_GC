@@ -238,7 +238,10 @@ namespace Vampire
             Destroy(gameObject);
         }
 
-        public override void TakeDamage(float damage, Vector2 knockback = default(Vector2))
+        public override void TakeDamage(
+    float damage,
+    Vector2 knockback = default(Vector2),
+    bool isCritical = false)
         {
             if (isFinished)
             {
@@ -408,7 +411,7 @@ namespace Vampire
                 Debug.Log($"[BossAbsorbHealMinion] 플레이어 침 직접 감지 / projectile={projectile.name}, damage={finalDamage}");
             }
 
-            TakeDamage(finalDamage, finalKnockback);
+            TakeDamage(finalDamage, finalKnockback, false);
 
             if (consumeProjectileOnHit)
             {

@@ -172,7 +172,10 @@ namespace Vampire
             }
         }
 
-        public override void TakeDamage(float damage, Vector2 knockback = default(Vector2))
+        public override void TakeDamage(
+    float damage,
+    Vector2 knockback = default(Vector2),
+    bool isCritical = false)
         {
             ResolveBossController();
 
@@ -186,7 +189,7 @@ namespace Vampire
                 return;
             }
 
-            base.TakeDamage(damage, knockback);
+            base.TakeDamage(damage, knockback, isCritical);
 
             if (bossController != null)
             {

@@ -370,10 +370,10 @@ namespace Vampire
         ////////////////////////////////////////////////////////////////////////////////
         /// Text Spawning
         ////////////////////////////////////////////////////////////////////////////////
-        public DamageText SpawnDamageText(Vector2 position, float damage)
+        public DamageText SpawnDamageText(Vector2 position, float damage, bool isCritical = false)
         {
             DamageText newText = textPool.Get();
-            newText.Setup(position, damage);
+            newText.Setup(position, damage, isCritical);
             return newText;
         }
 

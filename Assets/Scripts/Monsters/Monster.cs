@@ -338,8 +338,9 @@ namespace Vampire
         }
 
         public override void TakeDamage(
-            float damage,
-            Vector2 knockback = default(Vector2))
+    float damage,
+    Vector2 knockback = default(Vector2),
+    bool isCritical = false)
         {
             if (!alive)
             {
@@ -348,7 +349,7 @@ namespace Vampire
 
             if (entityManager != null && monsterHitbox != null)
             {
-                entityManager.SpawnDamageText(monsterHitbox.transform.position, damage);
+                entityManager.SpawnDamageText(monsterHitbox.transform.position, damage, isCritical);
             }
 
             currentHealth -= damage;

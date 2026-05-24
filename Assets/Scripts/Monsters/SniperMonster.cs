@@ -184,9 +184,12 @@ namespace Vampire
             }
         }
 
-        public override void TakeDamage(float damage, Vector2 knockback = default(Vector2))
+        public override void TakeDamage(
+    float damage,
+    Vector2 knockback = default(Vector2),
+    bool isCritical = false)
         {
-            base.TakeDamage(damage, Vector2.zero);
+            base.TakeDamage(damage, Vector2.zero, isCritical);
 
             if (rb != null)
             {
