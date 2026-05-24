@@ -81,6 +81,9 @@ namespace Vampire
         [Tooltip("체크하면 대쉬 중 피해를 받지 않습니다.")]
         [SerializeField] protected bool invincibleDuringDash = true;
 
+        [Tooltip("대쉬가 끝난 직후에도 아주 짧게 유지되는 추가 무적 시간입니다. 적과 겹친 상태로 대쉬가 끝났을 때 바로 맞는 것을 막습니다.")]
+        [SerializeField] protected float dashEndInvincibleGraceTime = 0.12f;
+
         [Tooltip("체크하면 대쉬 종료 시 Rigidbody 속도를 0으로 초기화합니다.")]
         [SerializeField] protected bool stopVelocityAfterDash = true;
 
@@ -153,6 +156,8 @@ namespace Vampire
         protected Coroutine dashCoroutine = null;
         protected Coroutine dashRechargeCoroutine = null;
 
+        private float dashInvincibleEndTime = -1f;
+
         private Sprite cachedSpriteBeforeDash;
         private bool dashSpriteApplied = false;
 
@@ -161,11 +166,7 @@ namespace Vampire
 
         public Vector2 LookDirection
         {
-            get
-            {
-                return lookDirection;
-            }
-
+            get { return lookDirection; }
             set
             {
                 if (value != Vector2.zero)
@@ -215,8 +216,10 @@ namespace Vampire
         public bool IsDashing => isDashing;
         public float AntibioticBombChance => antibioticBombChance;
         public bool AutoCollectItems => autoCollectItems;
+
         public UnityEvent<float> OnDealDamage { get; } = new UnityEvent<float>();
         public UnityEvent OnDeath { get; } = new UnityEvent();
+
         public float SlowChance => slowChance;
         public int AdditionalPierce => additionalPierce;
         public CharacterBlueprint Blueprint => characterBlueprint;
@@ -233,7 +236,12 @@ namespace Vampire
             rb = GetComponent<Rigidbody2D>();
             zPositioner = gameObject.AddComponent<ZPositioner>();
             spriteAnimator = GetComponentInChildren<SpriteAnimator>();
-            spriteRenderer = spriteAnimator.GetComponent<SpriteRenderer>();
+
+            if (spriteAnimator != null)
+            {
+                spriteRenderer = spriteAnimator.GetComponent<SpriteRenderer>();
+            }
+
             characterBlueprint = CrossSceneData.CharacterBlueprint;
         }
 
@@ -241,6 +249,10 @@ namespace Vampire
         {
             RestoreDashCollisionGhost();
             RestoreDashSpriteVisual();
+
+            isDashing = false;
+            dashCoroutine = null;
+            dashInvincibleEndTime = -1f;
         }
 
         public virtual void Init(EntityManager entityManager, AbilityManager abilityManager, StatsManager statsManager)
@@ -338,6 +350,7 @@ namespace Vampire
         {
             maxDashCharges = Mathf.Max(1, maxDashCharges);
             currentDashCharges = maxDashCharges;
+            dashInvincibleEndTime = -1f;
         }
 
         private void UpdateDashInput()
@@ -457,6 +470,15 @@ namespace Vampire
         {
             isDashing = true;
 
+            if (invincibleDuringDash)
+            {
+                dashInvincibleEndTime = Time.time + dashDuration + dashEndInvincibleGraceTime;
+            }
+            else
+            {
+                dashInvincibleEndTime = -1f;
+            }
+
             ApplyDashCollisionGhost();
 
             if (rb != null)
@@ -524,10 +546,39 @@ namespace Vampire
             isDashing = false;
             dashCoroutine = null;
 
+            if (invincibleDuringDash && dashEndInvincibleGraceTime > 0f)
+            {
+                dashInvincibleEndTime = Time.time + dashEndInvincibleGraceTime;
+
+                if (debugDashLog)
+                {
+                    Debug.Log($"[Dash] 대쉬 종료 후 추가 무적 시작 | {dashEndInvincibleGraceTime:0.00}초");
+                }
+            }
+            else
+            {
+                dashInvincibleEndTime = -1f;
+            }
+
             if (debugDashLog)
             {
                 Debug.Log("[Dash] 대쉬 종료");
             }
+        }
+
+        private bool IsDashInvincibilityActive()
+        {
+            if (!invincibleDuringDash)
+            {
+                return false;
+            }
+
+            if (isDashing)
+            {
+                return true;
+            }
+
+            return Time.time < dashInvincibleEndTime;
         }
 
         private void ApplyDashSpriteVisual(Vector2 dashDirection)
@@ -709,6 +760,7 @@ namespace Vampire
                 float expDiff = nextLevelExp - currentExp;
                 currentExp += expDiff;
                 exp -= expDiff;
+
                 expBar.Setup(currentExp, 0, nextLevelExp);
 
                 yield return LevelUpCoroutine();
@@ -716,6 +768,7 @@ namespace Vampire
                 float prevLevelExp = nextLevelExp;
                 expToNextLevel += characterBlueprint.LevelToExpIncrease(currentLevel);
                 nextLevelExp += expToNextLevel;
+
                 expBar.Setup(currentExp, prevLevelExp, nextLevelExp);
             }
 
@@ -751,7 +804,7 @@ namespace Vampire
 
         public override void Knockback(Vector2 knockback)
         {
-            if (isDashing)
+            if (IsDashInvincibilityActive())
             {
                 return;
             }
@@ -759,17 +812,14 @@ namespace Vampire
             rb.velocity += knockback * Mathf.Sqrt(rb.drag);
         }
 
-        public override void TakeDamage(
-    float damage,
-    Vector2 knockback = default(Vector2),
-    bool isCritical = false)
+        public override void TakeDamage(float damage, Vector2 knockback = default(Vector2), bool isCritical = false)
         {
             if (!alive)
             {
                 return;
             }
 
-            if (isDashing && invincibleDuringDash)
+            if (IsDashInvincibilityActive())
             {
                 if (debugDashLog)
                 {
@@ -838,11 +888,19 @@ namespace Vampire
         private IEnumerator HitAnimation()
         {
             isInvincible = true;
-            spriteRenderer.sharedMaterial = hitMaterial;
+
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.sharedMaterial = hitMaterial;
+            }
 
             yield return new WaitForSeconds(0.15f + invincibilityTimeBonus);
 
-            spriteRenderer.sharedMaterial = defaultMaterial;
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.sharedMaterial = defaultMaterial;
+            }
+
             isInvincible = false;
         }
 
@@ -853,30 +911,59 @@ namespace Vampire
             RestoreDashCollisionGhost();
             RestoreDashSpriteVisual();
 
-            spriteRenderer.sharedMaterial = deathMaterial;
+            isDashing = false;
+            dashInvincibleEndTime = -1f;
+
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.sharedMaterial = deathMaterial;
+            }
+
             abilityManager.DestroyActiveAbilities();
             StopWalkAnimation();
-            deathParticles.Play();
 
-            float height = spriteRenderer.bounds.size.y;
+            if (deathParticles != null)
+            {
+                deathParticles.Play();
+            }
+
+            float height = spriteRenderer != null ? spriteRenderer.bounds.size.y : 1f;
             float t = 0;
 
             while (t < 1)
             {
-                spriteRenderer.sharedMaterial = deathMaterial;
-                deathParticles.transform.position = transform.position + Vector3.up * height * (1 - t);
-                deathMaterial.SetFloat("_Wipe", t);
-                t += Time.deltaTime;
+                if (spriteRenderer != null)
+                {
+                    spriteRenderer.sharedMaterial = deathMaterial;
+                }
 
+                if (deathParticles != null)
+                {
+                    deathParticles.transform.position = transform.position + Vector3.up * height * (1 - t);
+                }
+
+                if (deathMaterial != null)
+                {
+                    deathMaterial.SetFloat("_Wipe", t);
+                }
+
+                t += Time.deltaTime;
                 yield return null;
             }
 
-            deathMaterial.SetFloat("_Wipe", 1.0f);
+            if (deathMaterial != null)
+            {
+                deathMaterial.SetFloat("_Wipe", 1.0f);
+            }
 
             yield return new WaitForSeconds(0.5f);
 
             OnDeath.Invoke();
-            spriteRenderer.enabled = false;
+
+            if (spriteRenderer != null)
+            {
+                spriteRenderer.enabled = false;
+            }
         }
 
         private void Revive()
