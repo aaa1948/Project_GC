@@ -115,7 +115,7 @@ namespace Vampire
             // ------------------------------------------
             if (item.itemName.Contains("반사신경 망치") || item.itemName.Contains("ReflexHammer"))
             {
-                player.AddReflexHammer(); //  AddReflexHammer() 호출
+                player.AddReflexHammer(); //  AddReflexHammer() 호출 
                 Debug.Log($"<color=red>[특수]</color> <b>{item.itemName}</b> 획득! 현재 중첩 개수: {player.MouthwashCount}개 (발동 확률: {player.MouthwashCount * 0.5f}%)");
             }
             if (item.extraProjectiles > 0)

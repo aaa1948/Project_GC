@@ -3,7 +3,17 @@ guid: e57f6130231e59c48a812baf6a1eb07c
 MonoImporter:
   externalObjects: {}
   serializedVersion: 2
-  defaultReferences: []
+  defaultReferences:
+  - itemCardImage: {instanceID: 0}
+  - itemIcon: {instanceID: 0}
+  - itemNameText: {instanceID: 0}
+  - itemDescriptionText: {instanceID: 0}
+  - itemCostText: {instanceID: 0}
+  - purchaseButton: {instanceID: 0}
+  - commonCardSprite: {fileID: 21300000, guid: 52dcb83dd170f3d47911235632eafba8, type: 3}
+  - uncommonCardSprite: {fileID: 21300000, guid: f36aa1abc1bee494bb26686248281dfd, type: 3}
+  - rareCardSprite: {fileID: 21300000, guid: 1fb55e9a17efc6a46b8f441cf07c466d, type: 3}
+  - legendaryCardSprite: {fileID: 21300000, guid: 2d9060e64be13bc4ab0964598151db20, type: 3}
   executionOrder: 0
   icon: {instanceID: 0}
   userData: 

@@ -879,6 +879,77 @@ SpriteRenderer:
   m_WasSpriteAssigned: 1
   m_MaskInteraction: 0
   m_SpriteSortPoint: 0
+--- !u!1 &173229507
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 173229508}
+  - component: {fileID: 173229509}
+  - component: {fileID: 173229511}
+  m_Layer: 5
+  m_Name: ShopCardsParent
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!224 &173229508
+RectTransform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 173229507}
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1892469449}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
+  m_AnchoredPosition: {x: 0, y: -100}
+  m_SizeDelta: {x: 1800, y: 760}
+  m_Pivot: {x: 0.5, y: 0.5}
+--- !u!114 &173229509
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 173229507}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 30649d3a9faa99c48a7b1166b86bf2a0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_Padding:
+    m_Left: 0
+    m_Right: 0
+    m_Top: 0
+    m_Bottom: 0
+  m_ChildAlignment: 4
+  m_Spacing: 80
+  m_ChildForceExpandWidth: 0
+  m_ChildForceExpandHeight: 0
+  m_ChildControlWidth: 1
+  m_ChildControlHeight: 1
+  m_ChildScaleWidth: 0
+  m_ChildScaleHeight: 0
+  m_ReverseArrangement: 0
+--- !u!222 &173229511
+CanvasRenderer:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 173229507}
+  m_CullTransparentMesh: 1
 --- !u!1 &197700463
 GameObject:
   m_ObjectHideFlags: 0
@@ -9674,13 +9745,29 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 9950557}
     - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
+      propertyPath: shopCardsParent
+      value: 
+      objectReference: {fileID: 173229508}
+    - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
       propertyPath: shopUIContainer
       value: 
       objectReference: {fileID: 1892469448}
     - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
+      propertyPath: runtimeCardSize.x
+      value: 570
+      objectReference: {fileID: 0}
+    - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
+      propertyPath: runtimeCardSize.y
+      value: 720
+      objectReference: {fileID: 0}
+    - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
       propertyPath: rerollCostIncrease
       value: 5
       objectReference: {fileID: 0}
+    - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
+      propertyPath: shopItemCardPrefab
+      value: 
+      objectReference: {fileID: 4071302612417614984, guid: 116895c3572ef1c4c9487aa6130ed682, type: 3}
     - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
       propertyPath: itemButtons.Array.size
       value: 3
@@ -9688,7 +9775,7 @@ PrefabInstance:
     - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
       propertyPath: itemButtons.Array.data[0]
       value: 
-      objectReference: {fileID: 1892469446}
+      objectReference: {fileID: 0}
     - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
       propertyPath: itemButtons.Array.data[1]
       value: 
@@ -22272,6 +22359,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1421529453}
     m_Modifications:
+    - target: {fileID: 4792985621942077358, guid: 3ad6441bf307ca14d9b29ce4429105d4, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4792985621942077358, guid: 3ad6441bf307ca14d9b29ce4429105d4, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4792985621942077358, guid: 3ad6441bf307ca14d9b29ce4429105d4, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 960
+      objectReference: {fileID: 0}
+    - target: {fileID: 4792985621942077358, guid: 3ad6441bf307ca14d9b29ce4429105d4, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -540
+      objectReference: {fileID: 0}
     - target: {fileID: 5835890924096506502, guid: 3ad6441bf307ca14d9b29ce4429105d4, type: 3}
       propertyPath: m_Name
       value: ShopUIContainer
@@ -22279,6 +22382,22 @@ PrefabInstance:
     - target: {fileID: 5835890924096506502, guid: 3ad6441bf307ca14d9b29ce4429105d4, type: 3}
       propertyPath: m_IsActive
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6537390252595238521, guid: 3ad6441bf307ca14d9b29ce4429105d4, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6537390252595238521, guid: 3ad6441bf307ca14d9b29ce4429105d4, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6537390252595238521, guid: 3ad6441bf307ca14d9b29ce4429105d4, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 960
+      objectReference: {fileID: 0}
+    - target: {fileID: 6537390252595238521, guid: 3ad6441bf307ca14d9b29ce4429105d4, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -540
       objectReference: {fileID: 0}
     - target: {fileID: 8956253740633720838, guid: 3ad6441bf307ca14d9b29ce4429105d4, type: 3}
       propertyPath: m_Pivot.x
@@ -22398,7 +22517,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 8956253740633720838, guid: 3ad6441bf307ca14d9b29ce4429105d4, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 173229508}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3ad6441bf307ca14d9b29ce4429105d4, type: 3}
 --- !u!114 &1892469444 stripped
@@ -22415,17 +22537,6 @@ MonoBehaviour:
 --- !u!114 &1892469445 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2539397469048936753, guid: 3ad6441bf307ca14d9b29ce4429105d4, type: 3}
-  m_PrefabInstance: {fileID: 1892469443}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e57f6130231e59c48a812baf6a1eb07c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &1892469446 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 8921686075473204995, guid: 3ad6441bf307ca14d9b29ce4429105d4, type: 3}
   m_PrefabInstance: {fileID: 1892469443}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}

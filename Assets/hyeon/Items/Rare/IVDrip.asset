@@ -15,7 +15,7 @@ MonoBehaviour:
   itemName: "\uD3EC\uB3C4\uB2F9 \uB9C1\uAC70"
   itemRarity: 2
   itemTag: 0
-  description: "\uCC98\uCE58 \uC2DC \uCCB4\uB825 +2\uD68C\uBCF5"
+  description: "\uCC98\uCE58 \uC2DC \uCCB4\uB825 +4%\uD68C\uBCF5"
   itemIcon: {fileID: 21300000, guid: 08df83dac3893ab48bb0df1175f74688, type: 3}
   cost: 60
   abilityPrefab: {fileID: 0}
@@ -36,7 +36,7 @@ MonoBehaviour:
   slowChance: 0
   statusDurationBoost: 0
   auraDamagePerSecond: 0
-  healOnKill: 2
+  healOnKill: 0.4
   summonOnKillChance: 0
   healOnIdlePerSecond: 0
   lifeSteal: 0
