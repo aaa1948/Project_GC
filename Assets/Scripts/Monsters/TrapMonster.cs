@@ -189,7 +189,10 @@ namespace Vampire
             }
         }
 
-        public override void TakeDamage(float damage, Vector2 direction = default(Vector2))
+        public override void TakeDamage(
+    float damage,
+    Vector2 direction = default(Vector2),
+    bool isCritical = false)
         {
             if (!setupCompleted || trapBlueprint == null)
             {
@@ -353,7 +356,7 @@ namespace Vampire
                     yield break;
                 }
 
-                trappedDamageable.TakeDamage(trapBlueprint.tickDamage, Vector2.zero);
+                trappedDamageable.TakeDamage(trapBlueprint.tickDamage, Vector2.zero, false);
 
                 if (debugLog)
                 {
