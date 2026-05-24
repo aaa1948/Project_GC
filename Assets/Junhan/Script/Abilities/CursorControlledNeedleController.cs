@@ -583,7 +583,7 @@ namespace Vampire
                 knockback *= statRuntime.KnockbackMultiplier;
             }
 
-            damageable.TakeDamage(finalDamage, knockbackDirection * knockback);
+            damageable.TakeDamage(finalDamage, knockbackDirection * knockback, isCritical);
 
             if (sourceCharacter != null && sourceCharacter.OnDealDamage != null)
             {
@@ -812,7 +812,7 @@ namespace Vampire
 
                 damagedIds.Add(splashId);
 
-                splashDamageable.TakeDamage(runtime.explosionDamage, Vector2.zero);
+                splashDamageable.TakeDamage(runtime.explosionDamage, Vector2.zero, false);
             }
         }
 
