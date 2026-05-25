@@ -25,14 +25,45 @@ namespace Vampire
         [SerializeField] private float maxTotalSpreadAngle = 120f;
 
         [Header("Active Special Augments")]
+        [Tooltip("독침 특수증강을 테스트용으로 강제 활성화합니다.")]
         [SerializeField] private bool poisonEnabled = false;
+
+        [Tooltip("폭발침 특수증강을 테스트용으로 강제 활성화합니다.")]
         [SerializeField] private bool explosionEnabled = false;
+
+        [Tooltip("유도침 특수증강을 테스트용으로 강제 활성화합니다.")]
         [SerializeField] private bool homingEnabled = false;
+
+        [Tooltip("관통침 특수증강을 테스트용으로 강제 활성화합니다.")]
         [SerializeField] private bool pierceEnabled = false;
+
+        [Tooltip("꿀침 특수증강을 테스트용으로 강제 활성화합니다.")]
         [SerializeField] private bool honeyEnabled = false;
+
+        [Tooltip("모기침 특수증강을 테스트용으로 강제 활성화합니다.")]
         [SerializeField] private bool mosquitoEnabled = false;
+
+        [Tooltip("침귀환 특수증강을 테스트용으로 강제 활성화합니다.")]
         [SerializeField] private bool returnNeedleEnabled = false;
+
+        [Tooltip("침술진 특수증강을 테스트용으로 강제 활성화합니다. 플레이 시작 전에 체크하면 Init 시 대쉬 추가와 컨트롤러 생성까지 자동 적용됩니다.")]
         [SerializeField] private bool acupunctureFormationEnabled = false;
+
+        [Header("Active Legendary Augments")]
+        [Tooltip("생명연소 전설증강을 테스트용으로 강제 활성화합니다.")]
+        [SerializeField] private bool lifeBurnEnabled = false;
+
+        [Tooltip("분신배양 전설증강을 테스트용으로 보유 처리합니다. 실제 분신 생성은 분신배양 전설증강/컨트롤러 쪽 구현을 따릅니다.")]
+        [SerializeField] private bool cloneLegendaryTaken = false;
+
+        [Tooltip("고슴도침 전설증강을 테스트용으로 강제 활성화합니다. 플레이 시작 전에 체크하면 Init 시 침 결계 컨트롤러까지 자동 생성됩니다.")]
+        [SerializeField] private bool hedgehogNeedleEnabled = false;
+
+        [Tooltip("대물침 전설증강을 테스트용으로 강제 활성화합니다.")]
+        [SerializeField] private bool heavySnipeEnabled = false;
+
+        [Tooltip("이기어침 전설증강을 테스트용으로 강제 활성화합니다. 플레이 시작 전에 체크하면 Init 시 조종 침 컨트롤러까지 자동 생성됩니다.")]
+        [SerializeField] private bool cursorControlEnabled = false;
 
         [Header("Poison Settings")]
         [SerializeField] private float poisonDuration = 3f;
@@ -98,18 +129,14 @@ namespace Vampire
         [SerializeField] private float acupunctureFormationVisualScale = 1f;
 
         private AcupunctureFormationController acupunctureFormationController;
+        private bool acupunctureFormationBonusDashApplied = false;
 
         [Header("Legendary - Life Burn / HP 1")]
-        [SerializeField] private bool lifeBurnEnabled = false;
         [SerializeField] private float lifeBurnDamageMultiplier = 3f;
         [SerializeField] private int lifeBurnBonusProjectiles = 10;
         [SerializeField] private float lifeBurnBonusRange = 3f;
 
-        [Header("Legendary - Clone Culture")]
-        [SerializeField] private bool cloneLegendaryTaken = false;
-
         [Header("Legendary - Hedgehog Needle / 고슴도침")]
-        [SerializeField] private bool hedgehogNeedleEnabled = false;
 
         [Tooltip("플레이어 주변을 도는 침 개수")]
         [SerializeField] private int hedgehogNeedleCount = 8;
@@ -129,8 +156,6 @@ namespace Vampire
         private HedgehogNeedleController hedgehogNeedleController;
 
         [Header("Legendary - Heavy Snipe / 대물침")]
-        [SerializeField] private bool heavySnipeEnabled = false;
-
         [Tooltip("true면 우클릭으로 차지, false면 좌클릭으로 차지합니다. 마우스가 없으면 Space 키로 차지합니다.")]
         [SerializeField] private bool useRightMouseForHeavySnipe = true;
 
@@ -265,8 +290,6 @@ namespace Vampire
         private float cursorHeavyChargeRatio = 0f;
 
         [Header("Legendary - Cursor Controlled Needle / 이기어침")]
-        [SerializeField] private bool cursorControlEnabled = false;
-
         [Tooltip("마우스 포인트를 따라가는 속도. 높을수록 더 즉각적으로 따라갑니다.")]
         [SerializeField] private float cursorNeedleFollowSpeed = 8f;
 
@@ -303,8 +326,37 @@ namespace Vampire
         public GameObject ProjectilePrefab => projectilePrefab;
         public LayerMask MonsterLayer => monsterLayer;
 
+        public override void Init(AbilityManager abilityManager, EntityManager entityManager, Character playerCharacter)
+        {
+            base.Init(abilityManager, entityManager, playerCharacter);
+
+            // 인스펙터에서 체크해둔 테스트용 증강 중,
+            // 컨트롤러 생성이나 대쉬 횟수 추가가 필요한 증강들을 실제 런타임 상태로 동기화합니다.
+            ApplyInspectorForcedAugmentRuntimeSetup();
+        }
+
+        private void ApplyInspectorForcedAugmentRuntimeSetup()
+        {
+            if (acupunctureFormationEnabled)
+            {
+                EnableAcupunctureFormationAugment();
+            }
+
+            if (hedgehogNeedleEnabled)
+            {
+                EnableHedgehogNeedleLegendary();
+            }
+
+            if (cursorControlEnabled)
+            {
+                EnableCursorControlLegendary();
+            }
+        }
+
         protected override void Update()
         {
+            ApplyInspectorForcedAugmentRuntimeSetup();
+
             // 이기어침이 활성화되면 기본 자동 공격은 멈춘다.
             // 단, 대물침도 같이 보유 중이면 우클릭 차지로 이기어침 자체를 강화한다.
             if (cursorControlEnabled)
@@ -1436,16 +1488,17 @@ namespace Vampire
 
         public void EnableAcupunctureFormationAugment()
         {
-            if (acupunctureFormationEnabled)
-            {
-                return;
-            }
-
             acupunctureFormationEnabled = true;
 
-            if (playerCharacter != null)
+            if (!acupunctureFormationBonusDashApplied && playerCharacter != null)
             {
                 playerCharacter.AddDashCharge(acupunctureFormationBonusDashCharges);
+                acupunctureFormationBonusDashApplied = true;
+            }
+
+            if (acupunctureFormationController != null)
+            {
+                return;
             }
 
             if (playerCharacter == null || entityManager == null)
@@ -1497,12 +1550,12 @@ namespace Vampire
 
         public void EnableHedgehogNeedleLegendary()
         {
-            if (hedgehogNeedleEnabled)
+            hedgehogNeedleEnabled = true;
+
+            if (hedgehogNeedleController != null)
             {
                 return;
             }
-
-            hedgehogNeedleEnabled = true;
 
             if (playerCharacter == null || entityManager == null)
             {
@@ -1552,12 +1605,12 @@ namespace Vampire
 
         public void EnableCursorControlLegendary()
         {
-            if (cursorControlEnabled)
+            cursorControlEnabled = true;
+
+            if (cursorControlledNeedleController != null)
             {
                 return;
             }
-
-            cursorControlEnabled = true;
 
             if (playerCharacter == null || entityManager == null)
             {
