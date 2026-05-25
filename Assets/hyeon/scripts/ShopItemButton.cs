@@ -7,14 +7,21 @@ namespace Vampire
     public class ShopItemButton : MonoBehaviour
     {
         [Header("UI References")]
+        [SerializeField] private Image itemCardImage;
         [SerializeField] private Image itemIcon;
         [SerializeField] private TextMeshProUGUI itemNameText;
         [SerializeField] private TextMeshProUGUI itemDescriptionText;
         [SerializeField] private TextMeshProUGUI itemCostText;
         [SerializeField] private Button purchaseButton;
 
+        [Header("Card Rarity Sprites")]
+        [SerializeField] private Sprite commonCardSprite;
+        [SerializeField] private Sprite uncommonCardSprite;
+        [SerializeField] private Sprite rareCardSprite;
+        [SerializeField] private Sprite legendaryCardSprite;
+
         private MerchantItemBlueprint currentItem;
-        private bool isSoldOut = false; // 품절 여부 기억
+        private bool isSoldOut = false;
 
         private void Awake()
         {
@@ -24,46 +31,70 @@ namespace Vampire
         public void Setup(MerchantItemBlueprint item)
         {
             currentItem = item;
-            isSoldOut = false; // 상점을 새로 열 때마다 초기화
-            purchaseButton.interactable = true; // 버튼 다시 활성화
+            isSoldOut = false;
+
+            purchaseButton.interactable = true;
 
             itemIcon.sprite = item.itemIcon;
             itemNameText.text = item.itemName;
             itemDescriptionText.text = item.description;
             itemCostText.text = item.cost.ToString() + " G";
-            itemCostText.color = Color.black; // 원래 글자색
+            itemCostText.color = Color.black;
+
+            SetCardByRarity(item.itemRarity);
+        }
+
+        private void SetCardByRarity(MerchantItemBlueprint.Rarity rarity)
+        {
+            if (itemCardImage == null) return;
+
+            switch (rarity)
+            {
+                case MerchantItemBlueprint.Rarity.Common:
+                    itemCardImage.sprite = commonCardSprite;
+                    break;
+
+                case MerchantItemBlueprint.Rarity.Uncommon:
+                    itemCardImage.sprite = uncommonCardSprite;
+                    break;
+
+                case MerchantItemBlueprint.Rarity.Rare:
+                    itemCardImage.sprite = rareCardSprite;
+                    break;
+
+                case MerchantItemBlueprint.Rarity.Legendary:
+                    itemCardImage.sprite = legendaryCardSprite;
+                    break;
+            }
         }
 
         private void OnPurchaseClicked()
         {
             if (currentItem == null || isSoldOut) return;
 
-            // 매니저에게 결제를 요청하고, 나 자신(버튼)도 같이 넘겨줍니다!
             MerchantUIManager.Instance.OnClickPurchaseItem(currentItem, this);
         }
 
-        // 성공적으로 구매했을 때 매니저가 호출해 줄 함수
         public void MarkAsSoldOut()
         {
             isSoldOut = true;
-            purchaseButton.interactable = false; // 버튼 클릭 금지
+            purchaseButton.interactable = false;
+
             itemCostText.text = "SOLD OUT";
-            itemCostText.color = Color.gray; // 글자를 회색으로 변경
+            itemCostText.color = Color.gray;
         }
 
-        // 돈이 부족할 때 매니저가 호출해 줄 함수
         public void ShowNotEnoughGold()
         {
             itemCostText.text = "돈 부족!";
-            itemCostText.color = Color.red; // 빨간색으로 경고
+            itemCostText.color = Color.red;
 
-            // 1초 뒤에 원래 가격표로 되돌리는 마법(Invoke)
             Invoke(nameof(ResetPriceText), 1f);
         }
 
         private void ResetPriceText()
         {
-            if (!isSoldOut)
+            if (!isSoldOut && currentItem != null)
             {
                 itemCostText.text = currentItem.cost.ToString() + " G";
                 itemCostText.color = Color.black;

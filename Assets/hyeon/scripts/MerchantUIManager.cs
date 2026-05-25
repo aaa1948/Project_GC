@@ -15,8 +15,18 @@ namespace Vampire
         [SerializeField] private Button rerollButton;
         [SerializeField] private TMP_Text rerollCostText;
 
+        [Header("Hide While Shop Open")]
+        [SerializeField] private GameObject minimapObject;
+
+        [Header("Dynamic Shop Card Settings")]
+        [SerializeField] private Transform shopCardsParent;
+        [SerializeField] private GameObject shopItemCardPrefab;
+        [SerializeField] private int shopItemCount = 3;
+
+        [Header("Runtime Card Size")]
+        [SerializeField] private Vector2 runtimeCardSize = new Vector2(110f, 150f);
+
         [Header("Shop Settings")]
-        [SerializeField] private List<ShopItemButton> itemButtons;
         [SerializeField] private List<MerchantItemBlueprint> allAvailableItems;
 
         [Header("Base Rarity Chance")]
@@ -41,8 +51,8 @@ namespace Vampire
         [SerializeField] private AudioClip rerollSound;
 
         private MerchantNPC currentInteractingNPC;
+        private readonly List<ShopItemButton> spawnedShopCards = new List<ShopItemButton>();
 
-        // 게임 한 판 전체에서 공유되는 리롤 값
         private int globalRerollCount = 0;
         private int currentRerollCost;
 
@@ -53,16 +63,19 @@ namespace Vampire
 
             currentRerollCost = baseRerollCost;
 
-            shopUIContainer.SetActive(false);
+            if (shopUIContainer != null)
+                shopUIContainer.SetActive(false);
 
-            closeButton.onClick.AddListener(CloseShop);
+            if (closeButton != null)
+                closeButton.onClick.AddListener(CloseShop);
 
             if (rerollButton != null)
                 rerollButton.onClick.AddListener(OnClickRerollItems);
         }
+
         private void Update()
         {
-            if (shopUIContainer.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+            if (shopUIContainer != null && shopUIContainer.activeSelf && Input.GetKeyDown(KeyCode.Escape))
             {
                 CloseShop();
             }
@@ -71,7 +84,12 @@ namespace Vampire
         public void OpenShop(MerchantNPC npc)
         {
             currentInteractingNPC = npc;
-            shopUIContainer.SetActive(true);
+
+            if (shopUIContainer != null)
+                shopUIContainer.SetActive(true);
+
+            if (minimapObject != null)
+                minimapObject.SetActive(false);
 
             Time.timeScale = 0f;
 
@@ -93,7 +111,7 @@ namespace Vampire
 
             int safetyCount = 0;
 
-            while (generatedItems.Count < itemButtons.Count && safetyCount < 100)
+            while (generatedItems.Count < shopItemCount && safetyCount < 100)
             {
                 safetyCount++;
 
@@ -109,7 +127,7 @@ namespace Vampire
                 }
             }
 
-            if (generatedItems.Count < itemButtons.Count)
+            if (generatedItems.Count < shopItemCount)
             {
                 FillRemainingItemsRandomly(generatedItems);
             }
@@ -181,7 +199,7 @@ namespace Vampire
                     remainingItems.Add(item);
             }
 
-            while (targetItems.Count < itemButtons.Count && remainingItems.Count > 0)
+            while (targetItems.Count < shopItemCount && remainingItems.Count > 0)
             {
                 int randomIndex = Random.Range(0, remainingItems.Count);
                 targetItems.Add(remainingItems[randomIndex]);
@@ -191,23 +209,67 @@ namespace Vampire
 
         private void DisplayCurrentShopItems()
         {
+            ClearShopCards();
+
             if (currentInteractingNPC == null)
+            {
+                Debug.LogWarning("[MerchantUIManager] currentInteractingNPC가 없습니다.");
                 return;
+            }
+
+            if (shopCardsParent == null || shopItemCardPrefab == null)
+            {
+                Debug.LogError("[MerchantUIManager] ShopCardsParent 또는 ShopItemCardPrefab이 연결되지 않았습니다!");
+                return;
+            }
 
             List<MerchantItemBlueprint> shopItems = currentInteractingNPC.GetShopItems();
 
-            for (int i = 0; i < itemButtons.Count; i++)
+            for (int i = 0; i < shopItems.Count; i++)
             {
-                if (i < shopItems.Count)
+                GameObject cardObj = Instantiate(shopItemCardPrefab, shopCardsParent);
+
+                RectTransform rect = cardObj.GetComponent<RectTransform>();
+                if (rect != null)
                 {
-                    itemButtons[i].gameObject.SetActive(true);
-                    itemButtons[i].Setup(shopItems[i]);
+                    rect.localScale = Vector3.one;
+                    rect.localRotation = Quaternion.identity;
+                    rect.anchoredPosition3D = Vector3.zero;
+                    rect.sizeDelta = runtimeCardSize;
+                }
+
+                LayoutElement layoutElement = cardObj.GetComponent<LayoutElement>();
+                if (layoutElement != null)
+                {
+                    layoutElement.preferredWidth = runtimeCardSize.x;
+                    layoutElement.preferredHeight = runtimeCardSize.y;
+                    layoutElement.flexibleWidth = 0f;
+                    layoutElement.flexibleHeight = 0f;
+                }
+
+                ShopItemButton card = cardObj.GetComponent<ShopItemButton>();
+
+                if (card != null)
+                {
+                    card.Setup(shopItems[i]);
+                    spawnedShopCards.Add(card);
                 }
                 else
                 {
-                    itemButtons[i].gameObject.SetActive(false);
+                    Debug.LogError("[MerchantUIManager] ShopItemCardPrefab에 ShopItemButton 컴포넌트가 없습니다!");
                 }
             }
+        }
+
+        private void ClearShopCards()
+        {
+            for (int i = 0; i < spawnedShopCards.Count; i++)
+            {
+                if (spawnedShopCards[i] != null)
+                    Destroy(spawnedShopCards[i].gameObject);
+            }
+
+            spawnedShopCards.Clear();
         }
 
         public void OnClickRerollItems()
@@ -243,7 +305,7 @@ namespace Vampire
         {
             if (rerollCostText != null)
             {
-                rerollCostText.text = $"Reroll - {currentRerollCost}G";
+                rerollCostText.text = $"{currentRerollCost}G";
             }
         }
 
@@ -257,8 +319,15 @@ namespace Vampire
 
         public void CloseShop()
         {
-            shopUIContainer.SetActive(false);
+            if (shopUIContainer != null)
+                shopUIContainer.SetActive(false);
+
+            if (minimapObject != null)
+                minimapObject.SetActive(true);
+
             Time.timeScale = 1f;
+
+            ClearShopCards();
 
             if (currentInteractingNPC != null)
             {
