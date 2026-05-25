@@ -3826,6 +3826,7 @@ MonoBehaviour:
   dashRechargeTime: 2
   maxDashCharges: 1
   invincibleDuringDash: 1
+  dashEndInvincibleGraceTime: 0.12
   stopVelocityAfterDash: 1
   dashMovementCurve:
     serializedVersion: 2
@@ -21603,11 +21604,11 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   selectionCount: 3
-  baseGeneralChance: 70
-  baseSpecialChance: 25
-  baseLegendaryChance: 5
-  specialChancePerLuck: 2
-  legendaryChancePerLuck: 1
+  baseGeneralChance: 80
+  baseSpecialChance: 17
+  baseLegendaryChance: 3
+  specialChancePerLuck: 1.5
+  legendaryChancePerLuck: 0.7
 --- !u!1 &1736393772
 GameObject:
   m_ObjectHideFlags: 0

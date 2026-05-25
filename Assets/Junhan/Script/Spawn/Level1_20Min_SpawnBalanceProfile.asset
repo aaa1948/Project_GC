@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Level1_20Min_SpawnBalanceProfile
   m_EditorClassIdentifier: 
   overrideLevelTime: 1
-  levelDurationMinutes: 20
+  levelDurationMinutes: 15
   spawnRatePoints:
   - minute: 0
     spawnRate: 1
@@ -902,7 +902,7 @@ MonoBehaviour:
   - 20
   hpSampleMinutes:
   - 0
-  - 10
-  - 20
+  - 7
+  - 15
   normalizeSpawnChances: 1
   debugLog: 1

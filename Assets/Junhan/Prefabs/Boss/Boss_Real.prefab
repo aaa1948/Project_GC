@@ -5222,8 +5222,8 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   autoCollectPatternsFromChildren: 1
-  maxHp: 15000
-  currentHp: 15000
+  maxHp: 20000
+  currentHp: 20000
   contactDamage: 10
   contactDamageCooldown: 0.5
   enableBasicAttack: 1
@@ -5391,6 +5391,8 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 256
   canHitPlayerOncePerCharge: 1
+  ignorePlayerPhysicsCollisionDuringCharge: 1
+  forceExactChargeMovement: 1
   showDebugHitbox: 1
   debugCharge: 0
 --- !u!114 &1671960822479111993
