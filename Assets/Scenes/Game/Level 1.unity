@@ -2864,8 +2864,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: Main Menu
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 7197d315232af3944b951aa9b64bd92b, type: 2}
+  m_sharedMaterial: {fileID: -5677060532124915531, guid: 7197d315232af3944b951aa9b64bd92b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -22844,7 +22844,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   levelManager: {fileID: 0}
   spawnEntries:
-  - spawnTimeSeconds: 480
+  - spawnTimeSeconds: 360
     miniBossBlueprint: {fileID: 11400000, guid: e57788280332e7f4fb68bda5863fa457, type: 2}
     autoResolvePoolIndex: 1
     monsterPoolIndex: -1
@@ -22853,7 +22853,7 @@ MonoBehaviour:
     fixedSpawnPoint: {fileID: 0}
     hpBuff: 0
     memo: "8\uBD84 \uBBF8\uB2C8\uBCF4\uC2A4"
-  - spawnTimeSeconds: 900
+  - spawnTimeSeconds: 720
     miniBossBlueprint: {fileID: 11400000, guid: 2ed5971bb65f2514ca8e48159e03db80, type: 2}
     autoResolvePoolIndex: 1
     monsterPoolIndex: -1

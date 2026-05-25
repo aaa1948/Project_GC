@@ -36,6 +36,19 @@ namespace Vampire
         [Tooltip("원형 탄막을 여러 겹 발사할 때 다음 원 발사까지 기다리는 시간입니다.")]
         [SerializeField] private float ringInterval = 0.25f;
 
+        [Header("Repeat Angle Offset / 반복 각도 보정")]
+        [Tooltip("같은 원형 탄막 패턴이 다시 실행될 때마다 시작 각도를 몇 도씩 틀지 정합니다. 예: 20이면 첫 번째 0도, 두 번째 20도, 세 번째 40도 기준으로 발사됩니다.")]
+        [SerializeField] private float patternRepeatAngleOffsetStep = 20f;
+
+        [Tooltip("한 번의 패턴 안에서 여러 겹의 원형 탄막을 발사할 때, 다음 원을 몇 도 틀어서 발사할지 정합니다. 기존 코드의 ring * 8f 값을 인스펙터에서 조절할 수 있게 뺀 값입니다.")]
+        [SerializeField] private float ringAngleOffsetStep = 8f;
+
+        [Tooltip("체크하면 패턴이 반복될 때마다 각도 보정값이 누적됩니다. 끄면 기존처럼 매번 같은 각도로 발사됩니다.")]
+        [SerializeField] private bool accumulateRepeatAngleOffset = true;
+
+        [Tooltip("체크하면 보스 오브젝트가 비활성화되었다가 다시 켜질 때 반복 각도 누적값을 0으로 초기화합니다.")]
+        [SerializeField] private bool resetRepeatIndexOnDisable = true;
+
         [Header("Visual Sorting")]
         [Tooltip("체크하면 탄환 SpriteRenderer의 Sorting Order를 강제로 설정합니다.")]
         [SerializeField] private bool forceBulletSortingOrder = true;
@@ -47,20 +60,51 @@ namespace Vampire
         [Tooltip("체크하면 발사 로그를 Console에 출력합니다.")]
         [SerializeField] private bool debugShot = false;
 
+        private int repeatPatternIndex = 0;
+
+        private void OnDisable()
+        {
+            if (resetRepeatIndexOnDisable)
+            {
+                repeatPatternIndex = 0;
+            }
+        }
+
         protected override IEnumerator ExecutePattern()
         {
             int bulletCount = GetPhaseBulletCount();
             int ringCount = GetPhaseRingCount();
 
+            int currentRepeatIndex = repeatPatternIndex;
+
+            if (accumulateRepeatAngleOffset)
+            {
+                repeatPatternIndex++;
+            }
+
+            float baseAngleOffset = GetRepeatBaseAngleOffset(currentRepeatIndex);
+
             for (int ring = 0; ring < ringCount; ring++)
             {
-                FireRadialBurst(bulletCount, ring * 8f);
+                float ringAngleOffset = baseAngleOffset + (ring * ringAngleOffsetStep);
+
+                FireRadialBurst(bulletCount, ringAngleOffset);
 
                 if (ring < ringCount - 1)
                 {
                     yield return new WaitForSeconds(ringInterval);
                 }
             }
+        }
+
+        private float GetRepeatBaseAngleOffset(int repeatIndex)
+        {
+            if (!accumulateRepeatAngleOffset)
+            {
+                return 0f;
+            }
+
+            return Mathf.Repeat(repeatIndex * patternRepeatAngleOffsetStep, 360f);
         }
 
         private int GetPhaseBulletCount()
@@ -101,6 +145,12 @@ namespace Vampire
                 return;
             }
 
+            if (bulletCount <= 0)
+            {
+                Debug.LogWarning("[BossRadialBurstPattern] Bullet Count가 0 이하입니다.");
+                return;
+            }
+
             Vector3 spawnPosition = bossController.BossCenterPosition;
 
             for (int i = 0; i < bulletCount; i++)
@@ -113,7 +163,12 @@ namespace Vampire
 
             if (debugShot)
             {
-                Debug.Log($"[BossRadialBurstPattern] Fired {bulletCount} bullets / phase={bossController.CurrentPhase}");
+                Debug.Log(
+                    $"[BossRadialBurstPattern] Fired {bulletCount} bullets / " +
+                    $"phase={bossController.CurrentPhase} / " +
+                    $"repeatIndex={repeatPatternIndex} / " +
+                    $"angleOffset={angleOffset:0.0}"
+                );
             }
         }
 
@@ -130,6 +185,7 @@ namespace Vampire
             if (forceBulletSortingOrder)
             {
                 SpriteRenderer[] renderers = bullet.GetComponentsInChildren<SpriteRenderer>(true);
+
                 foreach (SpriteRenderer renderer in renderers)
                 {
                     renderer.sortingOrder = bulletSortingOrder;

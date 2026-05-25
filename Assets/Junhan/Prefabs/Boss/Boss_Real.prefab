@@ -5467,6 +5467,10 @@ MonoBehaviour:
   ringCountPhase2: 1
   ringCountPhase3: 2
   ringInterval: 0.6
+  patternRepeatAngleOffsetStep: 20
+  ringAngleOffsetStep: 8
+  accumulateRepeatAngleOffset: 1
+  resetRepeatIndexOnDisable: 1
   forceBulletSortingOrder: 1
   bulletSortingOrder: 550
   debugShot: 0
@@ -5498,7 +5502,7 @@ MonoBehaviour:
   missileCountPhase2: 6
   missileCountPhase3: 8
   totalSpreadAngle: 90
-  missileSpeed: 4
+  missileSpeed: 7
   missileDamage: 15
   missileLifeTime: 30
   turnSpeed: 3
@@ -5593,7 +5597,7 @@ MonoBehaviour:
   spawnDistanceMax: 9
   spawnAngleJitter: 20
   minionHp: 20
-  minionMoveSpeed: 2.5
+  minionMoveSpeed: 1.8
   healAmountPerMinion: 100
   absorbDistance: 0.5
   maxPatternDuration: 18
