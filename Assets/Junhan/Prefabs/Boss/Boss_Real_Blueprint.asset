@@ -13,12 +13,12 @@ MonoBehaviour:
   m_Name: Boss_Real_Blueprint
   m_EditorClassIdentifier: 
   name: Shotgun Boss
-  hp: 500
+  hp: 20000
   atk: 10
   recovery: 0
   armor: 0
   atkspeed: 1
-  movespeed: 1
+  movespeed: 0.7
   acceleration: 5
   gemLootTable:
     lootTable:
