@@ -123,6 +123,14 @@ MonoBehaviour:
     m_Key: HeavySnipe_Description
     m_Metadata:
       m_Items: []
+  - m_Id: 276416827978207232
+    m_Key: genaral_name
+    m_Metadata:
+      m_Items: []
+  - m_Id: 276416830738059264
+    m_Key: genaral_reason
+    m_Metadata:
+      m_Items: []
   m_Metadata:
     m_Items: []
   m_KeyGenerator:

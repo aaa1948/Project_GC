@@ -47,9 +47,9 @@ MonoBehaviour:
   image: {fileID: 21300000, guid: c5164ffb826f3469db584349ea8fb550, type: 3}
   localizedName:
     m_TableReference:
-      m_TableCollectionName: GUID:b33cf4ad3225b41c9b095285edde9353
+      m_TableCollectionName: GUID:7293f9ffd63774eb1b5120a3e14cb7f5
     m_TableEntryReference:
-      m_KeyId: 54847856640
+      m_KeyId: 276416827978207232
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -65,6 +65,7 @@ MonoBehaviour:
     m_LocalVariables: []
   rarity: 50
   augmentTier: 0
+  canAppearAsOwnedUpgrade: 1
   rollMode: 0
   maxSelections: 999
   debugLog: 1

@@ -135,6 +135,14 @@ MonoBehaviour:
     m_Localized: Upgrade
     m_Metadata:
       m_Items: []
+  - m_Id: 276416827978207232
+    m_Localized: Genaral Ability
+    m_Metadata:
+      m_Items: []
+  - m_Id: 276416830738059264
+    m_Localized: Genaral reason Ability
+    m_Metadata:
+      m_Items: []
   references:
     version: 2
     RefIds: []
