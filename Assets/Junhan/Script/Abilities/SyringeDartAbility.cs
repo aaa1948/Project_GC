@@ -25,14 +25,45 @@ namespace Vampire
         [SerializeField] private float maxTotalSpreadAngle = 120f;
 
         [Header("Active Special Augments")]
+        [Tooltip("독침 특수증강을 테스트용으로 강제 활성화합니다.")]
         [SerializeField] private bool poisonEnabled = false;
+
+        [Tooltip("폭발침 특수증강을 테스트용으로 강제 활성화합니다.")]
         [SerializeField] private bool explosionEnabled = false;
+
+        [Tooltip("유도침 특수증강을 테스트용으로 강제 활성화합니다.")]
         [SerializeField] private bool homingEnabled = false;
+
+        [Tooltip("관통침 특수증강을 테스트용으로 강제 활성화합니다.")]
         [SerializeField] private bool pierceEnabled = false;
+
+        [Tooltip("꿀침 특수증강을 테스트용으로 강제 활성화합니다.")]
         [SerializeField] private bool honeyEnabled = false;
+
+        [Tooltip("모기침 특수증강을 테스트용으로 강제 활성화합니다.")]
         [SerializeField] private bool mosquitoEnabled = false;
+
+        [Tooltip("침귀환 특수증강을 테스트용으로 강제 활성화합니다.")]
         [SerializeField] private bool returnNeedleEnabled = false;
+
+        [Tooltip("침술진 특수증강을 테스트용으로 강제 활성화합니다. 플레이 시작 전에 체크하면 Init 시 대쉬 추가와 컨트롤러 생성까지 자동 적용됩니다.")]
         [SerializeField] private bool acupunctureFormationEnabled = false;
+
+        [Header("Active Legendary Augments")]
+        [Tooltip("생명연소 전설증강을 테스트용으로 강제 활성화합니다.")]
+        [SerializeField] private bool lifeBurnEnabled = false;
+
+        [Tooltip("분신배양 전설증강을 테스트용으로 보유 처리합니다. 실제 분신 생성은 분신배양 전설증강/컨트롤러 쪽 구현을 따릅니다.")]
+        [SerializeField] private bool cloneLegendaryTaken = false;
+
+        [Tooltip("고슴도침 전설증강을 테스트용으로 강제 활성화합니다. 플레이 시작 전에 체크하면 Init 시 침 결계 컨트롤러까지 자동 생성됩니다.")]
+        [SerializeField] private bool hedgehogNeedleEnabled = false;
+
+        [Tooltip("대물침 전설증강을 테스트용으로 강제 활성화합니다.")]
+        [SerializeField] private bool heavySnipeEnabled = false;
+
+        [Tooltip("이기어침 전설증강을 테스트용으로 강제 활성화합니다. 플레이 시작 전에 체크하면 Init 시 조종 침 컨트롤러까지 자동 생성됩니다.")]
+        [SerializeField] private bool cursorControlEnabled = false;
 
         [Header("Poison Settings")]
         [SerializeField] private float poisonDuration = 3f;
@@ -98,18 +129,14 @@ namespace Vampire
         [SerializeField] private float acupunctureFormationVisualScale = 1f;
 
         private AcupunctureFormationController acupunctureFormationController;
+        private bool acupunctureFormationBonusDashApplied = false;
 
         [Header("Legendary - Life Burn / HP 1")]
-        [SerializeField] private bool lifeBurnEnabled = false;
         [SerializeField] private float lifeBurnDamageMultiplier = 3f;
         [SerializeField] private int lifeBurnBonusProjectiles = 10;
         [SerializeField] private float lifeBurnBonusRange = 3f;
 
-        [Header("Legendary - Clone Culture")]
-        [SerializeField] private bool cloneLegendaryTaken = false;
-
         [Header("Legendary - Hedgehog Needle / 고슴도침")]
-        [SerializeField] private bool hedgehogNeedleEnabled = false;
 
         [Tooltip("플레이어 주변을 도는 침 개수")]
         [SerializeField] private int hedgehogNeedleCount = 8;
@@ -129,8 +156,6 @@ namespace Vampire
         private HedgehogNeedleController hedgehogNeedleController;
 
         [Header("Legendary - Heavy Snipe / 대물침")]
-        [SerializeField] private bool heavySnipeEnabled = false;
-
         [Tooltip("true면 우클릭으로 차지, false면 좌클릭으로 차지합니다. 마우스가 없으면 Space 키로 차지합니다.")]
         [SerializeField] private bool useRightMouseForHeavySnipe = true;
 
@@ -227,8 +252,23 @@ namespace Vampire
         [Tooltip("차징 미리보기 침의 회전 보정 각도입니다. 현재 침 이미지가 왼쪽을 향한 원본이면 180부터 테스트하세요.")]
         [SerializeField] private float heavyChargePreviewAngleOffset = 180f;
 
-        [Tooltip("차징 미리보기 침의 전체 크기 배율입니다. 실제 발사체 크기에 추가로 곱해집니다.")]
+        [Tooltip("차징 미리보기 침의 전체 크기 배율입니다. 1이면 실제 발사체 시각 크기와 최대한 맞춥니다.")]
         [SerializeField] private float heavyChargePreviewScaleMultiplier = 1f;
+
+        [Tooltip("체크하면 Projectile Prefab 내부 SpriteRenderer의 자식 위치/회전/스케일까지 복사해서 차징 프리뷰 크기를 실제 발사체와 맞춥니다.")]
+        [SerializeField] private bool heavyChargePreviewMatchProjectileVisualTransform = true;
+
+        [Tooltip("차징 시작 시 침이 플레이어 중심 기준 조준 방향 앞쪽에 얼마나 떨어져서 나타날지입니다.")]
+        [SerializeField] private float heavyChargePreviewStartForwardOffset = 1.1f;
+
+        [Tooltip("차징이 진행될수록 침이 조준 반대 방향으로 얼마나 뒤로 당겨질지입니다. 활시위를 당기는 느낌을 조절합니다.")]
+        [SerializeField] private float heavyChargePreviewPullBackDistance = 0.75f;
+
+        [Tooltip("조준 방향 기준 좌우 보정값입니다. 보통 0으로 두면 됩니다.")]
+        [SerializeField] private float heavyChargePreviewSideOffset = 0f;
+
+        [Tooltip("차징 중 침 주변에 붙일 VFX 프리팹입니다. 비워두면 VFX 없이 침 이미지만 표시됩니다.")]
+        [SerializeField] private GameObject heavyChargePreviewVfxPrefab;
 
         [Tooltip("차징 미리보기 침의 투명도입니다.")]
         [SerializeField, Range(0f, 1f)] private float heavyChargePreviewAlpha = 0.9f;
@@ -241,16 +281,15 @@ namespace Vampire
 
         private bool isHeavyCharging = false;
         private float heavyChargeTimer = 0f;
-
         private GameObject heavyChargePreviewObject;
+        private Transform heavyChargePreviewVisualTransform;
         private SpriteRenderer heavyChargePreviewRenderer;
+        private GameObject heavyChargePreviewVfxObject;
 
         // 이기어침 + 대물침 조합에서 사용하는 현재 차지율
         private float cursorHeavyChargeRatio = 0f;
 
         [Header("Legendary - Cursor Controlled Needle / 이기어침")]
-        [SerializeField] private bool cursorControlEnabled = false;
-
         [Tooltip("마우스 포인트를 따라가는 속도. 높을수록 더 즉각적으로 따라갑니다.")]
         [SerializeField] private float cursorNeedleFollowSpeed = 8f;
 
@@ -287,8 +326,37 @@ namespace Vampire
         public GameObject ProjectilePrefab => projectilePrefab;
         public LayerMask MonsterLayer => monsterLayer;
 
+        public override void Init(AbilityManager abilityManager, EntityManager entityManager, Character playerCharacter)
+        {
+            base.Init(abilityManager, entityManager, playerCharacter);
+
+            // 인스펙터에서 체크해둔 테스트용 증강 중,
+            // 컨트롤러 생성이나 대쉬 횟수 추가가 필요한 증강들을 실제 런타임 상태로 동기화합니다.
+            ApplyInspectorForcedAugmentRuntimeSetup();
+        }
+
+        private void ApplyInspectorForcedAugmentRuntimeSetup()
+        {
+            if (acupunctureFormationEnabled)
+            {
+                EnableAcupunctureFormationAugment();
+            }
+
+            if (hedgehogNeedleEnabled)
+            {
+                EnableHedgehogNeedleLegendary();
+            }
+
+            if (cursorControlEnabled)
+            {
+                EnableCursorControlLegendary();
+            }
+        }
+
         protected override void Update()
         {
+            ApplyInspectorForcedAugmentRuntimeSetup();
+
             // 이기어침이 활성화되면 기본 자동 공격은 멈춘다.
             // 단, 대물침도 같이 보유 중이면 우클릭 차지로 이기어침 자체를 강화한다.
             if (cursorControlEnabled)
@@ -332,8 +400,8 @@ namespace Vampire
         protected IEnumerator LaunchSyringes()
         {
             int totalProjectileCount = GetEffectiveProjectileCount();
-
             Vector2 baseDirection = playerCharacter.LookDirection;
+
             if (baseDirection == Vector2.zero)
             {
                 baseDirection = Vector2.right;
@@ -345,7 +413,6 @@ namespace Vampire
             {
                 Vector2 spreadDirection = GetSpreadDirection(baseDirection, i, totalProjectileCount);
                 LaunchSyringeProjectile(spreadDirection);
-
                 yield return new WaitForSeconds(syringeDelay);
             }
         }
@@ -505,7 +572,6 @@ namespace Vampire
                 timeSinceLastAttack = 0f;
                 isHeavyCharging = false;
                 heavyChargeTimer = 0f;
-
                 HideHeavySnipeChargePreview();
 
                 if (debugHeavySnipe)
@@ -548,21 +614,9 @@ namespace Vampire
             HeavySnipeChargeStats stats = CalculateHeavySnipeChargeStats(chargeRatio);
             Vector2 aimDirection = GetAimDirectionFromMouseOrLookDirection();
 
-            SyringeSpecialRuntime runtime = BuildSpecialRuntime();
+            SyringeSpecialRuntime runtime = BuildHeavySnipeRuntime(stats);
 
-            // 대물침은 침귀환과 무관하게 기존 차지샷으로 작동해야 하므로 귀환 효과를 강제로 끈다.
-            runtime.returnNeedleEnabled = false;
-
-            // 대물침은 전설 차지샷이므로 유도침 증강의 영향을 받지 않는다.
-            // 유도침을 보유하고 있어도 대물침은 발사 시점의 aimDirection 그대로 직선 비행한다.
-            runtime.homingEnabled = false;
-            runtime.homingLerpSpeed = 0f;
-
-            runtime.pierceEnabled = true;
-            runtime.pierceCount = stats.unlimitedPierce ? int.MaxValue : stats.pierceCount;
-            runtime.rangeBonus += stats.rangeBonus;
-
-            Vector2 spawnPosition = GetProjectileSpawnPosition(aimDirection);
+            Vector2 spawnPosition = GetHeavySnipeChargePreviewPosition(chargeRatio, aimDirection);
 
             Projectile projectile = entityManager.SpawnProjectile(
                 projectileIndex,
@@ -578,17 +632,14 @@ namespace Vampire
                 return;
             }
 
-            if (playerCharacter != null)
-            {
-                projectile.transform.localScale =
-                    Vector3.one *
-                    GetPlayerProjectileSizeMultiplier() *
-                    stats.sizeMultiplier;
+            projectile.transform.localScale =
+                Vector3.one *
+                GetPlayerProjectileSizeMultiplier() *
+                stats.sizeMultiplier;
 
-                // 대물침도 기본 사거리는 SyringeDartAbility에서 관리하고,
-                // 차지 사거리 보너스는 runtime.rangeBonus로 SyringeProjectile에서 더해진다.
-                projectile.maxDistance = GetEffectiveSyringeMaxDistance();
-            }
+            // 대물침도 기본 사거리는 SyringeDartAbility에서 관리하고,
+            // 차지 사거리 보너스는 runtime.rangeBonus로 SyringeProjectile에서 더해진다.
+            projectile.maxDistance = GetEffectiveSyringeMaxDistance();
 
             if (projectile is SyringeProjectile syringeProjectile)
             {
@@ -605,9 +656,34 @@ namespace Vampire
                     $"차지 {chargeRatio * 100f:0}% | " +
                     $"속도 배율 x{stats.speedMultiplier:0.00} | " +
                     $"크기 x{stats.sizeMultiplier:0.00} | " +
+                    $"유도 {(runtime.homingEnabled ? "켜짐" : "꺼짐")} | " +
                     $"관통 {(stats.unlimitedPierce ? "무제한" : stats.pierceCount.ToString())}"
                 );
             }
+        }
+
+        private SyringeSpecialRuntime BuildHeavySnipeRuntime(HeavySnipeChargeStats stats)
+        {
+            SyringeSpecialRuntime runtime = BuildSpecialRuntime();
+
+            // 대물침은 전설 차지샷이므로 침귀환과 무관하게 기존 차지샷으로 작동한다.
+            runtime.returnNeedleEnabled = false;
+            runtime.returnNeedleSpeedMultiplier = 0f;
+            runtime.returnNeedleDamageMultiplier = 0f;
+            runtime.returnNeedleArriveDistance = 0f;
+            runtime.returnNeedleMaxDuration = 0f;
+
+            // 핵심 수정:
+            // 유도침을 보유하고 있어도 대물침은 발사 시점의 조준 방향 그대로 직선 비행한다.
+            runtime.homingEnabled = false;
+            runtime.homingRange = 0f;
+            runtime.homingLerpSpeed = 0f;
+
+            runtime.pierceEnabled = true;
+            runtime.pierceCount = stats.unlimitedPierce ? int.MaxValue : stats.pierceCount;
+            runtime.rangeBonus += stats.rangeBonus;
+
+            return runtime;
         }
 
         private Vector2 GetAimDirectionFromMouseOrLookDirection()
@@ -720,15 +796,15 @@ namespace Vampire
 
             EnsureHeavySnipeChargePreview();
 
-            if (heavyChargePreviewRenderer == null)
+            if (heavyChargePreviewObject == null || heavyChargePreviewRenderer == null)
             {
                 return;
             }
 
             HeavySnipeChargeStats stats = CalculateHeavySnipeChargeStats(chargeRatio);
 
-            Vector2 spawnPosition = GetProjectileSpawnPosition(aimDirection);
-            heavyChargePreviewObject.transform.position = spawnPosition;
+            Vector2 previewPosition = GetHeavySnipeChargePreviewPosition(chargeRatio, aimDirection);
+            heavyChargePreviewObject.transform.position = previewPosition;
 
             float angle = Mathf.Atan2(aimDirection.y, aimDirection.x) * Mathf.Rad2Deg;
             heavyChargePreviewObject.transform.rotation =
@@ -751,12 +827,54 @@ namespace Vampire
             }
         }
 
+        private Vector2 GetHeavySnipeChargePreviewPosition(float chargeRatio, Vector2 aimDirection)
+        {
+            if (aimDirection.sqrMagnitude <= 0.0001f)
+            {
+                aimDirection = Vector2.right;
+            }
+
+            aimDirection.Normalize();
+
+            Vector2 basePosition = GetPlayerCenterPosition();
+            float pullRatio = Mathf.SmoothStep(0f, 1f, Mathf.Clamp01(chargeRatio));
+
+            float forwardDistance =
+                heavyChargePreviewStartForwardOffset -
+                heavyChargePreviewPullBackDistance * pullRatio;
+
+            Vector2 sideDirection = new Vector2(-aimDirection.y, aimDirection.x);
+
+            return
+                basePosition +
+                aimDirection * forwardDistance +
+                sideDirection * heavyChargePreviewSideOffset;
+        }
+
+        private Vector2 GetPlayerCenterPosition()
+        {
+            if (playerCharacter != null && playerCharacter.CenterTransform != null)
+            {
+                return playerCharacter.CenterTransform.position;
+            }
+
+            if (playerCharacter != null)
+            {
+                return playerCharacter.transform.position;
+            }
+
+            return Vector2.zero;
+        }
+
         private void EnsureHeavySnipeChargePreview()
         {
             if (heavyChargePreviewObject != null && heavyChargePreviewRenderer != null)
             {
+                EnsureHeavyChargePreviewVfx();
                 return;
             }
+
+            DestroyHeavySnipeChargePreview();
 
             Sprite previewSprite = GetHeavyChargePreviewSprite();
 
@@ -766,27 +884,114 @@ namespace Vampire
             }
 
             heavyChargePreviewObject = new GameObject("Heavy Snipe Charge Preview");
-            heavyChargePreviewRenderer = heavyChargePreviewObject.AddComponent<SpriteRenderer>();
+
+            GameObject visualObject = new GameObject("Visual");
+            heavyChargePreviewVisualTransform = visualObject.transform;
+            heavyChargePreviewVisualTransform.SetParent(heavyChargePreviewObject.transform);
+
+            heavyChargePreviewRenderer = visualObject.AddComponent<SpriteRenderer>();
             heavyChargePreviewRenderer.sprite = previewSprite;
 
             SpriteRenderer sourceRenderer = GetProjectilePrefabSpriteRenderer();
 
             if (sourceRenderer != null)
             {
+                ApplyProjectileVisualTransformToPreview(sourceRenderer);
+
                 heavyChargePreviewRenderer.flipX = sourceRenderer.flipX;
                 heavyChargePreviewRenderer.flipY = sourceRenderer.flipY;
                 heavyChargePreviewRenderer.sortingLayerID = sourceRenderer.sortingLayerID;
                 heavyChargePreviewRenderer.sortingOrder =
                     sourceRenderer.sortingOrder + Mathf.Max(1, heavyChargePreviewSortingOrderBonus);
-
                 heavyChargePreviewRenderer.color = sourceRenderer.color;
             }
             else
             {
+                heavyChargePreviewVisualTransform.localPosition = Vector3.zero;
+                heavyChargePreviewVisualTransform.localRotation = Quaternion.identity;
+                heavyChargePreviewVisualTransform.localScale = Vector3.one;
+
                 heavyChargePreviewRenderer.sortingOrder = heavyChargePreviewSortingOrderBonus;
             }
 
+            EnsureHeavyChargePreviewVfx();
+
             heavyChargePreviewObject.SetActive(false);
+        }
+
+        private void ApplyProjectileVisualTransformToPreview(SpriteRenderer sourceRenderer)
+        {
+            if (heavyChargePreviewVisualTransform == null)
+            {
+                return;
+            }
+
+            if (!heavyChargePreviewMatchProjectileVisualTransform || sourceRenderer == null || projectilePrefab == null)
+            {
+                heavyChargePreviewVisualTransform.localPosition = Vector3.zero;
+                heavyChargePreviewVisualTransform.localRotation = Quaternion.identity;
+                heavyChargePreviewVisualTransform.localScale = Vector3.one;
+                return;
+            }
+
+            Transform root = projectilePrefab.transform;
+            Transform source = sourceRenderer.transform;
+
+            if (source == root)
+            {
+                // SpriteRenderer가 투사체 루트에 직접 붙어 있으면,
+                // 실제 발사 시 projectile.transform.localScale로 덮어쓰기 때문에
+                // 프리뷰의 내부 Visual은 1배율로 둔다.
+                heavyChargePreviewVisualTransform.localPosition = Vector3.zero;
+                heavyChargePreviewVisualTransform.localRotation = Quaternion.identity;
+                heavyChargePreviewVisualTransform.localScale = Vector3.one;
+                return;
+            }
+
+            heavyChargePreviewVisualTransform.localPosition = root.InverseTransformPoint(source.position);
+            heavyChargePreviewVisualTransform.localRotation = Quaternion.Inverse(root.rotation) * source.rotation;
+            heavyChargePreviewVisualTransform.localScale = GetRelativeScaleToRoot(source, root);
+        }
+
+        private Vector3 GetRelativeScaleToRoot(Transform child, Transform root)
+        {
+            if (child == null || root == null || child == root)
+            {
+                return Vector3.one;
+            }
+
+            Vector3 result = Vector3.one;
+            Transform current = child;
+
+            while (current != null && current != root)
+            {
+                result = Vector3.Scale(current.localScale, result);
+                current = current.parent;
+            }
+
+            return result;
+        }
+
+        private void EnsureHeavyChargePreviewVfx()
+        {
+            if (heavyChargePreviewObject == null)
+            {
+                return;
+            }
+
+            if (heavyChargePreviewVfxPrefab == null || heavyChargePreviewVfxObject != null)
+            {
+                return;
+            }
+
+            heavyChargePreviewVfxObject = Instantiate(
+                heavyChargePreviewVfxPrefab,
+                heavyChargePreviewObject.transform
+            );
+
+            heavyChargePreviewVfxObject.transform.localPosition = Vector3.zero;
+            heavyChargePreviewVfxObject.transform.localRotation = Quaternion.identity;
+            heavyChargePreviewVfxObject.transform.localScale = Vector3.one;
         }
 
         private Sprite GetHeavyChargePreviewSprite()
@@ -813,7 +1018,46 @@ namespace Vampire
                 return null;
             }
 
-            return projectilePrefab.GetComponentInChildren<SpriteRenderer>(true);
+            SpriteRenderer[] renderers = projectilePrefab.GetComponentsInChildren<SpriteRenderer>(true);
+
+            SpriteRenderer firstRendererWithSprite = null;
+            SpriteRenderer firstEnabledRenderer = null;
+
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                SpriteRenderer renderer = renderers[i];
+
+                if (renderer == null || renderer.sprite == null)
+                {
+                    continue;
+                }
+
+                if (firstRendererWithSprite == null)
+                {
+                    firstRendererWithSprite = renderer;
+                }
+
+                if (renderer.enabled && firstEnabledRenderer == null)
+                {
+                    firstEnabledRenderer = renderer;
+                }
+
+                if (
+                    renderer.gameObject.name.IndexOf("Visual", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    renderer.gameObject.name.IndexOf("Needle", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    renderer.gameObject.name.IndexOf("Syringe", System.StringComparison.OrdinalIgnoreCase) >= 0
+                )
+                {
+                    return renderer;
+                }
+            }
+
+            if (firstEnabledRenderer != null)
+            {
+                return firstEnabledRenderer;
+            }
+
+            return firstRendererWithSprite;
         }
 
         private void HideHeavySnipeChargePreview()
@@ -829,9 +1073,12 @@ namespace Vampire
             if (heavyChargePreviewObject != null)
             {
                 Destroy(heavyChargePreviewObject);
-                heavyChargePreviewObject = null;
-                heavyChargePreviewRenderer = null;
             }
+
+            heavyChargePreviewObject = null;
+            heavyChargePreviewVisualTransform = null;
+            heavyChargePreviewRenderer = null;
+            heavyChargePreviewVfxObject = null;
         }
 
         private float EvaluateChargeFloat(
@@ -958,6 +1205,7 @@ namespace Vampire
                 returnNeedleMaxDuration = returnNeedleMaxDuration,
 
                 healingBlocked = lifeBurnEnabled,
+
                 rangeBonus = lifeBurnEnabled ? lifeBurnBonusRange : 0f
             };
 
@@ -1221,7 +1469,9 @@ namespace Vampire
         }
 
         public void EnablePoisonAugment() => poisonEnabled = true;
+
         public void EnableExplosionAugment() => explosionEnabled = true;
+
         public void EnableHomingAugment() => homingEnabled = true;
 
         public void EnablePierceAugment()
@@ -1231,21 +1481,24 @@ namespace Vampire
         }
 
         public void EnableHoneyAugment() => honeyEnabled = true;
+
         public void EnableMosquitoAugment() => mosquitoEnabled = true;
+
         public void EnableReturnNeedleAugment() => returnNeedleEnabled = true;
 
         public void EnableAcupunctureFormationAugment()
         {
-            if (acupunctureFormationEnabled)
-            {
-                return;
-            }
-
             acupunctureFormationEnabled = true;
 
-            if (playerCharacter != null)
+            if (!acupunctureFormationBonusDashApplied && playerCharacter != null)
             {
                 playerCharacter.AddDashCharge(acupunctureFormationBonusDashCharges);
+                acupunctureFormationBonusDashApplied = true;
+            }
+
+            if (acupunctureFormationController != null)
+            {
+                return;
             }
 
             if (playerCharacter == null || entityManager == null)
@@ -1288,19 +1541,21 @@ namespace Vampire
         public bool HasAcupunctureFormationAugment() => acupunctureFormationEnabled;
 
         public void EnableLifeBurnLegendary() => lifeBurnEnabled = true;
+
         public bool HasLifeBurnLegendary() => lifeBurnEnabled;
 
         public void MarkCloneLegendaryTaken() => cloneLegendaryTaken = true;
+
         public bool HasCloneLegendary() => cloneLegendaryTaken;
 
         public void EnableHedgehogNeedleLegendary()
         {
-            if (hedgehogNeedleEnabled)
+            hedgehogNeedleEnabled = true;
+
+            if (hedgehogNeedleController != null)
             {
                 return;
             }
-
-            hedgehogNeedleEnabled = true;
 
             if (playerCharacter == null || entityManager == null)
             {
@@ -1338,7 +1593,6 @@ namespace Vampire
             isHeavyCharging = false;
             heavyChargeTimer = 0f;
             cursorHeavyChargeRatio = 0f;
-
             HideHeavySnipeChargePreview();
 
             Debug.Log("[대물침] 전설 증강 활성화.");
@@ -1351,12 +1605,12 @@ namespace Vampire
 
         public void EnableCursorControlLegendary()
         {
-            if (cursorControlEnabled)
+            cursorControlEnabled = true;
+
+            if (cursorControlledNeedleController != null)
             {
                 return;
             }
-
-            cursorControlEnabled = true;
 
             if (playerCharacter == null || entityManager == null)
             {

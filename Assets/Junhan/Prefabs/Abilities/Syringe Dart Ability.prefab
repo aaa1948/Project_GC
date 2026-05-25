@@ -109,6 +109,11 @@ MonoBehaviour:
   mosquitoEnabled: 0
   returnNeedleEnabled: 0
   acupunctureFormationEnabled: 0
+  lifeBurnEnabled: 0
+  cloneLegendaryTaken: 0
+  hedgehogNeedleEnabled: 0
+  heavySnipeEnabled: 1
+  cursorControlEnabled: 0
   poisonDuration: 3
   poisonTickInterval: 0.5
   poisonTickDamage: 2
@@ -131,18 +136,14 @@ MonoBehaviour:
   acupunctureFormationNeedleCount: 6
   acupunctureFormationDamageMultiplier: 0.55
   acupunctureFormationVisualScale: 1
-  lifeBurnEnabled: 0
   lifeBurnDamageMultiplier: 3
   lifeBurnBonusProjectiles: 10
   lifeBurnBonusRange: 3
-  cloneLegendaryTaken: 0
-  hedgehogNeedleEnabled: 0
   hedgehogNeedleCount: 8
   hedgehogOrbitRadius: 1.25
   hedgehogRotationSpeed: 180
   hedgehogTouchFireCooldown: 0.35
   hedgehogDamageMultiplier: 0.45
-  heavySnipeEnabled: 0
   useRightMouseForHeavySnipe: 1
   heavyMaxChargeTime: 3
   heavyFireAutomaticallyOnFullCharge: 1
@@ -171,16 +172,20 @@ MonoBehaviour:
   heavyRangeBonusAt50: 3
   heavyRangeBonusAt70: 5
   heavyRangeBonusAt100: 8
-  heavyKnockbackMultiplierAt0: 1
-  heavyKnockbackMultiplierAt100: 2
+  heavyKnockbackMultiplierAt0: 2
+  heavyKnockbackMultiplierAt100: 4
   showHeavyChargePreview: 1
   heavyChargePreviewSprite: {fileID: 21300000, guid: 54bdd2e16f59bbb4faeb51d2d10ef0e2, type: 3}
   heavyChargePreviewAngleOffset: 180
   heavyChargePreviewScaleMultiplier: 1
+  heavyChargePreviewMatchProjectileVisualTransform: 1
+  heavyChargePreviewStartForwardOffset: 1.1
+  heavyChargePreviewPullBackDistance: 0.75
+  heavyChargePreviewSideOffset: 0
+  heavyChargePreviewVfxPrefab: {fileID: 0}
   heavyChargePreviewAlpha: 0.9
   heavyChargePreviewSortingOrderBonus: 30
   debugHeavySnipe: 1
-  cursorControlEnabled: 0
   cursorNeedleFollowSpeed: 3
   cursorNeedleHitRadius: 0.2
   cursorNeedleDamageMultiplier: 0.7

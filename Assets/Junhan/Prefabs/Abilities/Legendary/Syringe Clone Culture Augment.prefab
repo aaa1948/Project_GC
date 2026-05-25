@@ -49,7 +49,7 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:7293f9ffd63774eb1b5120a3e14cb7f5
     m_TableEntryReference:
-      m_KeyId: 21259870208
+      m_KeyId: 276408321405407232
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
@@ -58,13 +58,14 @@ MonoBehaviour:
     m_TableReference:
       m_TableCollectionName: GUID:7293f9ffd63774eb1b5120a3e14cb7f5
     m_TableEntryReference:
-      m_KeyId: 193561878528
+      m_KeyId: 276408385523732480
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
   rarity: 9
   augmentTier: 2
+  canAppearAsOwnedUpgrade: 1
   augmentType: 1
   references:
     version: 2

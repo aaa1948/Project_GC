@@ -30,7 +30,11 @@ MonoBehaviour:
     - item: 5
       dropChance: 1
       coinType: 0
-  walkSpriteSequence: []
+  walkSpriteSequence:
+  - {fileID: -793115464, guid: 84a0dbcfc80889744be3a850543b1514, type: 3}
+  - {fileID: -769479820, guid: 84a0dbcfc80889744be3a850543b1514, type: 3}
+  - {fileID: -278130288, guid: 84a0dbcfc80889744be3a850543b1514, type: 3}
+  - {fileID: 186094837, guid: 84a0dbcfc80889744be3a850543b1514, type: 3}
   walkFrameTime: 0
   meleeLayer:
     serializedVersion: 2

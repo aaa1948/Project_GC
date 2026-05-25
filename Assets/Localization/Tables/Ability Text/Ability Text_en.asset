@@ -18,184 +18,129 @@ MonoBehaviour:
   m_Metadata:
     m_Items: []
   m_TableData:
-  - m_Id: 21259870208
-    m_Localized: Boomerang
+  - m_Id: 276406169031200768
+    m_Localized: "Poison Needle\t"
     m_Metadata:
       m_Items: []
-  - m_Id: 193561878528
-    m_Localized: Boomerang attack
+  - m_Id: 276406260525748224
+    m_Localized: Coats needles with poison, dealing damage over time to enemies hit.
     m_Metadata:
       m_Items: []
-  - m_Id: 702691663872
-    m_Localized: Lightsword
+  - m_Id: 276406403371159552
+    m_Localized: Explosive Needle
     m_Metadata:
       m_Items: []
-  - m_Id: 847437094912
-    m_Localized: Boomerang attack
+  - m_Id: 276406439320539136
+    m_Localized: Needles explode on hit, dealing additional damage to nearby enemies.
     m_Metadata:
       m_Items: []
-  - m_Id: 1050382688256
-    m_Localized: Machete
+  - m_Id: 276406486447738880
+    m_Localized: Homing Needle
     m_Metadata:
       m_Items: []
-  - m_Id: 1150563639296
-    m_Localized: Boomerang attack
+  - m_Id: 276406643037884416
+    m_Localized: Needles curve toward nearby enemies while flying.
     m_Metadata:
       m_Items: []
-  - m_Id: 1425428963328
-    m_Localized: Lifesteal
+  - m_Id: 276406846071558144
+    m_Localized: Piercing Needle
     m_Metadata:
       m_Items: []
-  - m_Id: 1544433950720
-    m_Localized: Chance to gain health on dealing damage
+  - m_Id: 276406902354923520
+    m_Localized: Needles pierce through enemies and continue hitting targets behind
+      them.
     m_Metadata:
       m_Items: []
-  - m_Id: 2346053525504
-    m_Localized: Recover health over time
+  - m_Id: 276406983216910336
+    m_Localized: Sticky needles slow enemies for a short time on hit.
     m_Metadata:
       m_Items: []
-  - m_Id: 2330958225408
-    m_Localized: Recovery
+  - m_Id: 276406941647163392
+    m_Localized: Honey Needle
     m_Metadata:
       m_Items: []
-  - m_Id: 3436413181952
-    m_Localized: Bat
+  - m_Id: 276407036195164160
+    m_Localized: Mosquito Needle
     m_Metadata:
       m_Items: []
-  - m_Id: 3524413874176
-    m_Localized: Close-range knockback attack
+  - m_Id: 276407085163663360
+    m_Localized: Restores health whenever a needle hits an enemy. Hitting a boss
+      restores more health.
     m_Metadata:
       m_Items: []
-  - m_Id: 4023905148928
-    m_Localized: Dagger
+  - m_Id: 276407136451612672
+    m_Localized: Returning Needle
     m_Metadata:
       m_Items: []
-  - m_Id: 4033036148736
-    m_Localized: Close-range bleed attack
+  - m_Id: 276407167992778752
+    m_Localized: Needles return to the player after hitting an enemy, damaging enemies
+      along the return path.
     m_Metadata:
       m_Items: []
-  - m_Id: 4334879236096
-    m_Localized: Sword
+  - m_Id: 276407202587398144
+    m_Localized: Acupuncture Formation
     m_Metadata:
       m_Items: []
-  - m_Id: 4351253798912
-    m_Localized: Only attacks to the left and right
+  - m_Id: 276407238444503040
+    m_Localized: Gain 1 additional dash charge. Dashing leaves a clone at the starting
+      point that fires needles in all directions.
     m_Metadata:
       m_Items: []
-  - m_Id: 4967288004608
-    m_Localized: Bazooka
+  - m_Id: 276407276457480192
+    m_Localized: Life Burn
     m_Metadata:
       m_Items: []
-  - m_Id: 4999026302976
-    m_Localized: Long-range AOE attack
+  - m_Id: 276408032623382528
+    m_Localized: Set maximum health to 1 and prevent healing. In exchange, greatly
+      increases needle damage, projectile count, and range.
     m_Metadata:
       m_Items: []
-  - m_Id: 5393987133440
-    m_Localized: AK-47
+  - m_Id: 276408321405407232
+    m_Localized: Clone Culture
     m_Metadata:
       m_Items: []
-  - m_Id: 5398001082368
-    m_Localized: Fast-firing low-damage attack
+  - m_Id: 276408385523732480
+    m_Localized: Creates a clone that follows the player and attacks using the current
+      needle ability.
     m_Metadata:
       m_Items: []
-  - m_Id: 6604362604544
-    m_Localized: Thrown in quick succession
+  - m_Id: 276408451193950208
+    m_Localized: Creates a rotating needle barrier around the player. Enemies that
+      touch it trigger counter needles.
     m_Metadata:
       m_Items: []
-  - m_Id: 6587841241088
-    m_Localized: Shuriken
+  - m_Id: 276408415978573824
+    m_Localized: Hedgehog Needle
     m_Metadata:
       m_Items: []
-  - m_Id: 7050871431168
-    m_Localized: Axe
+  - m_Id: 276408486942003200
+    m_Localized: Heavy Snipe
     m_Metadata:
       m_Items: []
-  - m_Id: 7053991993344
-    m_Localized: Orbits the player
+  - m_Id: 276408529585491968
+    m_Localized: Sword-Control Needle
     m_Metadata:
       m_Items: []
-  - m_Id: 7868966232064
-    m_Localized: Grenade
+  - m_Id: 276408564805062656
+    m_Localized: Stops the basic automatic attack and creates a controllable needle
+      that follows the mouse position.
     m_Metadata:
       m_Items: []
-  - m_Id: 7889975500800
-    m_Localized: Explodes in all directions
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7910674391040
-    m_Localized: Molotov
-    m_Metadata:
-      m_Items: []
-  - m_Id: 7923844505600
-    m_Localized: Creates pools of fire on the ground
-    m_Metadata:
-      m_Items: []
-  - m_Id: 11456790650880
-    m_Localized: AOE+
-    m_Metadata:
-      m_Items: []
-  - m_Id: 11462826254336
-    m_Localized: Increased AOE
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17051954438144
-    m_Localized: Armor+
-    m_Metadata:
-      m_Items: []
-  - m_Id: 17059760037888
-    m_Localized: Flat damage reduction
-    m_Metadata:
-      m_Items: []
-  - m_Id: 27185514536960
-    m_Localized: Cooldown+
-    m_Metadata:
-      m_Items: []
-  - m_Id: 27191411728384
-    m_Localized: Decreased attack cooldown
-    m_Metadata:
-      m_Items: []
-  - m_Id: 28001675763712
-    m_Localized: Damage+
-    m_Metadata:
-      m_Items: []
-  - m_Id: 28005144453120
-    m_Localized: Increased attack damage
-    m_Metadata:
-      m_Items: []
-  - m_Id: 28807695163392
-    m_Localized: Speed+
-    m_Metadata:
-      m_Items: []
-  - m_Id: 28814192140288
-    m_Localized: Increased movement speed
-    m_Metadata:
-      m_Items: []
-  - m_Id: 29846494240768
-    m_Localized: Knockback+
-    m_Metadata:
-      m_Items: []
-  - m_Id: 29946226401280
-    m_Localized: Increased knockback
-    m_Metadata:
-      m_Items: []
-  - m_Id: 30472754159616
-    m_Localized: Projectiles+
-    m_Metadata:
-      m_Items: []
-  - m_Id: 30477896376320
-    m_Localized: Increased projectile count
-    m_Metadata:
-      m_Items: []
-  - m_Id: 30488721874944
-    m_Localized: Projectile Speed+
-    m_Metadata:
-      m_Items: []
-  - m_Id: 30492345753600
-    m_Localized: Increased projectile speed
+  - m_Id: 276410096367751168
+    m_Localized: Hold the attack button to fire a powerful charged needle. The longer
+      it charges, the more damage, size, speed, and piercing power it gains.
     m_Metadata:
       m_Items: []
   - m_Id: 64544616472576
     m_Localized: Upgrade
+    m_Metadata:
+      m_Items: []
+  - m_Id: 276416827978207232
+    m_Localized: Genaral Ability
+    m_Metadata:
+      m_Items: []
+  - m_Id: 276416830738059264
+    m_Localized: Genaral reason Ability
     m_Metadata:
       m_Items: []
   references:

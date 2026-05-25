@@ -35,6 +35,11 @@ MonoBehaviour:
     m_ReadOnly: 1
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 3ae6529458215764984835ffbc1e8076
+    m_Address: Assets/New Table Shared Data.asset
+    m_ReadOnly: 1
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: 6def7e6a8fc31461fb80c6136fc1a913
     m_Address: Assets/Localization/Tables/Game Text/Game Text Shared Data.asset
     m_ReadOnly: 1
