@@ -34,8 +34,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 212}
-  m_SizeDelta: {x: 300, y: 60}
+  m_AnchoredPosition: {x: 0, y: 121.9}
+  m_SizeDelta: {x: 260, y: 40}
   m_Pivot: {x: 0.5, y: 5}
 --- !u!222 &2775637357327924508
 CanvasRenderer:
@@ -92,8 +92,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30
-  m_fontSizeBase: 30
+  m_fontSize: 25
+  m_fontSizeBase: 25
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 0
@@ -168,8 +168,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0, y: -475}
-  m_SizeDelta: {x: 270, y: 50}
+  m_AnchoredPosition: {x: 0, y: -478.5}
+  m_SizeDelta: {x: 270, y: 20}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &9082173500482066547
 CanvasRenderer:
@@ -199,9 +199,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: 'hello this is a test
-
-    if I do it like this will it work?'
+  m_text: hi
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 7197d315232af3944b951aa9b64bd92b, type: 2}
   m_sharedMaterial: {fileID: -5677060532124915531, guid: 7197d315232af3944b951aa9b64bd92b, type: 2}
@@ -228,8 +226,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 20
-  m_fontSizeBase: 20
+  m_fontSize: 15
+  m_fontSizeBase: 15
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 0
@@ -784,7 +782,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   abilityImage: {fileID: 5629613628922674391}
-  abilityImageRect: {fileID: 5629613628004045749}
+  abilityImageRect: {fileID: 5629613628922674390}
   nameText: {fileID: 1975616830681139122}
   descriptionText: {fileID: 8157530445014014522}
   buttonText: {fileID: 5629613628260501237}
