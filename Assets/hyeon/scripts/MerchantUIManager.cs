@@ -15,6 +15,9 @@ namespace Vampire
         [SerializeField] private Button rerollButton;
         [SerializeField] private TMP_Text rerollCostText;
 
+        [Header("Hide While Shop Open")]
+        [SerializeField] private GameObject minimapObject;
+
         [Header("Dynamic Shop Card Settings")]
         [SerializeField] private Transform shopCardsParent;
         [SerializeField] private GameObject shopItemCardPrefab;
@@ -48,7 +51,6 @@ namespace Vampire
         [SerializeField] private AudioClip rerollSound;
 
         private MerchantNPC currentInteractingNPC;
-
         private readonly List<ShopItemButton> spawnedShopCards = new List<ShopItemButton>();
 
         private int globalRerollCount = 0;
@@ -85,6 +87,9 @@ namespace Vampire
 
             if (shopUIContainer != null)
                 shopUIContainer.SetActive(true);
+
+            if (minimapObject != null)
+                minimapObject.SetActive(false);
 
             Time.timeScale = 0f;
 
@@ -220,14 +225,9 @@ namespace Vampire
 
             List<MerchantItemBlueprint> shopItems = currentInteractingNPC.GetShopItems();
 
-            Debug.Log($"[상점 카드 생성] shopItems.Count = {shopItems.Count}");
-            Debug.Log($"[상점 카드 부모] {shopCardsParent.name}, Active = {shopCardsParent.gameObject.activeInHierarchy}");
-
             for (int i = 0; i < shopItems.Count; i++)
             {
                 GameObject cardObj = Instantiate(shopItemCardPrefab, shopCardsParent);
-
-                Debug.Log($"[상점 카드 생성됨] {cardObj.name}, parent = {cardObj.transform.parent.name}");
 
                 RectTransform rect = cardObj.GetComponent<RectTransform>();
                 if (rect != null)
@@ -305,7 +305,7 @@ namespace Vampire
         {
             if (rerollCostText != null)
             {
-                rerollCostText.text = $"Reroll - {currentRerollCost}G";
+                rerollCostText.text = $"{currentRerollCost}G";
             }
         }
 
@@ -321,6 +321,9 @@ namespace Vampire
         {
             if (shopUIContainer != null)
                 shopUIContainer.SetActive(false);
+
+            if (minimapObject != null)
+                minimapObject.SetActive(true);
 
             Time.timeScale = 1f;
 

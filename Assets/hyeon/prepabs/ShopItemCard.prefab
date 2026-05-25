@@ -34,8 +34,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -80}
-  m_SizeDelta: {x: 420, y: 80}
+  m_AnchoredPosition: {x: 0, y: -95}
+  m_SizeDelta: {x: 420, y: 70}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3534939858106198088
 CanvasRenderer:
@@ -92,8 +92,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 26
-  m_fontSizeBase: 26
+  m_fontSize: 24
+  m_fontSizeBase: 24
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -302,7 +302,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 170}
+  m_AnchoredPosition: {x: 0, y: 120}
   m_SizeDelta: {x: 300, y: 180}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7428065932345324925
@@ -379,8 +379,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -230}
-  m_SizeDelta: {x: 420, y: 90}
+  m_AnchoredPosition: {x: 0, y: -200}
+  m_SizeDelta: {x: 420, y: 70}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &7937466583619897912
 CanvasRenderer:
@@ -523,12 +523,12 @@ MonoBehaviour:
   itemIcon: {fileID: 8659184863966635373}
   itemNameText: {fileID: 4872986024224624421}
   itemDescriptionText: {fileID: 258610008769257001}
-  itemCostText: {fileID: 4872986024224624421}
+  itemCostText: {fileID: 8873962076887518083}
   purchaseButton: {fileID: 5470442262234334701}
-  commonCardSprite: {fileID: 21300000, guid: 52dcb83dd170f3d47911235632eafba8, type: 3}
-  uncommonCardSprite: {fileID: 21300000, guid: f36aa1abc1bee494bb26686248281dfd, type: 3}
-  rareCardSprite: {fileID: 21300000, guid: 1fb55e9a17efc6a46b8f441cf07c466d, type: 3}
-  legendaryCardSprite: {fileID: 21300000, guid: 2d9060e64be13bc4ab0964598151db20, type: 3}
+  commonCardSprite: {fileID: 21300000, guid: 38b75d3a721337042af7b7f1c08a0691, type: 3}
+  uncommonCardSprite: {fileID: 21300000, guid: 121fd2ae9f4e1194fba0a09c78cd12af, type: 3}
+  rareCardSprite: {fileID: 21300000, guid: 67ebed648abb362439e312074cafa55c, type: 3}
+  legendaryCardSprite: {fileID: 21300000, guid: 30e77e77ca9ba3d4a9f64cceb3bcb1c2, type: 3}
 --- !u!114 &4267337110141127148
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -658,8 +658,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 30}
-  m_SizeDelta: {x: 420, y: 70}
+  m_AnchoredPosition: {x: 0, y: -10}
+  m_SizeDelta: {x: 420, y: 60}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4316273102764039878
 CanvasRenderer:
@@ -716,15 +716,15 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 40
-  m_fontSizeBase: 40
+  m_fontSize: 34
+  m_fontSizeBase: 34
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
-  m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
+  m_HorizontalAlignment: 2
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0

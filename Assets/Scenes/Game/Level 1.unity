@@ -9737,6 +9737,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1043593209}
     - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
+      propertyPath: minimapObject
+      value: 
+      objectReference: {fileID: 578318352}
+    - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
       propertyPath: baseRerollCost
       value: 10
       objectReference: {fileID: 0}
