@@ -168,8 +168,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0, y: -580}
-  m_SizeDelta: {x: 300, y: 80}
+  m_AnchoredPosition: {x: 0, y: -525}
+  m_SizeDelta: {x: 260, y: 30}
   m_Pivot: {x: 0.5, y: 0}
 --- !u!222 &9082173500482066547
 CanvasRenderer:
@@ -465,7 +465,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &5629613628004045749
 RectTransform:
   m_ObjectHideFlags: 0
@@ -513,7 +513,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 9e43e11e8c34bc744a491b844592e98c, type: 3}
+  m_Sprite: {fileID: 0}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -761,7 +761,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 4e87955644ee09c4eba8dbfa3e9e1c89, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 42d9b56e5eb190c42a7241ac85f90e80, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -793,14 +793,14 @@ MonoBehaviour:
   descriptionBackgroundImage: {fileID: 0}
   selectionButtonImage: {fileID: 0}
   bottomEmblemImage: {fileID: 0}
-  generalCardBackgroundSprite: {fileID: 21300000, guid: 4e87955644ee09c4eba8dbfa3e9e1c89, type: 3}
-  generalIconFrameSprite: {fileID: 21300000, guid: 9e43e11e8c34bc744a491b844592e98c, type: 3}
+  generalCardBackgroundSprite: {fileID: 21300000, guid: f7e25b6221c71f1468147e2029043bf0, type: 3}
+  generalIconFrameSprite: {fileID: 0}
   generalBottomEmblemSprite: {fileID: 0}
-  specialCardBackgroundSprite: {fileID: 21300000, guid: ba1d9ab9a7657f346881dca676738943, type: 3}
-  specialIconFrameSprite: {fileID: 21300000, guid: 1bb3fb48bc565c34bac97a99d8a25bb3, type: 3}
+  specialCardBackgroundSprite: {fileID: 21300000, guid: 910065ddbcc71114283083f31b565b15, type: 3}
+  specialIconFrameSprite: {fileID: 0}
   specialBottomEmblemSprite: {fileID: 0}
-  legendaryCardBackgroundSprite: {fileID: 21300000, guid: 94b1a5bc310f5d240a900aa0db98e44a, type: 3}
-  legendaryIconFrameSprite: {fileID: 21300000, guid: c6ae690b8495fb047ba065fad4932f24, type: 3}
+  legendaryCardBackgroundSprite: {fileID: 21300000, guid: 867ac2b57edc2eb49a0e060f8e87d7cd, type: 3}
+  legendaryIconFrameSprite: {fileID: 0}
   legendaryBottomEmblemSprite: {fileID: 0}
   generalNameColor: {r: 0.75, g: 0.9, b: 1, a: 1}
   specialNameColor: {r: 0.9, g: 0.65, b: 1, a: 1}
@@ -887,8 +887,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 130, y: 130}
+  m_AnchoredPosition: {x: 0, y: -6.2}
+  m_SizeDelta: {x: 220, y: 220}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5629613628922674392
 CanvasRenderer:
@@ -1058,7 +1058,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: 4e87955644ee09c4eba8dbfa3e9e1c89, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 42d9b56e5eb190c42a7241ac85f90e80, type: 3}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1

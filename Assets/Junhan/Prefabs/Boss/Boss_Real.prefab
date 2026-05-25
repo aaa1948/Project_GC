@@ -4954,7 +4954,7 @@ SpriteRenderer:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7235151020446064520}
-  m_Enabled: 1
+  m_Enabled: 0
   m_CastShadows: 0
   m_ReceiveShadows: 0
   m_DynamicOccludee: 1
@@ -4988,7 +4988,7 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 941236917, guid: a1934d8b81b1b463789e100d3936db4f, type: 3}
+  m_Sprite: {fileID: 21300000, guid: e16ddd0f6890b28409d02f7d3124ded3, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -5006,7 +5006,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7235151020446064520}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f811c188e630842a2b86bbc69a1d2cda, type: 3}
   m_Name: 
@@ -5032,6 +5032,7 @@ GameObject:
   - component: {fileID: 1943931074877483503}
   - component: {fileID: -2132358606978188551}
   - component: {fileID: 1124459555734412324}
+  - component: {fileID: 420498428529024886}
   m_Layer: 7
   m_Name: Boss_Real
   m_TagString: Untagged
@@ -5190,7 +5191,7 @@ SpriteRenderer:
   m_SortingLayerID: -96099825
   m_SortingLayer: 2
   m_SortingOrder: 0
-  m_Sprite: {fileID: 941236917, guid: a1934d8b81b1b463789e100d3936db4f, type: 3}
+  m_Sprite: {fileID: 21300000, guid: e16ddd0f6890b28409d02f7d3124ded3, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -5606,6 +5607,32 @@ MonoBehaviour:
   forceMinionSortingOrder: 1
   minionSortingOrder: 430
   debugLog: 0
+--- !u!114 &420498428529024886
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8960830493049914446}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9e02f50aa1a77cf478e92fd1220362e4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  targetRenderer: {fileID: -7992988690108218509}
+  autoFindRenderer: 1
+  walkFrames:
+  - {fileID: 21300000, guid: e16ddd0f6890b28409d02f7d3124ded3, type: 3}
+  - {fileID: 21300000, guid: 6de6ea7e2f662054fbf23a0cf67e8880, type: 3}
+  - {fileID: 21300000, guid: c02fc4f5380a3b44cb34d3700d5767a4, type: 3}
+  - {fileID: 21300000, guid: 30b2a6fcad5a00145a4621570664045f, type: 3}
+  - {fileID: 21300000, guid: ddf8fdc21ffdd3a4ba3cfb957341eaf5, type: 3}
+  frameTime: 0.12
+  playOnEnable: 1
+  useUnscaledTime: 0
+  resetToFirstFrameOnEnable: 1
+  applyFirstFrameImmediately: 1
+  showWarnings: 1
 --- !u!1001 &6061857700174536434
 PrefabInstance:
   m_ObjectHideFlags: 0
