@@ -4,7 +4,7 @@ using UnityEngine;
 public class AcidRainScreenVFXController : MonoBehaviour
 {
     [Header("파티클 설정")]
-    [Tooltip("위산비 효과에 사용할 파티클 시스템들입니다. 비 파티클, 튐 파티클 등을 여러 개 넣을 수 있습니다. 비워두면 자식 오브젝트에서 자동으로 찾습니다.")]
+    [Tooltip("위산비 효과에 사용할 파티클 시스템들입니다. 비워두면 자식 오브젝트에서 자동으로 찾습니다.")]
     [SerializeField] private ParticleSystem[] particleSystems;
 
     [Tooltip("위산비가 시작될 때 파티클 방출량이 서서히 증가하는 시간입니다.")]
@@ -24,33 +24,22 @@ public class AcidRainScreenVFXController : MonoBehaviour
     [SerializeField] private bool clearOnStart = true;
 
     [Header("테스트 옵션")]
-    [Tooltip("체크하면 플레이 모드에서 테스트 키로 위산비를 켜고 끌 수 있습니다.")]
+    [Tooltip("체크하면 플레이 모드에서 테스트 키로 위산비를 켜고 끌 수 있습니다. 실제 이벤트 연결 후에는 꺼도 됩니다.")]
     [SerializeField] private bool useKeyboardTest = true;
 
     [Tooltip("위산비 테스트에 사용할 키입니다.")]
     [SerializeField] private KeyCode testToggleKey = KeyCode.V;
 
-    private float[] originalEmissionRates;
+    private float[] originalEmissionMultipliers;
     private Coroutine fadeCoroutine;
     private bool isPlaying;
+    private bool initialized;
+
+    public bool IsPlaying => isPlaying;
 
     private void Awake()
     {
-        if (particleSystems == null || particleSystems.Length == 0)
-        {
-            particleSystems = GetComponentsInChildren<ParticleSystem>(true);
-        }
-
-        originalEmissionRates = new float[particleSystems.Length];
-
-        for (int i = 0; i < particleSystems.Length; i++)
-        {
-            if (particleSystems[i] == null)
-                continue;
-
-            ParticleSystem.EmissionModule emission = particleSystems[i].emission;
-            originalEmissionRates[i] = emission.rateOverTime.constant;
-        }
+        InitializeIfNeeded();
     }
 
     private void Start()
@@ -69,7 +58,9 @@ public class AcidRainScreenVFXController : MonoBehaviour
     private void Update()
     {
         if (!useKeyboardTest)
+        {
             return;
+        }
 
         if (Input.GetKeyDown(testToggleKey))
         {
@@ -84,9 +75,26 @@ public class AcidRainScreenVFXController : MonoBehaviour
         }
     }
 
+    private void OnDisable()
+    {
+        if (fadeCoroutine != null)
+        {
+            StopCoroutine(fadeCoroutine);
+            fadeCoroutine = null;
+        }
+    }
+
     [ContextMenu("Play Acid Rain")]
     public void PlayRain()
     {
+        InitializeIfNeeded();
+
+        if (particleSystems == null || particleSystems.Length == 0)
+        {
+            Debug.LogWarning("[AcidRainScreenVFX] 재생할 ParticleSystem이 없습니다.");
+            return;
+        }
+
         if (fadeCoroutine != null)
         {
             StopCoroutine(fadeCoroutine);
@@ -98,6 +106,13 @@ public class AcidRainScreenVFXController : MonoBehaviour
     [ContextMenu("Stop Acid Rain")]
     public void StopRain()
     {
+        InitializeIfNeeded();
+
+        if (particleSystems == null || particleSystems.Length == 0)
+        {
+            return;
+        }
+
         if (fadeCoroutine != null)
         {
             StopCoroutine(fadeCoroutine);
@@ -109,10 +124,18 @@ public class AcidRainScreenVFXController : MonoBehaviour
     [ContextMenu("Stop Immediately")]
     public void StopImmediately()
     {
+        InitializeIfNeeded();
+
         if (fadeCoroutine != null)
         {
             StopCoroutine(fadeCoroutine);
             fadeCoroutine = null;
+        }
+
+        if (particleSystems == null)
+        {
+            isPlaying = false;
+            return;
         }
 
         for (int i = 0; i < particleSystems.Length; i++)
@@ -120,13 +143,51 @@ public class AcidRainScreenVFXController : MonoBehaviour
             ParticleSystem ps = particleSystems[i];
 
             if (ps == null)
+            {
                 continue;
+            }
 
-            SetEmissionRate(ps, 0f);
+            SetEmissionMultiplierScale(ps, i, 0f);
             ps.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
         }
 
         isPlaying = false;
+    }
+
+    private void InitializeIfNeeded()
+    {
+        if (initialized)
+        {
+            return;
+        }
+
+        if (particleSystems == null || particleSystems.Length == 0)
+        {
+            particleSystems = GetComponentsInChildren<ParticleSystem>(true);
+        }
+
+        originalEmissionMultipliers = new float[particleSystems.Length];
+
+        for (int i = 0; i < particleSystems.Length; i++)
+        {
+            ParticleSystem ps = particleSystems[i];
+
+            if (ps == null)
+            {
+                originalEmissionMultipliers[i] = 1f;
+                continue;
+            }
+
+            ParticleSystem.EmissionModule emission = ps.emission;
+            originalEmissionMultipliers[i] = emission.rateOverTimeMultiplier;
+
+            if (Mathf.Approximately(originalEmissionMultipliers[i], 0f))
+            {
+                originalEmissionMultipliers[i] = 1f;
+            }
+        }
+
+        initialized = true;
     }
 
     private IEnumerator PlayRainRoutine()
@@ -138,9 +199,11 @@ public class AcidRainScreenVFXController : MonoBehaviour
             ParticleSystem ps = particleSystems[i];
 
             if (ps == null)
+            {
                 continue;
+            }
 
-            SetEmissionRate(ps, 0f);
+            SetEmissionMultiplierScale(ps, i, 0f);
             ps.Play(true);
         }
 
@@ -149,7 +212,6 @@ public class AcidRainScreenVFXController : MonoBehaviour
         while (timer < fadeInTime)
         {
             timer += Time.deltaTime;
-
             float t = fadeInTime <= 0f ? 1f : Mathf.Clamp01(timer / fadeInTime);
 
             for (int i = 0; i < particleSystems.Length; i++)
@@ -157,12 +219,11 @@ public class AcidRainScreenVFXController : MonoBehaviour
                 ParticleSystem ps = particleSystems[i];
 
                 if (ps == null)
+                {
                     continue;
+                }
 
-                float targetRate = originalEmissionRates[i];
-                float currentRate = Mathf.Lerp(0f, targetRate, t);
-
-                SetEmissionRate(ps, currentRate);
+                SetEmissionMultiplierScale(ps, i, t);
             }
 
             yield return null;
@@ -173,9 +234,11 @@ public class AcidRainScreenVFXController : MonoBehaviour
             ParticleSystem ps = particleSystems[i];
 
             if (ps == null)
+            {
                 continue;
+            }
 
-            SetEmissionRate(ps, originalEmissionRates[i]);
+            SetEmissionMultiplierScale(ps, i, 1f);
         }
 
         fadeCoroutine = null;
@@ -186,23 +249,34 @@ public class AcidRainScreenVFXController : MonoBehaviour
         isPlaying = false;
 
         float timer = 0f;
-        float[] startRates = new float[particleSystems.Length];
+        float[] startScales = new float[particleSystems.Length];
 
         for (int i = 0; i < particleSystems.Length; i++)
         {
             ParticleSystem ps = particleSystems[i];
 
             if (ps == null)
+            {
+                startScales[i] = 0f;
                 continue;
+            }
 
             ParticleSystem.EmissionModule emission = ps.emission;
-            startRates[i] = emission.rateOverTime.constant;
+            float originalMultiplier = GetOriginalEmissionMultiplier(i);
+
+            if (originalMultiplier <= 0f)
+            {
+                startScales[i] = 1f;
+            }
+            else
+            {
+                startScales[i] = emission.rateOverTimeMultiplier / originalMultiplier;
+            }
         }
 
         while (timer < fadeOutTime)
         {
             timer += Time.deltaTime;
-
             float t = fadeOutTime <= 0f ? 1f : Mathf.Clamp01(timer / fadeOutTime);
 
             for (int i = 0; i < particleSystems.Length; i++)
@@ -210,10 +284,12 @@ public class AcidRainScreenVFXController : MonoBehaviour
                 ParticleSystem ps = particleSystems[i];
 
                 if (ps == null)
+                {
                     continue;
+                }
 
-                float currentRate = Mathf.Lerp(startRates[i], 0f, t);
-                SetEmissionRate(ps, currentRate);
+                float scale = Mathf.Lerp(startScales[i], 0f, t);
+                SetEmissionMultiplierScale(ps, i, scale);
             }
 
             yield return null;
@@ -224,9 +300,11 @@ public class AcidRainScreenVFXController : MonoBehaviour
             ParticleSystem ps = particleSystems[i];
 
             if (ps == null)
+            {
                 continue;
+            }
 
-            SetEmissionRate(ps, 0f);
+            SetEmissionMultiplierScale(ps, i, 0f);
             ps.Stop(true, ParticleSystemStopBehavior.StopEmitting);
         }
 
@@ -237,7 +315,9 @@ public class AcidRainScreenVFXController : MonoBehaviour
             ParticleSystem ps = particleSystems[i];
 
             if (ps == null)
+            {
                 continue;
+            }
 
             ps.Clear(true);
         }
@@ -245,9 +325,29 @@ public class AcidRainScreenVFXController : MonoBehaviour
         fadeCoroutine = null;
     }
 
-    private void SetEmissionRate(ParticleSystem ps, float rate)
+    private void SetEmissionMultiplierScale(ParticleSystem ps, int index, float scale)
     {
+        if (ps == null)
+        {
+            return;
+        }
+
         ParticleSystem.EmissionModule emission = ps.emission;
-        emission.rateOverTime = new ParticleSystem.MinMaxCurve(rate);
+        emission.rateOverTimeMultiplier = GetOriginalEmissionMultiplier(index) * Mathf.Clamp01(scale);
+    }
+
+    private float GetOriginalEmissionMultiplier(int index)
+    {
+        if (originalEmissionMultipliers == null)
+        {
+            return 1f;
+        }
+
+        if (index < 0 || index >= originalEmissionMultipliers.Length)
+        {
+            return 1f;
+        }
+
+        return originalEmissionMultipliers[index];
     }
 }
