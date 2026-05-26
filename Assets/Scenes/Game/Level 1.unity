@@ -20938,9 +20938,9 @@ MonoBehaviour:
   acidSecretionEvents:
   - eventName: "\uC704\uC0B0\uBD84\uBE44"
     enabled: 1
-    startTime: 1
+    startTime: 150
     duration: 30
-    useRandomStartTime: 1
+    useRandomStartTime: 0
     startTimeRanges:
     - minStartMinute: 5
       maxStartMinute: 6
@@ -38298,7 +38298,7 @@ MonoBehaviour:
     monsterBlueprint: {fileID: 11400000, guid: 4b65cea1eeb064941bb483af69f4057f, type: 2}
     hpBuff: 0
     spawnTimeMode: 0
-    spawnTimeSeconds: 10
+    spawnTimeSeconds: 120
     randomStartTimeSeconds: 300
     randomEndTimeSeconds: 360
     randomEventCount: 2

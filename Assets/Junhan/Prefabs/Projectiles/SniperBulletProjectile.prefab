@@ -103,6 +103,10 @@ MonoBehaviour:
   maxDistance: 25
   rotationSpeed: 0
   airResistance: 0
+  alignVisualToLaunchDirection: 1
+  visualAngleOffset: 0
+  resetRotationOnSetup: 1
+  keepVisualAlignedWhileMoving: 0
   destructionParticleSystem: {fileID: 0}
   criticalDamageMultiplier: 2
 --- !u!50 &420979380559453195
@@ -165,5 +169,5 @@ CapsuleCollider2D:
   m_UsedByEffector: 0
   m_UsedByComposite: 0
   m_Offset: {x: 0, y: 0}
-  m_Size: {x: 1, y: 0.5}
+  m_Size: {x: 1.3, y: 0.3}
   m_Direction: 1
