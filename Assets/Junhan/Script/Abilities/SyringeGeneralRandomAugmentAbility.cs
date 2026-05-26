@@ -229,16 +229,6 @@ namespace Vampire
             }
 
             string description = "";
-
-            if (rollMode == RollMode.AlwaysGeneralRandomTwo)
-            {
-                description += "다음 일반 증강 2개를 획득합니다.\n\n";
-            }
-            else
-            {
-                description += "현재 빌드와 관련된 증강 1개를 강화합니다.\n\n";
-            }
-
             for (int i = 0; i < previewAugments.Count; i++)
             {
                 GeneralAugmentType augmentType = previewAugments[i];

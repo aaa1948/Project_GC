@@ -1493,6 +1493,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 27198615}
     m_Modifications:
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -9.5
+      objectReference: {fileID: 0}
     - target: {fileID: 4379362936154790578, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: m_Name
       value: Button [Bottom]
@@ -1584,7 +1596,7 @@ PrefabInstance:
     - target: {fileID: 8188805818370081222, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 21300000, guid: 8014a07f610dc48a68b07bf23addc4ad, type: 3}
+      objectReference: {fileID: 21300000, guid: b2feebc63f64bee4aa6f0a30021a70eb, type: 3}
     - target: {fileID: 8867614504195791090, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: CollectableType
       value: 
@@ -1768,7 +1780,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: 2800000, guid: 4bc4c5c7519a54fd79d587c6e1f5c5e4, type: 3}
+  m_Texture: {fileID: 2800000, guid: 92768b1ff45996943be06e9e7f186f98, type: 3}
   m_UVRect:
     serializedVersion: 2
     x: 0
@@ -3283,6 +3295,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 27198615}
     m_Modifications:
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.8
+      objectReference: {fileID: 0}
     - target: {fileID: 4379362936154790578, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: m_Name
       value: Button [Right]
@@ -3374,7 +3394,7 @@ PrefabInstance:
     - target: {fileID: 8188805818370081222, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 1729274800, guid: 47d8a91e3026e405a96bac590c863934, type: 3}
+      objectReference: {fileID: 21300000, guid: bfe81a5d0cc546d4b8a14fb7d2901d07, type: 3}
     - target: {fileID: 8867614504195791090, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: CollectableType
       value: 
@@ -3403,6 +3423,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 27198615}
     m_Modifications:
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 11.9
+      objectReference: {fileID: 0}
     - target: {fileID: 4379362936154790578, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: m_Name
       value: Button [Top]
@@ -3494,7 +3530,7 @@ PrefabInstance:
     - target: {fileID: 8188805818370081222, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 21300000, guid: 2564366b0db3b442f96b7d83cc9db628, type: 3}
+      objectReference: {fileID: 21300000, guid: 81ee4f9fc6497fc4da2c39dc83f21b5b, type: 3}
     - target: {fileID: 8867614504195791090, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: CollectableType
       value: 
@@ -3606,7 +3642,7 @@ GameObject:
   - component: {fileID: 856782960}
   - component: {fileID: 856782962}
   m_Layer: 9
-  m_Name: "\u89D2\u8272"
+  m_Name: asshi
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4000,7 +4036,7 @@ MonoBehaviour:
     m_RotationOrder: 4
   useDashMovementCurve: 1
   useDashSprite: 1
-  dashSprite: {fileID: 1658229422, guid: 4a9825874034d4671b1dc9f6c8707eca, type: 3}
+  dashSprite: {fileID: 21300000, guid: 3fdea2abadb67af419e28790c5474a51, type: 3}
   dashSpriteFacesRight: 1
   restartWalkAnimationAfterDash: 1
   passThroughCollidersDuringDash: 1
@@ -9528,8 +9564,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0.5}
   m_AnchorMax: {x: 1, y: 0.5}
-  m_AnchoredPosition: {x: 55, y: 0}
-  m_SizeDelta: {x: 50, y: 50}
+  m_AnchoredPosition: {x: 95.9, y: 0}
+  m_SizeDelta: {x: 150, y: 150}
   m_Pivot: {x: 1, y: 0.5}
 --- !u!114 &1077823143
 MonoBehaviour:
@@ -9551,7 +9587,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Texture: {fileID: 2800000, guid: e63184306ebc44a038df3f3eaae91808, type: 3}
+  m_Texture: {fileID: 2800000, guid: 6dd857048f9e1e74ebe24f70c3adb1d4, type: 3}
   m_UVRect:
     serializedVersion: 2
     x: 0
@@ -9848,6 +9884,10 @@ PrefabInstance:
       propertyPath: shopItemCardPrefab
       value: 
       objectReference: {fileID: 4071302612417614984, guid: 116895c3572ef1c4c9487aa6130ed682, type: 3}
+    - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
+      propertyPath: autoFindMinimapIfEmpty
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
       propertyPath: itemButtons.Array.size
       value: 3
@@ -10532,6 +10572,58 @@ Transform:
   - {fileID: 1967562481}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1209616732
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1209616733}
+  - component: {fileID: 1209616734}
+  m_Layer: 0
+  m_Name: ModalMinimapLayerController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1209616733
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1209616732}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -741, y: -324, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1421529453}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1209616734
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1209616732}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6576d2d54a90dc54284a1721b2651298, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  miniMapRoot: {fileID: 578318352}
+  autoFindMiniMapIfEmpty: 0
+  addCanvasIfMissing: 1
+  modalSortingOrder: -100
+  controlCanvasGroup: 1
+  normalAlpha: 1
+  modalAlpha: 1
+  debugLog: 0
 --- !u!1 &1223039554
 GameObject:
   m_ObjectHideFlags: 0
@@ -10812,6 +10904,10 @@ MonoBehaviour:
   pauseMenu: {fileID: 499037435}
   particles: {fileID: 0}
   failsafeChestBlueprint: {fileID: 11400000, guid: 46af59dce019b4b5cb49f8515ccd9f54, type: 2}
+  minimapObject: {fileID: 578318352}
+  autoFindMinimapIfEmpty: 0
+  addCanvasToMinimapIfMissing: 1
+  minimapModalSortingOrder: -100
   cardPopupDelay: 0.1
   enableReroll: 1
   rerollButton: {fileID: 1710082538}
@@ -16191,6 +16287,7 @@ RectTransform:
   - {fileID: 1090440967}
   - {fileID: 1892469449}
   - {fileID: 907104507}
+  - {fileID: 1209616733}
   - {fileID: 578318353}
   - {fileID: 349207337}
   - {fileID: 1223039557}
@@ -24389,6 +24486,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 27198615}
     m_Modifications:
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.8
+      objectReference: {fileID: 0}
     - target: {fileID: 2609625984077573391, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -24488,7 +24593,7 @@ PrefabInstance:
     - target: {fileID: 8188805818370081222, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 484719879, guid: 47d8a91e3026e405a96bac590c863934, type: 3}
+      objectReference: {fileID: 21300000, guid: e5e31cfe3db15ac47a2f041080138efd, type: 3}
     - target: {fileID: 8867614504195791090, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: CollectableType
       value: 
