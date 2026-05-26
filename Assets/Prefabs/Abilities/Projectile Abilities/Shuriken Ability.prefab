@@ -24,13 +24,13 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7378740072262091319}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &-5271225717907280364
 MonoBehaviour:
@@ -44,28 +44,28 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a99a6bc29b922498da41d7188c31e619, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  image: {fileID: 21300000, guid: 8aa8c4cb76e054949bb308e463d0f9c2, type: 3}
-  name: "\u624B\u88CF\u528D"
+  image: {fileID: 1373663924, guid: b1f4f5abd91b61f4385ece53883ee436, type: 3}
   localizedName:
     m_TableReference:
       m_TableCollectionName: GUID:7293f9ffd63774eb1b5120a3e14cb7f5
     m_TableEntryReference:
-      m_KeyId: 6587841241088
+      m_KeyId: 21259870208
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  description: "\u9060\u8DDD\u96E2\u9023\u9396\u8FFD\u64CA"
   localizedDescription:
     m_TableReference:
       m_TableCollectionName: GUID:7293f9ffd63774eb1b5120a3e14cb7f5
     m_TableEntryReference:
-      m_KeyId: 6604362604544
+      m_KeyId: 21259870208
       m_Key: 
     m_FallbackState: 0
     m_WaitForCompletion: 0
     m_LocalVariables: []
-  rarity: 50
+  rarity: 25
+  augmentTier: 0
+  canAppearAsOwnedUpgrade: 1
   projectilePrefab: {fileID: 7669521032070789568, guid: 1b6da83723c9f4501a4c1db54d6d0386, type: 3}
   monsterLayer:
     serializedVersion: 2
@@ -86,11 +86,17 @@ MonoBehaviour:
   cooldown:
     value: 0.5
     upgrades: []
+  useProjectileSpawnOffset: 1
+  projectileSpawnForwardOffset: 0.28
+  projectileSpawnDownOffset: 0.6
+  projectileSpawnPoint: {fileID: 0}
+  useSpreadDirectionForSpawnOffset: 0
+  spreadAngle: 30
+  debugProjectileLog: 0
   projectileCount:
     value: 2
     upgrades: 01000000010000000100000001000000
     projectilesPer: 1
-    <UpgradeName>k__BackingField: "\u624B\u88CF\u528D\u6578\u91CF"
   firerate:
     value: 4
     upgrades: []

@@ -8,10 +8,12 @@ namespace Vampire
     {
         private EntityManager entityManager;
         private TextMeshPro text;
+        private float defaultFontSize;
 
         void Awake()
         {
             text = GetComponent<TextMeshPro>();
+            defaultFontSize = text.fontSize;
         }
 
         public void Init(EntityManager entityManager)
@@ -19,10 +21,22 @@ namespace Vampire
             this.entityManager = entityManager;
         }
 
-        public void Setup(Vector2 position, float damage)
+        public void Setup(Vector2 position, float damage, bool isCritical = false)
         {
             transform.position = position;
             text.text = damage.ToString("N0");
+
+            if (isCritical)
+            {
+                text.color = Color.red;
+                text.fontSize = defaultFontSize * 1.25f;
+            }
+            else
+            {
+                text.color = Color.white;
+                text.fontSize = defaultFontSize;
+            }
+
             StopAllCoroutines();
             StartCoroutine(AnimateText());
         }
@@ -30,13 +44,15 @@ namespace Vampire
         IEnumerator AnimateText()
         {
             float t = 0;
+
             while (t < 1)
             {
                 transform.position += Vector3.up * Time.deltaTime * 0.5f;
-                transform.localScale = Vector3.one * EasingUtils.EaseOutBack(1-t);
+                transform.localScale = Vector3.one * EasingUtils.EaseOutBack(1 - t);
                 yield return null;
-                t += Time.deltaTime*2;
+                t += Time.deltaTime * 2;
             }
+
             entityManager.DespawnDamageText(this);
         }
     }

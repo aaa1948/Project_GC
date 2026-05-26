@@ -6,8 +6,8 @@ namespace Vampire
     public class BossLevelSpawner : MonoBehaviour
     {
         [Header("References")]
+        [SerializeField] private LevelManager levelManager;
         [SerializeField] private Character playerCharacter;
-        [SerializeField] private GameObject bossPrefab;
 
         [Header("Spawn Condition")]
         [SerializeField] private float spawnAfterSeconds = 10f;
@@ -19,7 +19,6 @@ namespace Vampire
         [SerializeField] private bool useRandomDirectionAroundPlayer = true;
         [SerializeField] private float spawnDistanceFromPlayer = 3f;
         [SerializeField] private Vector2 spawnOffsetFromPlayer = new Vector2(0f, 3f);
-
         [SerializeField] private bool useFixedSpawnPoint = false;
         [SerializeField] private Transform fixedSpawnPoint;
 
@@ -28,22 +27,50 @@ namespace Vampire
         [SerializeField] private KeyCode debugSpawnKey = KeyCode.F8;
 
         private bool hasSpawned = false;
-        private GameObject spawnedBossInstance;
+        private Monster spawnedBossMonster;
 
-        private void Start()
+        private IEnumerator Start()
         {
+            ResolveReferences();
+
+            // LevelManager.Start()가 EntityManager.Init()을 끝낼 시간을 준다.
+            yield return null;
+            yield return null;
+
+            ResolveReferences();
+
+            if (logOnSpawn)
+            {
+                Debug.Log(
+                    $"[BossLevelSpawner] Ready | " +
+                    $"LevelManager={(levelManager != null ? "OK" : "NULL")} | " +
+                    $"EntityManager={(levelManager != null && levelManager.EntityManager != null ? "OK" : "NULL")} | " +
+                    $"Player={(playerCharacter != null ? playerCharacter.name : "NULL")}"
+                );
+            }
+
+            StartCoroutine(SpawnRoutine());
+        }
+
+        private void ResolveReferences()
+        {
+            if (levelManager == null)
+            {
+                levelManager = FindObjectOfType<LevelManager>();
+            }
+
             if (playerCharacter == null)
             {
                 playerCharacter = FindObjectOfType<Character>();
             }
-
-            Debug.Log($"[BossLevelSpawner] Start | bossPrefab={(bossPrefab != null ? bossPrefab.name : "NULL")} | player={(playerCharacter != null ? playerCharacter.name : "NULL")}");
-            StartCoroutine(SpawnRoutine());
         }
 
         private IEnumerator SpawnRoutine()
         {
-            Debug.Log($"[BossLevelSpawner] Waiting {spawnAfterSeconds:F1} seconds before spawn...");
+            if (logOnSpawn)
+            {
+                Debug.Log($"[BossLevelSpawner] Waiting {spawnAfterSeconds:F1} seconds before boss spawn...");
+            }
 
             if (useRealtimeForDebug)
             {
@@ -71,11 +98,7 @@ namespace Vampire
 
         private void SpawnBoss()
         {
-            if (bossPrefab == null)
-            {
-                Debug.LogError("[BossLevelSpawner] bossPrefab is NULL.");
-                return;
-            }
+            ResolveReferences();
 
             if (spawnOnlyOnce && hasSpawned)
             {
@@ -83,45 +106,81 @@ namespace Vampire
                 return;
             }
 
-            Vector3 spawnPosition = GetSpawnPosition();
-            Debug.Log($"[BossLevelSpawner] Spawning boss at {spawnPosition}");
-
-            spawnedBossInstance = Instantiate(bossPrefab, spawnPosition, Quaternion.identity);
-
-            if (spawnedBossInstance == null)
+            if (levelManager == null)
             {
-                Debug.LogError("[BossLevelSpawner] Instantiate failed.");
+                Debug.LogError("[BossLevelSpawner] LevelManager is NULL.");
                 return;
             }
 
-            BossController bossController = spawnedBossInstance.GetComponent<BossController>();
-            if (bossController == null)
+            if (levelManager.EntityManager == null)
             {
-                Debug.LogError("[BossLevelSpawner] Spawned prefab has no BossController on root.");
+                Debug.LogError("[BossLevelSpawner] EntityManager is NULL.");
+                return;
             }
-            else
+
+            if (levelManager.CurrentLevelBlueprint == null)
+            {
+                Debug.LogError("[BossLevelSpawner] CurrentLevelBlueprint is NULL.");
+                return;
+            }
+
+            if (levelManager.CurrentLevelBlueprint.finalBoss == null)
+            {
+                Debug.LogError("[BossLevelSpawner] Final Boss setting is NULL in LevelBlueprint.");
+                return;
+            }
+
+            if (levelManager.CurrentLevelBlueprint.finalBoss.bossBlueprint == null)
+            {
+                Debug.LogError("[BossLevelSpawner] Final Boss BossBlueprint is NULL.");
+                return;
+            }
+
+            int bossPoolIndex = levelManager.CurrentLevelBlueprint.monsters.Length;
+            Vector3 spawnPosition = GetSpawnPosition();
+
+            if (logOnSpawn)
+            {
+                Debug.Log(
+                    $"[BossLevelSpawner] Spawning boss through EntityManager | " +
+                    $"PoolIndex={bossPoolIndex} | Position={spawnPosition}"
+                );
+            }
+
+            spawnedBossMonster = levelManager.EntityManager.SpawnMonster(
+                bossPoolIndex,
+                spawnPosition,
+                levelManager.CurrentLevelBlueprint.finalBoss.bossBlueprint,
+                0f
+            );
+
+            if (spawnedBossMonster == null)
+            {
+                Debug.LogError("[BossLevelSpawner] EntityManager.SpawnMonster returned NULL.");
+                return;
+            }
+
+            BossController bossController = spawnedBossMonster.GetComponent<BossController>();
+
+            if (bossController != null)
             {
                 if (playerCharacter == null)
                 {
                     playerCharacter = FindObjectOfType<Character>();
                 }
 
-                if (playerCharacter != null)
-                {
-                    bossController.SetPlayerCharacter(playerCharacter);
-                    Debug.Log($"[BossLevelSpawner] Boss linked to player: {playerCharacter.name}");
-                }
-                else
-                {
-                    Debug.LogWarning("[BossLevelSpawner] Player not found. Boss spawned without player reference.");
-                }
+                bossController.SetPlayerCharacter(playerCharacter);
+            }
+            else
+            {
+                Debug.LogWarning("[BossLevelSpawner] Spawned boss has no BossController. Patterns will not run.");
             }
 
             hasSpawned = true;
 
             if (logOnSpawn)
             {
-                Debug.Log("[BossLevelSpawner] Boss spawned successfully.");
+                Debug.Log($"[BossLevelSpawner] Boss spawned successfully: {spawnedBossMonster.name}");
             }
         }
 

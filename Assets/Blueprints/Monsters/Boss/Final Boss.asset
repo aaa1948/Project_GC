@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Final Boss
   m_EditorClassIdentifier: 
   name: Shotgun Boss
-  hp: 500
+  hp: 450
   atk: 10
   recovery: 0
   armor: 0
@@ -36,10 +36,7 @@ MonoBehaviour:
   - {fileID: -1451960610, guid: a1934d8b81b1b463789e100d3936db4f, type: 3}
   - {fileID: -1697577783, guid: a1934d8b81b1b463789e100d3936db4f, type: 3}
   walkFrameTime: 0.2
-  abilityPrefabs:
-  - {fileID: 7744714996288908991, guid: 3440285163500438fba0dba88b03a6ee, type: 3}
-  - {fileID: 7744714996288908991, guid: c7b1743ed4bf54f77b6c080991dceb67, type: 3}
-  - {fileID: 7744714996288908991, guid: 40d7a53849f9a4bf590a08e1f36a65dc, type: 3}
+  abilityPrefabs: []
   meleeLayer:
     serializedVersion: 2
     m_Bits: 512

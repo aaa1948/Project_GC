@@ -1,0 +1,155 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b94449d710f83429796c060423fde854, type: 3}
+  m_Name: Stage1_SniperTest_Level
+  m_EditorClassIdentifier: 
+  levelTime: 900
+  backgroundTexture: {fileID: 2800000, guid: 42b11be826072496a9d57814c0ca6576, type: 3}
+  abilityPrefabs:
+  - {fileID: 7378740072262091319, guid: 9757fae3764f6e1488b23a8ff2e6c349, type: 3}
+  - {fileID: 7378740072262091319, guid: 9a6cb5bbd9c72f14c9567c769a71c7ef, type: 3}
+  - {fileID: 7378740072262091319, guid: f6bf6f8839f614f419426722e5cf0cbd, type: 3}
+  - {fileID: 7378740072262091319, guid: babdca8bf85115c4cba6d13e2ea6c093, type: 3}
+  - {fileID: 7378740072262091319, guid: b8ae7f34be6ce7e4ba50ea2d283dac2e, type: 3}
+  - {fileID: 7378740072262091319, guid: 43e4dc6239cc60f4d8e9440eceb849e2, type: 3}
+  - {fileID: 7378740072262091319, guid: 5f8098d6f1cc0ab4aa0a441c904e27e4, type: 3}
+  - {fileID: 7378740072262091319, guid: 71464678c402c4242ae253ea26f49921, type: 3}
+  - {fileID: 7378740072262091319, guid: 1528d3a995fc76e498100e9c9aaaecde, type: 3}
+  - {fileID: 7378740072262091319, guid: 533d819dd06174a4c9bedfe7a5c71a8c, type: 3}
+  - {fileID: 7378740072262091319, guid: 228f48811db777343bb38c3419605e4a, type: 3}
+  - {fileID: 7378740072262091319, guid: a0daf2ec26e3f4a45a029d24d08235ef, type: 3}
+  - {fileID: 7378740072262091319, guid: 079b3b7ffe8e24b4a98135dc2f88acf7, type: 3}
+  monsters:
+  - monstersPrefab: {fileID: 8960830493049914446, guid: 12adb3a92ed404612906d2c1fe4b586e, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: 1d1547b98475241e798c26597f6553a5, type: 2}
+    - {fileID: 11400000, guid: 03a9f1276c78f4503b3757f7e14adbed, type: 2}
+    - {fileID: 11400000, guid: 1b3587b35d7cb4a008d17889617a4db5, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: dfcf798c11f284752815ead20a8dbaeb, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: 38f13c65830f840f99434d21ce75baef, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: b21d49c07805e4c2c8cab56371c5aad6, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: 0c81abe360d964c53b7e90be45a30ca5, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: f221b6d092ee543038a69c17c526bab0, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: f2518533fe52946a188a4e6a74ecff6e, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: a44b011fa2eb8bd4da4a1615f68591b9, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: 4b65cea1eeb064941bb483af69f4057f, type: 2}
+  miniBosses: []
+  finalBoss:
+    bossPrefab: {fileID: 8960830493049914446, guid: bf088821f793b4654a2ba39cb4266ae9, type: 3}
+    bossBlueprint: {fileID: 11400000, guid: f8c41435c677742d699bbf048ae85731, type: 2}
+  monsterSpawnTable:
+    spawnRateKeyframes:
+    - t: 0
+      spawnRate: 3
+    - t: 0
+      spawnRate: 3
+    - t: 0
+      spawnRate: 3
+    - t: 0
+      spawnRate: 3
+    - t: 0
+      spawnRate: 3
+    - t: 0
+      spawnRate: 3
+    - t: 1
+      spawnRate: 3
+    spawnChanceKeyframes:
+    - t: 0
+      spawnChances:
+      - 1
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+    - t: 0.05
+      spawnChances:
+      - 1
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+    - t: 0.25
+      spawnChances:
+      - 0.25
+      - 0.75
+      - 0
+      - 0
+      - 0
+      - 0
+    - t: 0.35
+      spawnChances:
+      - 0.15
+      - 0.6
+      - 0.25
+      - 0
+      - 0
+      - 0
+    - t: 0.43
+      spawnChances:
+      - 0
+      - 0.25
+      - 0.75
+      - 0
+      - 0
+      - 0
+    - t: 0.48
+      spawnChances:
+      - 0.8
+      - 0.1
+      - 0.1
+      - 0
+      - 0
+      - 0
+    - t: 0.55
+      spawnChances:
+      - 1
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+    hpMultiplierKeyframes:
+    - t: 0
+      healthBuffs:
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+    - t: 0.5
+      healthBuffs:
+      - 1
+      - 1
+      - 1
+      - 0
+      - 0
+      - 0
+    - t: 1
+      healthBuffs:
+      - 2
+      - 2
+      - 2
+      - 1
+      - 1
+      - 1
+  chestBlueprint: {fileID: 11400000, guid: 7306af3f2b7df4c818a7f7d847d30570, type: 2}
+  chestSpawnDelay: 30
+  chestSpawnAmount: 2
+  initialExpGemCount: 25
+  initialExpGemType: 1

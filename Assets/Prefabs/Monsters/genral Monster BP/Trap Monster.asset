@@ -1,0 +1,59 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bb41164b72e0c4a49b9f1457e8fab560, type: 3}
+  m_Name: Trap Monster
+  m_EditorClassIdentifier: 
+  name: Trap Monster Blueprint
+  hp: 0
+  atk: 0
+  recovery: 0
+  armor: 0
+  atkspeed: 0
+  movespeed: 0
+  acceleration: 0
+  gemLootTable:
+    lootTable:
+    - item: 1
+      dropChance: 0.8
+      coinType: 0
+    - item: 2
+      dropChance: 0.2
+      coinType: 0
+  coinLootTable:
+    lootTable:
+    - item: 1
+      dropChance: 0.6
+      coinType: 0
+    - item: 2
+      dropChance: 0.3
+      coinType: 0
+    - item: 5
+      dropChance: 0.1
+      coinType: 0
+  walkSpriteSequence: []
+  walkFrameTime: 0
+  activeHealth: 25
+  tickDamage: 3
+  tickInterval: 0.5
+  bindDuration: 4
+  bindPlayerOnActivate: 1
+  spawnNearPlayerForTest: 0
+  spawnMinDistanceFromPlayer: 6
+  spawnMaxDistanceFromPlayer: 15
+  dormantSprites:
+  - {fileID: 21300000, guid: c5164ffb826f3469db584349ea8fb550, type: 3}
+  activeSprites:
+  - {fileID: -771059453, guid: 43783415a44e2453c88887bb8e4b70fb, type: 3}
+  deathSprites:
+  - {fileID: 588948436, guid: 02288e18bb6844bd09c390d973e71969, type: 3}
+  animationFrameTime: 0.15
+  deathDespawnDelay: 0.15

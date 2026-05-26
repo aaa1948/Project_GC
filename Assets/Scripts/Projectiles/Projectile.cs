@@ -7,10 +7,13 @@ namespace Vampire
     public class Projectile : MonoBehaviour
     {
         [SerializeField] protected SpriteRenderer projectileSpriteRenderer;
-        [SerializeField] protected float maxDistance;
+        [SerializeField] public float maxDistance;
         [SerializeField] protected float rotationSpeed = 0;
         [SerializeField] protected float airResistance = 0;
         [SerializeField] protected ParticleSystem destructionParticleSystem;
+
+        [Header("Critical Settings")]
+        [SerializeField] protected float criticalDamageMultiplier = 2f;
 
         protected float despawnTime = 1;
         protected LayerMask targetLayer;
@@ -102,8 +105,20 @@ namespace Vampire
                 return;
             }
 
-            damageable.TakeDamage(damage, knockback * direction);
-            OnHitDamageable?.Invoke(damage);
+            float finalDamage = damage;
+            bool isCritical = false;
+
+            if (playerCharacter != null && Random.value < playerCharacter.CritChance)
+            {
+                isCritical = true;
+                finalDamage *= criticalDamageMultiplier;
+
+                Debug.Log($"<color=red>[Ä¡¸íÅ¸]</color> Critical Hit! Damage: {finalDamage}");
+            }
+
+            damageable.TakeDamage(finalDamage, knockback * direction, isCritical);
+            OnHitDamageable?.Invoke(finalDamage);
+
             DestroyProjectile();
         }
 
@@ -182,7 +197,7 @@ namespace Vampire
             {
                 if (collider.transform.parent.TryGetComponent<IDamageable>(out IDamageable damageable))
                 {
-                    HitDamageable(collider.gameObject.GetComponentInParent<IDamageable>());
+                    HitDamageable(damageable);
                 }
                 else
                 {

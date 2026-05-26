@@ -8,7 +8,16 @@ namespace Vampire
         public enum LegendaryAugmentType
         {
             LifeBurn,
-            CloneCulture
+            CloneCulture,
+
+            // 전설 증강: 고슴도침
+            HedgehogNeedle,
+
+            // 전설 증강: 대물침
+            HeavySnipe,
+
+            // 전설 증강: 이기어침
+            CursorControl
         }
 
         [Header("Legendary Augment")]
@@ -16,7 +25,6 @@ namespace Vampire
 
         private SyringeDartAbility syringeDartAbility;
 
-        // 원본 블루프린트와 런타임 복제본 구분
         private CharacterBlueprint originalBlueprintAsset;
         private CharacterBlueprint runtimeClonedBlueprint;
 
@@ -25,6 +33,7 @@ namespace Vampire
             base.Init(abilityManager, entityManager, playerCharacter);
 
             maxLevel = 1;
+
             syringeDartAbility = abilityManager.GetComponentInChildren<SyringeDartAbility>(true);
 
             if (syringeDartAbility == null)
@@ -56,6 +65,18 @@ namespace Vampire
                 case LegendaryAugmentType.CloneCulture:
                     ApplyCloneLegendary();
                     break;
+
+                case LegendaryAugmentType.HedgehogNeedle:
+                    syringeDartAbility.EnableHedgehogNeedleLegendary();
+                    break;
+
+                case LegendaryAugmentType.HeavySnipe:
+                    syringeDartAbility.EnableHeavySnipeLegendary();
+                    break;
+
+                case LegendaryAugmentType.CursorControl:
+                    syringeDartAbility.EnableCursorControlLegendary();
+                    break;
             }
         }
 
@@ -73,6 +94,15 @@ namespace Vampire
 
                 case LegendaryAugmentType.CloneCulture:
                     return !syringeDartAbility.HasCloneLegendary() && base.RequirementsMet();
+
+                case LegendaryAugmentType.HedgehogNeedle:
+                    return !syringeDartAbility.HasHedgehogNeedleLegendary() && base.RequirementsMet();
+
+                case LegendaryAugmentType.HeavySnipe:
+                    return !syringeDartAbility.HasHeavySnipeLegendary() && base.RequirementsMet();
+
+                case LegendaryAugmentType.CursorControl:
+                    return !syringeDartAbility.HasCursorControlLegendary() && base.RequirementsMet();
 
                 default:
                     return false;
@@ -112,7 +142,6 @@ namespace Vampire
                 return;
             }
 
-            // 이미 런타임 복제본을 쓰고 있으면 다시 안 만듦
             if (runtimeClonedBlueprint != null && playerCharacter.Blueprint == runtimeClonedBlueprint)
             {
                 return;
@@ -172,6 +201,7 @@ namespace Vampire
             }
 
             object healthBar = healthBarField.GetValue(playerCharacter);
+
             if (healthBar == null)
             {
                 return;

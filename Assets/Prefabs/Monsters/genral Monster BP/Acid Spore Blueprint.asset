@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c171b45c3e416354bb02500acd6be53a, type: 3}
+  m_Name: Acid Spore Blueprint
+  m_EditorClassIdentifier: 
+  name: "\uC704\uC0B0 \uD3EC\uC790"
+  hp: 20
+  atk: 0
+  recovery: 0
+  armor: 0
+  atkspeed: 1
+  movespeed: 8
+  acceleration: 120
+  gemLootTable:
+    lootTable:
+    - item: 2
+      dropChance: 1
+      coinType: 0
+  coinLootTable:
+    lootTable:
+    - item: 1
+      dropChance: 0.3
+      coinType: 0
+    - item: 2
+      dropChance: 0.4
+      coinType: 0
+    - item: 5
+      dropChance: 0.3
+      coinType: 0
+  walkSpriteSequence: []
+  walkFrameTime: 0
+  playerLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  explosionDamage: 30
+  explosionRadius: 0.55
+  explosionKnockback: 1
+  armDelay: 0.25
+  warningDistance: 2
+  warningBlinkSpeed: 12
+  rewardOnSelfExplosion: 0
+  debugLog: 1

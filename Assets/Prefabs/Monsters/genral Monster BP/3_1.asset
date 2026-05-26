@@ -1,0 +1,50 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f1ae058c390b426495056b39e15d543, type: 3}
+  m_Name: 3_1
+  m_EditorClassIdentifier: 
+  name: "\uC601\uC591\uC81C"
+  hp: 150
+  atk: 10
+  recovery: 0
+  armor: 0
+  atkspeed: 2
+  movespeed: 0.9
+  acceleration: 5
+  gemLootTable:
+    lootTable:
+    - item: 2
+      dropChance: 0.9
+      coinType: 1
+    - item: 10
+      dropChance: 0.1
+      coinType: 1
+  coinLootTable:
+    lootTable:
+    - item: 1
+      dropChance: 0.1
+      coinType: 1
+    - item: 2
+      dropChance: 0.4
+      coinType: 1
+    - item: 5
+      dropChance: 0.5
+      coinType: 1
+  walkSpriteSequence:
+  - {fileID: -2922201, guid: 07cbd5fa1cf8a8e4fa08b25c3558d926, type: 3}
+  - {fileID: 1745515091, guid: 07cbd5fa1cf8a8e4fa08b25c3558d926, type: 3}
+  - {fileID: -248303118, guid: 07cbd5fa1cf8a8e4fa08b25c3558d926, type: 3}
+  - {fileID: -1456532820, guid: 07cbd5fa1cf8a8e4fa08b25c3558d926, type: 3}
+  walkFrameTime: 0.2
+  meleeLayer:
+    serializedVersion: 2
+    m_Bits: 512

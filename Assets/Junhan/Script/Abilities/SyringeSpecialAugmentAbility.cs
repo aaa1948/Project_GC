@@ -9,26 +9,40 @@ namespace Vampire
             Poison,
             Explosion,
             Homing,
-            Pierce
+            Pierce,
+            Honey,
+            Mosquito,
+            ReturnNeedle,
+            AcupunctureFormation
         }
 
         [Header("Special Augment")]
         [SerializeField] private SpecialAugmentType augmentType;
 
+        [Header("Debug")]
+        [SerializeField] private bool debugLog = true;
+
         private SyringeDartAbility syringeDartAbility;
 
-        public override void Init(AbilityManager abilityManager, EntityManager entityManager, Character playerCharacter)
+        public override void Init(
+            AbilityManager abilityManager,
+            EntityManager entityManager,
+            Character playerCharacter)
         {
             base.Init(abilityManager, entityManager, playerCharacter);
 
-            // 특수증강은 한 번만 선택 가능하게 한다.
+            // 특수 증강은 한 번만 선택 가능
             maxLevel = 1;
 
-            syringeDartAbility = abilityManager.GetComponentInChildren<SyringeDartAbility>(true);
+            RefreshSyringeDartAbilityReference();
 
             if (syringeDartAbility == null)
             {
-                Debug.LogError("[SyringeSpecialAugmentAbility] SyringeDartAbility를 찾지 못했습니다.");
+                Debug.LogError(
+                    "[SyringeSpecialAugmentAbility] SyringeDartAbility를 찾지 못했습니다. " +
+                    "AbilityManager 아래에 실제 시작 침 능력이 있는지 확인하세요.",
+                    this
+                );
             }
         }
 
@@ -36,8 +50,15 @@ namespace Vampire
         {
             base.Use();
 
+            RefreshSyringeDartAbilityReference();
+
             if (syringeDartAbility == null)
             {
+                Debug.LogError(
+                    $"[SyringeSpecialAugmentAbility] {augmentType} 적용 실패: SyringeDartAbility가 없습니다.",
+                    this
+                );
+
                 return;
             }
 
@@ -58,11 +79,41 @@ namespace Vampire
                 case SpecialAugmentType.Pierce:
                     syringeDartAbility.EnablePierceAugment();
                     break;
+
+                case SpecialAugmentType.Honey:
+                    syringeDartAbility.EnableHoneyAugment();
+                    break;
+
+                case SpecialAugmentType.Mosquito:
+                    syringeDartAbility.EnableMosquitoAugment();
+                    break;
+
+                case SpecialAugmentType.ReturnNeedle:
+                    syringeDartAbility.EnableReturnNeedleAugment();
+                    break;
+
+                case SpecialAugmentType.AcupunctureFormation:
+                    syringeDartAbility.EnableAcupunctureFormationAugment();
+                    break;
+            }
+
+            if (debugLog)
+            {
+                Debug.Log(
+                    $"[SyringeSpecialAugmentAbility] 특수증강 적용 완료 | " +
+                    $"Type={augmentType} | " +
+                    $"Target={syringeDartAbility.name} | " +
+                    $"Owned={syringeDartAbility.Owned} | " +
+                    $"Active={syringeDartAbility.gameObject.activeInHierarchy}",
+                    syringeDartAbility
+                );
             }
         }
 
         public override bool RequirementsMet()
         {
+            RefreshSyringeDartAbilityReference();
+
             if (syringeDartAbility == null)
             {
                 return false;
@@ -82,8 +133,31 @@ namespace Vampire
                 case SpecialAugmentType.Pierce:
                     return !syringeDartAbility.HasPierceAugment() && base.RequirementsMet();
 
+                case SpecialAugmentType.Honey:
+                    return !syringeDartAbility.HasHoneyAugment() && base.RequirementsMet();
+
+                case SpecialAugmentType.Mosquito:
+                    return !syringeDartAbility.HasMosquitoAugment() && base.RequirementsMet();
+
+                case SpecialAugmentType.ReturnNeedle:
+                    return !syringeDartAbility.HasReturnNeedleAugment() && base.RequirementsMet();
+
+                case SpecialAugmentType.AcupunctureFormation:
+                    return !syringeDartAbility.HasAcupunctureFormationAugment() && base.RequirementsMet();
+
                 default:
                     return false;
+            }
+        }
+
+        private void RefreshSyringeDartAbilityReference()
+        {
+            SyringeDartAbility resolvedAbility =
+                SyringeAbilityResolver.FindOwnedOrFirst(abilityManager);
+
+            if (resolvedAbility != null)
+            {
+                syringeDartAbility = resolvedAbility;
             }
         }
     }

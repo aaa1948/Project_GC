@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -11,20 +12,60 @@ namespace Vampire
         [Header("UI References")]
         [SerializeField] private GameObject shopUIContainer;
         [SerializeField] private Button closeButton;
+        [SerializeField] private Button rerollButton;
+        [SerializeField] private TMP_Text rerollCostText;
 
         [Header("Shop Settings")]
-        [SerializeField] private List<ShopItemButton> itemButtons;              // 진열대 (버튼들)
-        [SerializeField] private List<MerchantItemBlueprint> allAvailableItems; // 우리가 만든 붕어빵(데이터) 전체 목록
+        [SerializeField] private List<ShopItemButton> itemButtons;
+        [SerializeField] private List<MerchantItemBlueprint> allAvailableItems;
+
+        [Header("Base Rarity Chance")]
+        [SerializeField] private int commonWeight = 55;
+        [SerializeField] private int uncommonWeight = 32;
+        [SerializeField] private int rareWeight = 11;
+        [SerializeField] private int legendaryWeight = 2;
+
+        [Header("Reroll Rarity Bonus")]
+        [SerializeField] private int rareBonusPerReroll = 2;
+        [SerializeField] private int legendaryBonusPerReroll = 1;
+        [SerializeField] private int maxRareBonus = 8;
+        [SerializeField] private int maxLegendaryBonus = 4;
+        [SerializeField] private int minCommonWeight = 20;
+
+        [Header("Reroll Settings")]
+        [SerializeField] private int baseRerollCost = 10;
+        [SerializeField] private int rerollCostIncrease = 5;
+
+        [Header("Sound Settings")]
+        [SerializeField] private AudioSource audioSource;
+        [SerializeField] private AudioClip rerollSound;
 
         private MerchantNPC currentInteractingNPC;
+
+        // 게임 한 판 전체에서 공유되는 리롤 값
+        private int globalRerollCount = 0;
+        private int currentRerollCost;
 
         private void Awake()
         {
             if (Instance == null) Instance = this;
             else Destroy(gameObject);
 
+            currentRerollCost = baseRerollCost;
+
             shopUIContainer.SetActive(false);
+
             closeButton.onClick.AddListener(CloseShop);
+
+            if (rerollButton != null)
+                rerollButton.onClick.AddListener(OnClickRerollItems);
+        }
+        private void Update()
+        {
+            if (shopUIContainer.activeSelf && Input.GetKeyDown(KeyCode.Escape))
+            {
+                CloseShop();
+            }
         }
 
         public void OpenShop(MerchantNPC npc)
@@ -32,26 +73,135 @@ namespace Vampire
             currentInteractingNPC = npc;
             shopUIContainer.SetActive(true);
 
-            //  1. 상점을 열었을 때 게임 시간 멈추기 (일시정지)
             Time.timeScale = 0f;
 
-            // 1. 전체 아이템 목록을 랜덤하게 섞기
-            List<MerchantItemBlueprint> shuffledItems = new List<MerchantItemBlueprint>(allAvailableItems);
-            for (int i = 0; i < shuffledItems.Count; i++)
+            if (!npc.HasGeneratedShopItems())
             {
-                MerchantItemBlueprint temp = shuffledItems[i];
-                int randomIndex = Random.Range(i, shuffledItems.Count);
-                shuffledItems[i] = shuffledItems[randomIndex];
-                shuffledItems[randomIndex] = temp;
+                List<MerchantItemBlueprint> generatedItems =
+                    GenerateNewShopItems(false, globalRerollCount);
+
+                npc.SetShopItems(generatedItems);
             }
 
-            // 2. 섞인 아이템들을 진열대(버튼)에 하나씩 올리기
+            UpdateRerollCostText();
+            DisplayCurrentShopItems();
+        }
+
+        private List<MerchantItemBlueprint> GenerateNewShopItems(bool useRerollBonus, int rerollCount)
+        {
+            List<MerchantItemBlueprint> generatedItems = new List<MerchantItemBlueprint>();
+
+            int safetyCount = 0;
+
+            while (generatedItems.Count < itemButtons.Count && safetyCount < 100)
+            {
+                safetyCount++;
+
+                MerchantItemBlueprint.Rarity selectedRarity = useRerollBonus
+                    ? GetRandomRarityWithRerollBonus(rerollCount)
+                    : GetRandomRarity();
+
+                MerchantItemBlueprint selectedItem = GetRandomItemByRarity(selectedRarity);
+
+                if (selectedItem != null && !generatedItems.Contains(selectedItem))
+                {
+                    generatedItems.Add(selectedItem);
+                }
+            }
+
+            if (generatedItems.Count < itemButtons.Count)
+            {
+                FillRemainingItemsRandomly(generatedItems);
+            }
+
+            return generatedItems;
+        }
+
+        private MerchantItemBlueprint.Rarity GetRandomRarity()
+        {
+            return RollRarity(commonWeight, uncommonWeight, rareWeight, legendaryWeight);
+        }
+
+        private MerchantItemBlueprint.Rarity GetRandomRarityWithRerollBonus(int rerollCount)
+        {
+            int rareBonus = Mathf.Min(rerollCount * rareBonusPerReroll, maxRareBonus);
+            int legendaryBonus = Mathf.Min(rerollCount * legendaryBonusPerReroll, maxLegendaryBonus);
+
+            int adjustedCommon = Mathf.Max(minCommonWeight, commonWeight - rareBonus - legendaryBonus);
+            int adjustedUncommon = uncommonWeight;
+            int adjustedRare = rareWeight + rareBonus;
+            int adjustedLegendary = legendaryWeight + legendaryBonus;
+
+            return RollRarity(adjustedCommon, adjustedUncommon, adjustedRare, adjustedLegendary);
+        }
+
+        private MerchantItemBlueprint.Rarity RollRarity(int common, int uncommon, int rare, int legendary)
+        {
+            int total = common + uncommon + rare + legendary;
+
+            if (total <= 0)
+                return MerchantItemBlueprint.Rarity.Common;
+
+            int roll = Random.Range(0, total);
+
+            if (roll < common)
+                return MerchantItemBlueprint.Rarity.Common;
+
+            roll -= common;
+
+            if (roll < uncommon)
+                return MerchantItemBlueprint.Rarity.Uncommon;
+
+            roll -= uncommon;
+
+            if (roll < rare)
+                return MerchantItemBlueprint.Rarity.Rare;
+
+            return MerchantItemBlueprint.Rarity.Legendary;
+        }
+
+        private MerchantItemBlueprint GetRandomItemByRarity(MerchantItemBlueprint.Rarity rarity)
+        {
+            List<MerchantItemBlueprint> candidates =
+                allAvailableItems.FindAll(item => item.itemRarity == rarity);
+
+            if (candidates.Count == 0)
+                return null;
+
+            return candidates[Random.Range(0, candidates.Count)];
+        }
+
+        private void FillRemainingItemsRandomly(List<MerchantItemBlueprint> targetItems)
+        {
+            List<MerchantItemBlueprint> remainingItems = new List<MerchantItemBlueprint>();
+
+            foreach (MerchantItemBlueprint item in allAvailableItems)
+            {
+                if (!targetItems.Contains(item))
+                    remainingItems.Add(item);
+            }
+
+            while (targetItems.Count < itemButtons.Count && remainingItems.Count > 0)
+            {
+                int randomIndex = Random.Range(0, remainingItems.Count);
+                targetItems.Add(remainingItems[randomIndex]);
+                remainingItems.RemoveAt(randomIndex);
+            }
+        }
+
+        private void DisplayCurrentShopItems()
+        {
+            if (currentInteractingNPC == null)
+                return;
+
+            List<MerchantItemBlueprint> shopItems = currentInteractingNPC.GetShopItems();
+
             for (int i = 0; i < itemButtons.Count; i++)
             {
-                if (i < shuffledItems.Count)
+                if (i < shopItems.Count)
                 {
                     itemButtons[i].gameObject.SetActive(true);
-                    itemButtons[i].Setup(shuffledItems[i]);
+                    itemButtons[i].Setup(shopItems[i]);
                 }
                 else
                 {
@@ -60,15 +210,56 @@ namespace Vampire
             }
         }
 
+        public void OnClickRerollItems()
+        {
+            if (currentInteractingNPC == null)
+                return;
+
+            if (ProcessPayment(currentRerollCost))
+            {
+                globalRerollCount++;
+
+                List<MerchantItemBlueprint> newItems =
+                    GenerateNewShopItems(true, globalRerollCount);
+
+                currentInteractingNPC.SetShopItems(newItems);
+
+                PlayRerollSound();
+
+                currentRerollCost = baseRerollCost + (rerollCostIncrease * globalRerollCount);
+
+                UpdateRerollCostText();
+                DisplayCurrentShopItems();
+
+                Debug.Log($"[상점] 리롤 성공! 전체 리롤 횟수: {globalRerollCount}, 다음 리롤 비용: {currentRerollCost}G");
+            }
+            else
+            {
+                Debug.LogWarning("[상점] 리롤할 골드가 부족합니다!");
+            }
+        }
+
+        private void UpdateRerollCostText()
+        {
+            if (rerollCostText != null)
+            {
+                rerollCostText.text = $"Reroll - {currentRerollCost}G";
+            }
+        }
+
+        private void PlayRerollSound()
+        {
+            if (audioSource != null && rerollSound != null)
+            {
+                audioSource.PlayOneShot(rerollSound);
+            }
+        }
+
         public void CloseShop()
         {
-            // 1. 상점 UI 화면에서 숨기기
             shopUIContainer.SetActive(false);
-
-            //  2. 게임 시간 다시 정상으로 돌리기 (전투 재개)
             Time.timeScale = 1f;
 
-            // 3. NPC 상태 초기화
             if (currentInteractingNPC != null)
             {
                 currentInteractingNPC.CloseShopUI();
@@ -76,30 +267,21 @@ namespace Vampire
             }
         }
 
-        //  수정된 부분: 결제 성공 시 상점 닫고 상인 파괴하기
         public void OnClickPurchaseItem(MerchantItemBlueprint itemToBuy, ShopItemButton clickedButton)
         {
             if (ProcessPayment(itemToBuy.cost))
             {
-                // 새로 만든 스탯 적용기 호출!
                 ShopStatApplier statApplier = FindObjectOfType<ShopStatApplier>();
+
                 if (statApplier != null)
                 {
                     statApplier.ApplyStats(itemToBuy);
                 }
 
-                // (이제 버튼을 품절 상태로 만들 필요가 없습니다. 창이 바로 닫히니까요!)
-                // clickedButton.MarkAsSoldOut(); 
-
-                //  새로 추가된 "택 1 시스템" 로직 
-
-                // 1. 어떤 상인과 거래했는지 임시로 저장해둠
                 MerchantNPC npcToDestroy = currentInteractingNPC;
 
-                // 2. 상점 UI 닫기 및 시간 재개 (CloseShop에서 currentInteractingNPC가 null로 변함)
                 CloseShop();
 
-                // 3. 거래가 끝난 상인 오브젝트를 맵에서 지워버림 (퇴근)
                 if (npcToDestroy != null)
                 {
                     Debug.Log("<color=magenta>[시스템]</color> 거래 완료! 아저씨가 퇴근했습니다.");
@@ -108,21 +290,16 @@ namespace Vampire
             }
         }
 
-        // 결제(재화 차감 및 저장)만을 전담하는 독립적인 메서드
         private bool ProcessPayment(int cost)
         {
-            // 1. 현재 게임을 관장하는 StatsManager를 찾습니다.
             StatsManager currentStats = FindObjectOfType<StatsManager>();
 
             if (currentStats != null)
             {
-                // 2. 외부에서 공개된 속성(Getter)으로 잔액만 슬쩍 확인합니다.
                 if (currentStats.CoinsGained >= cost)
                 {
-                    // 3. 기존 코드 수정 없이, '음수'를 더하는 트릭으로 돈을 차감합니다!
-                    // 예: 100골드 차감 -> IncreaseCoinsGained(-100)
                     currentStats.IncreaseCoinsGained(-cost);
-                    return true; // 결제 성공
+                    return true;
                 }
                 else
                 {
@@ -134,7 +311,7 @@ namespace Vampire
                 Debug.LogError("[MerchantUIManager] 맵에 StatsManager가 없습니다!");
             }
 
-            return false; // 잔액 부족 또는 매니저 없음으로 결제 실패
+            return false;
         }
     }
 }

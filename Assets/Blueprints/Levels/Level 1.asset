@@ -12,56 +12,90 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b94449d710f83429796c060423fde854, type: 3}
   m_Name: Level 1
   m_EditorClassIdentifier: 
-  levelTime: 600
-  backgroundTexture: {fileID: 2800000, guid: 42b11be826072496a9d57814c0ca6576, type: 3}
+  levelTime: 900
+  backgroundTexture: {fileID: 2800000, guid: afc1aca3130305f49bbe18449e497697, type: 3}
   abilityPrefabs:
-  - {fileID: 7378740072262091319, guid: ad7ae2010ff3f409aae00371b1f7d578, type: 3}
   - {fileID: 7378740072262091319, guid: 9757fae3764f6e1488b23a8ff2e6c349, type: 3}
   - {fileID: 7378740072262091319, guid: 9a6cb5bbd9c72f14c9567c769a71c7ef, type: 3}
   - {fileID: 7378740072262091319, guid: f6bf6f8839f614f419426722e5cf0cbd, type: 3}
   - {fileID: 7378740072262091319, guid: babdca8bf85115c4cba6d13e2ea6c093, type: 3}
   - {fileID: 7378740072262091319, guid: b8ae7f34be6ce7e4ba50ea2d283dac2e, type: 3}
   - {fileID: 7378740072262091319, guid: 43e4dc6239cc60f4d8e9440eceb849e2, type: 3}
+  - {fileID: 7378740072262091319, guid: 5f8098d6f1cc0ab4aa0a441c904e27e4, type: 3}
+  - {fileID: 7378740072262091319, guid: 71464678c402c4242ae253ea26f49921, type: 3}
+  - {fileID: 7378740072262091319, guid: 1528d3a995fc76e498100e9c9aaaecde, type: 3}
+  - {fileID: 7378740072262091319, guid: 533d819dd06174a4c9bedfe7a5c71a8c, type: 3}
+  - {fileID: 7378740072262091319, guid: 228f48811db777343bb38c3419605e4a, type: 3}
+  - {fileID: 7378740072262091319, guid: a0daf2ec26e3f4a45a029d24d08235ef, type: 3}
+  - {fileID: 7378740072262091319, guid: 079b3b7ffe8e24b4a98135dc2f88acf7, type: 3}
+  - {fileID: 7378740072262091319, guid: d559d8ad76e7e4646b8d57b68f47e392, type: 3}
+  - {fileID: 7378740072262091319, guid: fc9486cd06fa0534e830e3b0792ae540, type: 3}
   monsters:
+  - monstersPrefab: {fileID: 8960830493049914446, guid: 399940952553bf947a6340bd0adf19e8, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: 23cbbabfbfc14e4498b09675b4940a0c, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: 8a397a3661916974e8e924a689ce294d, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: 90fba8307cc57ca45aa183b28d883534, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: 574e4726c1b6fd840b1008fadccc6391, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: e116b97a1a21fec48a3af32b4706b909, type: 2}
+    - {fileID: 11400000, guid: 155bf50c0d2204642a6ca159080c74dc, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: 74257ac8d42091c41b39377b5aef3199, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: 66de12b7cb39f584d8c89366ee7d27de, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: 570aaf57a6ce5f548874e0b6fb86563f, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: 63ef44ffe88d963469a0de489862fc74, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: 003f1f5d57a9fd84180d0c83a624ec21, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: d7559159349e33e41994c84cd55e4a29, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: 0936209b98deeb247a553a0a37654666, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: d859fc1f55039d843830177320577405, type: 2}
   - monstersPrefab: {fileID: 8960830493049914446, guid: 12adb3a92ed404612906d2c1fe4b586e, type: 3}
     monsterBlueprints:
-    - {fileID: 11400000, guid: 1d1547b98475241e798c26597f6553a5, type: 2}
-    - {fileID: 11400000, guid: 03a9f1276c78f4503b3757f7e14adbed, type: 2}
-    - {fileID: 11400000, guid: 1b3587b35d7cb4a008d17889617a4db5, type: 2}
-  - monstersPrefab: {fileID: 8960830493049914446, guid: dfcf798c11f284752815ead20a8dbaeb, type: 3}
+    - {fileID: 11400000, guid: 784dd4ef41fcc754291fad20a5410c14, type: 2}
+    - {fileID: 0}
+    - {fileID: 11400000, guid: f4dab74aec78875478f41a2021c36fa2, type: 2}
+    - {fileID: 11400000, guid: c73eb4bd38da09d4d8442ac98248540c, type: 2}
+    - {fileID: 11400000, guid: 97f87d6abaec70f4cafe586d915eb003, type: 2}
+    - {fileID: 11400000, guid: f96273ced2f62dc4a954e53caa856a2d, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: a44b011fa2eb8bd4da4a1615f68591b9, type: 3}
     monsterBlueprints:
-    - {fileID: 11400000, guid: 38f13c65830f840f99434d21ce75baef, type: 2}
-  - monstersPrefab: {fileID: 8960830493049914446, guid: b21d49c07805e4c2c8cab56371c5aad6, type: 3}
+    - {fileID: 11400000, guid: 4b65cea1eeb064941bb483af69f4057f, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: 2cc2f6a300c7c064e8c741710935724d, type: 3}
     monsterBlueprints:
-    - {fileID: 11400000, guid: 0c81abe360d964c53b7e90be45a30ca5, type: 2}
-  - monstersPrefab: {fileID: 8960830493049914446, guid: f221b6d092ee543038a69c17c526bab0, type: 3}
+    - {fileID: 11400000, guid: fd859e63b1c5df740b6b559bcaa17031, type: 2}
+  - monstersPrefab: {fileID: 7130632717509287678, guid: 2a99d0baa50bf3d4281ed58269f4adc0, type: 3}
     monsterBlueprints:
-    - {fileID: 11400000, guid: f2518533fe52946a188a4e6a74ecff6e, type: 2}
-  miniBosses:
-  - bossPrefab: {fileID: 8960830493049914446, guid: bf088821f793b4654a2ba39cb4266ae9, type: 3}
-    bossBlueprint: {fileID: 11400000, guid: 6aa76d11a438f4bd0aab1e7b138ef8f9, type: 2}
-    spawnTime: 300
+    - {fileID: 11400000, guid: f5484c90eb7bae64ab5daa68b3d0e47d, type: 2}
+  - monstersPrefab: {fileID: 8960830493049914446, guid: cd52caf36670a854ea910cf5e0f94a26, type: 3}
+    monsterBlueprints:
+    - {fileID: 11400000, guid: e57788280332e7f4fb68bda5863fa457, type: 2}
+    - {fileID: 11400000, guid: 2ed5971bb65f2514ca8e48159e03db80, type: 2}
+  miniBosses: []
   finalBoss:
-    bossPrefab: {fileID: 8960830493049914446, guid: bf088821f793b4654a2ba39cb4266ae9, type: 3}
-    bossBlueprint: {fileID: 11400000, guid: f8c41435c677742d699bbf048ae85731, type: 2}
+    bossPrefab: {fileID: 8960830493049914446, guid: 867d2b957fe0d1f479d2db0105efa53c, type: 3}
+    bossBlueprint: {fileID: 11400000, guid: 63ef837a5625edf45be889fdd41d1ff1, type: 2}
   monsterSpawnTable:
     spawnRateKeyframes:
     - t: 0
       spawnRate: 1
-    - t: 0.1
-      spawnRate: 3
-    - t: 0.43
-      spawnRate: 4.5
-    - t: 0.48
-      spawnRate: 1
-    - t: 0.55
-      spawnRate: 1.5
-    - t: 0.65
-      spawnRate: 3.5
-    - t: 0.975
-      spawnRate: 6
+    - t: 0.05
+      spawnRate: 1.4
+    - t: 0.15
+      spawnRate: 2.2
+    - t: 0.25
+      spawnRate: 4
+    - t: 0.4
+      spawnRate: 7
+    - t: 0.6
+      spawnRate: 11
+    - t: 0.8
+      spawnRate: 15
     - t: 1
-      spawnRate: 2
+      spawnRate: 20
     spawnChanceKeyframes:
     - t: 0
       spawnChances:
@@ -71,9 +105,98 @@ MonoBehaviour:
       - 0
       - 0
       - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
     - t: 0.05
       spawnChances:
-      - 1
+      - 0.8067485
+      - 0.19325152
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+    - t: 0.1
+      spawnChances:
+      - 0.65
+      - 0.35
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+    - t: 0.15
+      spawnChances:
+      - 0.484472
+      - 0.37577638
+      - 0.09627329
+      - 0
+      - 0.04347826
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+    - t: 0.2
+      spawnChances:
+      - 0.35
+      - 0.35
+      - 0.2
+      - 0
+      - 0.1
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
       - 0
       - 0
       - 0
@@ -81,81 +204,169 @@ MonoBehaviour:
       - 0
     - t: 0.25
       spawnChances:
-      - 0.25
-      - 0.75
+      - 0.26125
+      - 0.304375
+      - 0.23750001
+      - 0
+      - 0.153125
+      - 0.021875001
       - 0
       - 0
       - 0
       - 0
-    - t: 0.35
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0.021875001
+      - 0
+      - 0
+      - 0
+    - t: 0.3
       spawnChances:
-      - 0.15
-      - 0.6
+      - 0.2
+      - 0.25
       - 0.25
       - 0
+      - 0.2
+      - 0.05
       - 0
       - 0
-    - t: 0.43
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0.05
+      - 0
+      - 0
+      - 0
+    - t: 0.4
       spawnChances:
+      - 0.12
+      - 0.18
+      - 0.25
       - 0
       - 0.25
-      - 0.75
-      - 0
-      - 0
-      - 0
-    - t: 0.48
-      spawnChances:
-      - 0.8
       - 0.1
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
       - 0.1
       - 0
       - 0
       - 0
-    - t: 0.55
+    - t: 0.5
       spawnChances:
-      - 1
+      - 0.080000006
+      - 0.120000005
+      - 0.25000003
+      - 0
+      - 0.20000002
+      - 0.15000002
+      - 0
+      - 0.050000004
       - 0
       - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0.15000002
       - 0
       - 0
       - 0
     - t: 0.6
       spawnChances:
-      - 0.3
-      - 0.3
-      - 0.3
-      - 0.1
-      - 0
-      - 0
-    - t: 0.7
-      spawnChances:
-      - 0.3
-      - 0.3
-      - 0.3
-      - 0
-      - 0.1
-      - 0
-    - t: 0.8
-      spawnChances:
-      - 0.3
-      - 0.3
-      - 0.3
-      - 0
-      - 0
-      - 0.1
-    - t: 0.9
-      spawnChances:
-      - 0.25
-      - 0.25
-      - 0.25
       - 0.05
       - 0.1
+      - 0.2
+      - 0
+      - 0.2
+      - 0.2
+      - 0
+      - 0.05
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0.2
+      - 0
+      - 0
+      - 0
+    - t: 0.75
+      spawnChances:
+      - 0.05
+      - 0.05
+      - 0.15
+      - 0
+      - 0.15
+      - 0.25
+      - 0
       - 0.1
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0.25
+      - 0
+      - 0
+      - 0
+    - t: 0.9
+      spawnChances:
+      - 0.05
+      - 0.05
+      - 0.1
+      - 0
+      - 0.1
+      - 0.3
+      - 0
+      - 0.1
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0.3
+      - 0
+      - 0
+      - 0
     - t: 1
       spawnChances:
+      - 0.05
+      - 0.05
+      - 0.1
+      - 0
+      - 0.1
       - 0.3
+      - 0
+      - 0.1
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
       - 0.3
-      - 0.4
       - 0
       - 0
       - 0
@@ -168,22 +379,61 @@ MonoBehaviour:
       - 0
       - 0
       - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
     - t: 0.5
       healthBuffs:
-      - 1
-      - 1
-      - 1
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
       - 0
       - 0
       - 0
     - t: 1
       healthBuffs:
-      - 2
-      - 2
-      - 2
-      - 1
-      - 1
-      - 1
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
+      - 0
   chestBlueprint: {fileID: 11400000, guid: 7306af3f2b7df4c818a7f7d847d30570, type: 2}
   chestSpawnDelay: 30
   chestSpawnAmount: 2
