@@ -5368,7 +5368,7 @@ MonoBehaviour:
   warningLinePrefab: {fileID: 3500323201647957297, guid: 39ffc1f9dd07a9248bd4bda7a75c0bae, type: 3}
   warningTime: 0.5
   warningWidth: 1.5
-  warningColor: {r: 0.4, g: 0.85, b: 1, a: 0.45}
+  warningColor: {r: 1, g: 1, b: 1, a: 1}
   chargeCountPhase1: 1
   chargeCountPhase2: 2
   chargeCountPhase3: 3
