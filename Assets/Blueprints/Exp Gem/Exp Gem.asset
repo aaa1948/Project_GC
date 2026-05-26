@@ -14,10 +14,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   gemSpritesAndColors:
     content1:
-    - {fileID: 372590598, guid: e8f5ab0ca84154643a62b3f6adb1297c, type: 3}
-    - {fileID: 139951702, guid: e8f5ab0ca84154643a62b3f6adb1297c, type: 3}
-    - {fileID: -584297072, guid: e8f5ab0ca84154643a62b3f6adb1297c, type: 3}
-    - {fileID: 1739633518, guid: e8f5ab0ca84154643a62b3f6adb1297c, type: 3}
+    - {fileID: 21300000, guid: c10216e0241210a42970e14618f681f3, type: 3}
+    - {fileID: 21300000, guid: 6a8740a326f185e45a4c5f016966af1a, type: 3}
+    - {fileID: 21300000, guid: cfe1312f8c01efe42b98044aa1b40595, type: 3}
+    - {fileID: 21300000, guid: 46387b95625b3164aa0f9dafbf72581a, type: 3}
     content2:
     - {r: 0.1254902, g: 0.6666667, b: 0.8666667, a: 1}
     - {r: 0.078431375, g: 0.4156863, b: 0.7686275, a: 1}
