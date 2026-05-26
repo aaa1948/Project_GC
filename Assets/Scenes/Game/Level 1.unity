@@ -20907,10 +20907,10 @@ MonoBehaviour:
     duration: 40
     useRandomStartTime: 1
     startTimeRanges:
-    - minStartMinute: 2
-      maxStartMinute: 3
-    - minStartMinute: 8
-      maxStartMinute: 9
+    - minStartMinute: 4
+      maxStartMinute: 5
+    - minStartMinute: 11
+      maxStartMinute: 13
     spawnMultiplier: 2.5
     minimumReferenceSpawnRate: 1.5
     started: 0
@@ -20924,10 +20924,10 @@ MonoBehaviour:
     duration: 30
     useRandomStartTime: 1
     startTimeRanges:
-    - minStartMinute: 2.5
-      maxStartMinute: 4
-    - minStartMinute: 10
-      maxStartMinute: 11
+    - minStartMinute: 4
+      maxStartMinute: 6
+    - minStartMinute: 11
+      maxStartMinute: 12
     guaranteedCoinType: 5
     guaranteedCoinCount: 1
     applyOnlyToNormalMonsters: 1
@@ -20940,11 +20940,11 @@ MonoBehaviour:
     enabled: 1
     startTime: 1
     duration: 30
-    useRandomStartTime: 0
+    useRandomStartTime: 1
     startTimeRanges:
     - minStartMinute: 5
       maxStartMinute: 6
-    - minStartMinute: 13
+    - minStartMinute: 12
       maxStartMinute: 14
     acidPuddlePrefab: {fileID: 8611868660744885873, guid: 648095bcd3c3cff4c8c964c298ab9200, type: 3}
     puddleSpawnInterval: 2
@@ -36453,8 +36453,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   selectionCount: 3
-  baseGeneralChance: 80
-  baseSpecialChance: 17
+  baseGeneralChance: 84
+  baseSpecialChance: 13
   baseLegendaryChance: 3
   specialChancePerLuck: 1.5
   legendaryChancePerLuck: 0.7
@@ -38297,12 +38297,12 @@ MonoBehaviour:
     monsterPoolIndex: 8
     monsterBlueprint: {fileID: 11400000, guid: 4b65cea1eeb064941bb483af69f4057f, type: 2}
     hpBuff: 0
-    spawnTimeMode: 1
-    spawnTimeSeconds: 1
+    spawnTimeMode: 0
+    spawnTimeSeconds: 10
     randomStartTimeSeconds: 300
     randomEndTimeSeconds: 360
-    randomEventCount: 1
-    spawnCountMode: 0
+    randomEventCount: 2
+    spawnCountMode: 1
     spawnCount: 1
     randomMinSpawnCount: 1
     randomMaxSpawnCount: 1
@@ -38324,8 +38324,8 @@ MonoBehaviour:
     hpBuff: 50
     spawnTimeMode: 1
     spawnTimeSeconds: 1
-    randomStartTimeSeconds: 600
-    randomEndTimeSeconds: 720
+    randomStartTimeSeconds: 480
+    randomEndTimeSeconds: 540
     randomEventCount: 1
     spawnCountMode: 1
     spawnCount: 2
@@ -38374,7 +38374,7 @@ MonoBehaviour:
     hpBuff: 0
     spawnTimeMode: 1
     spawnTimeSeconds: 1
-    randomStartTimeSeconds: 600
+    randomStartTimeSeconds: 540
     randomEndTimeSeconds: 900
     randomEventCount: 8
     spawnCountMode: 1

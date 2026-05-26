@@ -55,7 +55,7 @@ MonoBehaviour:
   - {fileID: 4045584077578594558}
   activeColor: {r: 0.4, g: 1, b: 0.1, a: 0.55}
   warningColor: {r: 0.10479069, g: 0.24528301, b: 0.03316715, a: 1}
-  warningDuration: 0.4
+  warningDuration: 0.9
   forceVisualSorting: 1
   puddleSortingLayerName: Default
   puddleOrderInLayer: -5
