@@ -3642,7 +3642,7 @@ GameObject:
   - component: {fileID: 856782960}
   - component: {fileID: 856782962}
   m_Layer: 9
-  m_Name: "\u89D2\u8272"
+  m_Name: asshi
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -4036,7 +4036,7 @@ MonoBehaviour:
     m_RotationOrder: 4
   useDashMovementCurve: 1
   useDashSprite: 1
-  dashSprite: {fileID: 1658229422, guid: 4a9825874034d4671b1dc9f6c8707eca, type: 3}
+  dashSprite: {fileID: 21300000, guid: 3fdea2abadb67af419e28790c5474a51, type: 3}
   dashSpriteFacesRight: 1
   restartWalkAnimationAfterDash: 1
   passThroughCollidersDuringDash: 1
@@ -9885,6 +9885,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 4071302612417614984, guid: 116895c3572ef1c4c9487aa6130ed682, type: 3}
     - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
+      propertyPath: autoFindMinimapIfEmpty
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7978169288554769983, guid: f0153d0f112dd774296d7a5e696be881, type: 3}
       propertyPath: itemButtons.Array.size
       value: 3
       objectReference: {fileID: 0}
@@ -10613,7 +10617,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   miniMapRoot: {fileID: 578318352}
-  autoFindMiniMapIfEmpty: 1
+  autoFindMiniMapIfEmpty: 0
   addCanvasIfMissing: 1
   modalSortingOrder: -100
   controlCanvasGroup: 1
@@ -10900,8 +10904,8 @@ MonoBehaviour:
   pauseMenu: {fileID: 499037435}
   particles: {fileID: 0}
   failsafeChestBlueprint: {fileID: 11400000, guid: 46af59dce019b4b5cb49f8515ccd9f54, type: 2}
-  minimapObject: {fileID: 0}
-  autoFindMinimapIfEmpty: 1
+  minimapObject: {fileID: 578318352}
+  autoFindMinimapIfEmpty: 0
   addCanvasToMinimapIfMissing: 1
   minimapModalSortingOrder: -100
   cardPopupDelay: 0.1
