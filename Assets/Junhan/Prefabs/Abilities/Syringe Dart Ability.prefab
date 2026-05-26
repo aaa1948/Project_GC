@@ -84,7 +84,7 @@ MonoBehaviour:
     value: 1
     upgrades: []
   cooldown:
-    value: 0.5
+    value: 0.7
     upgrades: []
   useProjectileSpawnOffset: 1
   projectileSpawnForwardOffset: 0.28
@@ -112,7 +112,7 @@ MonoBehaviour:
   lifeBurnEnabled: 0
   cloneLegendaryTaken: 0
   hedgehogNeedleEnabled: 0
-  heavySnipeEnabled: 1
+  heavySnipeEnabled: 0
   cursorControlEnabled: 0
   poisonDuration: 3
   poisonTickInterval: 0.5
