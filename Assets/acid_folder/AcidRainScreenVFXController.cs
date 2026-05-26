@@ -16,6 +16,16 @@ public class AcidRainScreenVFXController : MonoBehaviour
     [Tooltip("위산비 종료 후 남아 있는 파티클이 자연스럽게 사라질 때까지 기다리는 시간입니다.")]
     [SerializeField] private float waitBeforeClearTime = 1.2f;
 
+    [Header("렌더링 순서")]
+    [Tooltip("체크하면 자식 파티클 렌더러들의 Sorting Layer와 Order in Layer를 코드에서 강제로 적용합니다.")]
+    [SerializeField] private bool forceRendererSorting = true;
+
+    [Tooltip("위산비 파티클에 적용할 Sorting Layer 이름입니다.")]
+    [SerializeField] private string rainSortingLayerName = "Default";
+
+    [Tooltip("위산비 파티클의 Order in Layer입니다. 캐릭터와 몬스터 위에 보이게 하려면 높은 값을 사용하세요.")]
+    [SerializeField] private int rainOrderInLayer = 100;
+
     [Header("시작 옵션")]
     [Tooltip("게임 시작과 동시에 위산비를 재생할지 여부입니다. 위산분비 이벤트 때만 켤 예정이면 꺼두세요.")]
     [SerializeField] private bool playOnStart = false;
@@ -24,7 +34,7 @@ public class AcidRainScreenVFXController : MonoBehaviour
     [SerializeField] private bool clearOnStart = true;
 
     [Header("테스트 옵션")]
-    [Tooltip("체크하면 플레이 모드에서 테스트 키로 위산비를 켜고 끌 수 있습니다. 실제 이벤트 연결 후에는 꺼도 됩니다.")]
+    [Tooltip("체크하면 플레이 모드에서 테스트 키로 위산비를 켜고 끌 수 있습니다. 이벤트 연결 후에는 꺼도 됩니다.")]
     [SerializeField] private bool useKeyboardTest = true;
 
     [Tooltip("위산비 테스트에 사용할 키입니다.")]
@@ -40,6 +50,7 @@ public class AcidRainScreenVFXController : MonoBehaviour
     private void Awake()
     {
         InitializeIfNeeded();
+        ApplyRendererSorting();
     }
 
     private void Start()
@@ -75,6 +86,11 @@ public class AcidRainScreenVFXController : MonoBehaviour
         }
     }
 
+    private void OnValidate()
+    {
+        ApplyRendererSorting();
+    }
+
     private void OnDisable()
     {
         if (fadeCoroutine != null)
@@ -84,10 +100,20 @@ public class AcidRainScreenVFXController : MonoBehaviour
         }
     }
 
+    [ContextMenu("Refresh Particle List")]
+    public void RefreshParticleList()
+    {
+        particleSystems = GetComponentsInChildren<ParticleSystem>(true);
+        initialized = false;
+        InitializeIfNeeded();
+        ApplyRendererSorting();
+    }
+
     [ContextMenu("Play Acid Rain")]
     public void PlayRain()
     {
         InitializeIfNeeded();
+        ApplyRendererSorting();
 
         if (particleSystems == null || particleSystems.Length == 0)
         {
@@ -164,6 +190,11 @@ public class AcidRainScreenVFXController : MonoBehaviour
         if (particleSystems == null || particleSystems.Length == 0)
         {
             particleSystems = GetComponentsInChildren<ParticleSystem>(true);
+        }
+
+        if (particleSystems == null)
+        {
+            particleSystems = new ParticleSystem[0];
         }
 
         originalEmissionMultipliers = new float[particleSystems.Length];
@@ -349,5 +380,31 @@ public class AcidRainScreenVFXController : MonoBehaviour
         }
 
         return originalEmissionMultipliers[index];
+    }
+
+    private void ApplyRendererSorting()
+    {
+        if (!forceRendererSorting)
+        {
+            return;
+        }
+
+        ParticleSystemRenderer[] renderers = GetComponentsInChildren<ParticleSystemRenderer>(true);
+
+        if (renderers == null)
+        {
+            return;
+        }
+
+        for (int i = 0; i < renderers.Length; i++)
+        {
+            if (renderers[i] == null)
+            {
+                continue;
+            }
+
+            renderers[i].sortingLayerName = rainSortingLayerName;
+            renderers[i].sortingOrder = rainOrderInLayer;
+        }
     }
 }
