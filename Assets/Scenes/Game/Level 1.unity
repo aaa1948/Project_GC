@@ -1493,6 +1493,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 27198615}
     m_Modifications:
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -9.5
+      objectReference: {fileID: 0}
     - target: {fileID: 4379362936154790578, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: m_Name
       value: Button [Bottom]
@@ -1584,7 +1596,7 @@ PrefabInstance:
     - target: {fileID: 8188805818370081222, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 21300000, guid: 8014a07f610dc48a68b07bf23addc4ad, type: 3}
+      objectReference: {fileID: 21300000, guid: b2feebc63f64bee4aa6f0a30021a70eb, type: 3}
     - target: {fileID: 8867614504195791090, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: CollectableType
       value: 
@@ -3283,6 +3295,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 27198615}
     m_Modifications:
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.8
+      objectReference: {fileID: 0}
     - target: {fileID: 4379362936154790578, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: m_Name
       value: Button [Right]
@@ -3374,7 +3394,7 @@ PrefabInstance:
     - target: {fileID: 8188805818370081222, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 1729274800, guid: 47d8a91e3026e405a96bac590c863934, type: 3}
+      objectReference: {fileID: 21300000, guid: bfe81a5d0cc546d4b8a14fb7d2901d07, type: 3}
     - target: {fileID: 8867614504195791090, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: CollectableType
       value: 
@@ -3403,6 +3423,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 27198615}
     m_Modifications:
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 11.9
+      objectReference: {fileID: 0}
     - target: {fileID: 4379362936154790578, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: m_Name
       value: Button [Top]
@@ -3494,7 +3530,7 @@ PrefabInstance:
     - target: {fileID: 8188805818370081222, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 21300000, guid: 2564366b0db3b442f96b7d83cc9db628, type: 3}
+      objectReference: {fileID: 21300000, guid: 81ee4f9fc6497fc4da2c39dc83f21b5b, type: 3}
     - target: {fileID: 8867614504195791090, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: CollectableType
       value: 
@@ -24389,6 +24425,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 27198615}
     m_Modifications:
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.8
+      objectReference: {fileID: 0}
+    - target: {fileID: 2240547434388865785, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.8
+      objectReference: {fileID: 0}
     - target: {fileID: 2609625984077573391, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -24488,7 +24532,7 @@ PrefabInstance:
     - target: {fileID: 8188805818370081222, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: m_Sprite
       value: 
-      objectReference: {fileID: 484719879, guid: 47d8a91e3026e405a96bac590c863934, type: 3}
+      objectReference: {fileID: 21300000, guid: e5e31cfe3db15ac47a2f041080138efd, type: 3}
     - target: {fileID: 8867614504195791090, guid: cb898dd879eac436cabcd5ae25a3a4bd, type: 3}
       propertyPath: CollectableType
       value: 
