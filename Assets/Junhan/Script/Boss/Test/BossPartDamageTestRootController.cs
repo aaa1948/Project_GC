@@ -14,12 +14,85 @@ namespace Vampire
     /// Boss Current HP
     /// = 모든 파츠 CurrentHealth 합계
     ///
-    /// 단, Core가 파괴되면
-    /// 다른 파츠 HP와 관계없이 Boss Current HP를 0으로 강제합니다.
+    /// 기존 모드에서는 Core 하나가 파괴되면 전체 사망합니다.
+    /// UFO 모드에서는 지정한 5코어에 최대 HP를 균등 배정하며 모두 파괴되어야 사망합니다.
     /// </summary>
     public sealed class BossPartDamageTestRootController :
         MonoBehaviour
     {
+        [Header("UFO 5 Core Prototype")]
+        [Tooltip("켜면 아래에 지정한 서로 다른 코어 5개만 피해와 HP 합산에 참여합니다. 끄면 기존 단일 Core 규칙을 유지합니다.")]
+        [SerializeField] private bool useFiveCoreHealth;
+
+        [Tooltip("UFO 전체 최대 HP입니다. 각 코어에는 이 값의 20%를 배정합니다. Play 시작 전에 설정하세요.")]
+        [SerializeField, Min(0.05f)] private float fiveCoreMaxHealth = 3010f;
+
+        [Tooltip("빨간 코어의 BossPartDamageTestPart를 연결하세요.")]
+        [SerializeField] private BossPartDamageTestPart redCore;
+        [Tooltip("주황 코어의 BossPartDamageTestPart를 연결하세요.")]
+        [SerializeField] private BossPartDamageTestPart orangeCore;
+        [Tooltip("노란 코어의 BossPartDamageTestPart를 연결하세요.")]
+        [SerializeField] private BossPartDamageTestPart yellowCore;
+        [Tooltip("초록 코어의 BossPartDamageTestPart를 연결하세요.")]
+        [SerializeField] private BossPartDamageTestPart greenCore;
+        [Tooltip("파란 코어의 BossPartDamageTestPart를 연결하세요.")]
+        [SerializeField] private BossPartDamageTestPart blueCore;
+
+        public BossPartDamageTestPart[] FiveCores => new[] { redCore, orangeCore, yellowCore, greenCore, blueCore };
+
+        public float HealLivingCores(float amount)
+        {
+            if (!useFiveCoreHealth || bossDead || !HasValidFiveCoreSetup() ||
+                amount <= 0f || float.IsNaN(amount) || float.IsInfinity(amount)) return 0f;
+            float missing = 0f;
+            foreach (var part in FiveCores)
+                if (!part.IsBroken) missing += Mathf.Max(0f, part.MaxHealth - part.CurrentHealth);
+            if (missing <= 0f) return 0f;
+            float fraction = Mathf.Min(1f, amount / missing);
+            float healed = 0f;
+            foreach (var part in FiveCores)
+                if (!part.IsBroken) healed += part.HealFiveCore((part.MaxHealth - part.CurrentHealth) * fraction);
+            return healed;
+        }
+
+        public bool UsesFiveCoreHealth => useFiveCoreHealth;
+
+        public bool IsFiveCoreMember(BossPartDamageTestPart part)
+        {
+            return part != null && (part == redCore || part == orangeCore ||
+                part == yellowCore || part == greenCore || part == blueCore);
+        }
+
+        public bool CanReceivePartDamage(BossPartDamageTestPart part)
+        {
+            return !bossDead && (!useFiveCoreHealth ||
+                (HasValidFiveCoreSetup() && IsFiveCoreMember(part)));
+        }
+
+        public float GetPartMaxHealth(BossPartDamageTestPart part, float legacyMaxHealth)
+        {
+            return useFiveCoreHealth && IsFiveCoreMember(part)
+                ? Mathf.Max(0.05f, fiveCoreMaxHealth) * 0.2f : legacyMaxHealth;
+        }
+
+        private bool HasValidFiveCoreSetup()
+        {
+            if (float.IsNaN(fiveCoreMaxHealth) || float.IsInfinity(fiveCoreMaxHealth) ||
+                fiveCoreMaxHealth < 0.05f)
+                return false;
+
+            BossPartDamageTestPart[] cores = { redCore, orangeCore, yellowCore, greenCore, blueCore };
+            Transform scope = partsSearchRoot != null ? partsSearchRoot : transform.parent;
+            if (scope == null) scope = transform;
+            for (int i = 0; i < cores.Length; i++)
+            {
+                if (cores[i] == null || !cores[i].transform.IsChildOf(scope)) return false;
+                for (int j = 0; j < i; j++)
+                    if (cores[i] == cores[j]) return false;
+            }
+            return true;
+        }
+
         [Header("파츠 검색")]
 
         [Tooltip(
@@ -43,7 +116,7 @@ namespace Vampire
 
         [Tooltip(
             "현재 감지된 Core 파츠입니다. " +
-            "Torso의 Auto Treat Torso As Core가 켜져 있으면 자동으로 잡힙니다.")]
+            "Torso의 Auto Treat Torso As Core가 켜져 있으면 자동으로 잡힙니다. UFO 모드에서는 단일 대표 Core를 사용하지 않아 비어 있습니다.")]
         [SerializeField]
         private BossPartDamageTestPart corePart;
 
@@ -56,7 +129,7 @@ namespace Vampire
 
         [Tooltip(
             "모든 파츠 CurrentHealth의 합입니다. " +
-            "Core가 파괴되면 0으로 강제됩니다.")]
+            "기존 모드는 단일 Core 파괴 시 0이 되며, UFO 모드는 5코어 합산 HP를 표시합니다.")]
         [SerializeField]
         private float currentBossHealth;
 
@@ -79,6 +152,11 @@ namespace Vampire
     "보스 사망 시 아직 살아 있는 모든 파츠 SpriteRenderer를 함께 숨깁니다.")]
         [SerializeField]
         private bool hideRemainingPartsOnBossDeath = true;
+
+        [Tooltip("UFO 최종 사망 시 숨길 외형의 부모입니다. 비워두면 Parts Search Root, 그다음 이 관리자의 부모를 사용합니다. 보스 바깥의 오브젝트는 연결하지 마세요.")]
+        [SerializeField] private Transform bossDeathVisualRoot;
+
+        private bool runtimeInitialized;
 
         [Header("디버그")]
 
@@ -134,11 +212,15 @@ namespace Vampire
 
         private void OnEnable()
         {
+            if (useFiveCoreHealth && runtimeInitialized) return;
             ResetRuntimeState();
+            runtimeInitialized = true;
         }
 
         private void Start()
         {
+            if (useFiveCoreHealth && !HasValidFiveCoreSetup())
+                Debug.LogError("[UFO HP] 같은 보스 안의 서로 다른 코어 5개와 유효한 최대 HP를 지정하세요. 잘못된 설정에서는 피해와 사망 처리를 차단합니다.", this);
             // 자식들의 Awake / OnEnable 순서에 의존하지 않도록
             // Start에서도 한 번 더 강제로 수집합니다.
             if (autoCollectParts)
@@ -173,6 +255,22 @@ namespace Vampire
         {
             registeredParts.Clear();
             brokenPartIds.Clear();
+
+            if (useFiveCoreHealth)
+            {
+                if (HasValidFiveCoreSetup())
+                {
+                    RegisterPartInternal(redCore);
+                    RegisterPartInternal(orangeCore);
+                    RegisterPartInternal(yellowCore);
+                    RegisterPartInternal(greenCore);
+                    RegisterPartInternal(blueCore);
+                }
+                SyncPartsArray();
+                ResolveCorePart();
+                RecalculateBossHealth();
+                return;
+            }
 
             Transform searchRoot =
                 partsSearchRoot != null
@@ -270,6 +368,8 @@ namespace Vampire
         private bool RegisterPartInternal(
             BossPartDamageTestPart part)
         {
+            if (useFiveCoreHealth && (!HasValidFiveCoreSetup() || !IsFiveCoreMember(part)))
+                return false;
             if (part == null)
             {
                 return false;
@@ -333,6 +433,9 @@ namespace Vampire
         public void NotifyPartBroken(
             BossPartDamageTestPart part)
         {
+            if (bossDead || part == null || !part.IsBroken) return;
+            if (useFiveCoreHealth && (!HasValidFiveCoreSetup() || !IsFiveCoreMember(part)))
+                return;
             if (part == null)
             {
                 return;
@@ -363,6 +466,14 @@ namespace Vampire
                     this);
             }
 
+            if (useFiveCoreHealth)
+            {
+                if (redCore.IsBroken && orangeCore.IsBroken && yellowCore.IsBroken &&
+                    greenCore.IsBroken && blueCore.IsBroken)
+                    HandleBossDeath(part, "5 Core 모두 파괴");
+                return;
+            }
+
             if (part.IsCore)
             {
                 HandleBossDeath(
@@ -387,6 +498,20 @@ namespace Vampire
         /// </summary>
         public void RecalculateBossHealth()
         {
+            if (useFiveCoreHealth)
+            {
+                if (!HasValidFiveCoreSetup())
+                {
+                    totalMaxHealth = 0f;
+                    currentBossHealth = 0f;
+                    return;
+                }
+                totalMaxHealth = fiveCoreMaxHealth;
+                currentBossHealth = bossDead ? 0f : Mathf.Clamp(
+                    redCore.CurrentHealth + orangeCore.CurrentHealth + yellowCore.CurrentHealth +
+                    greenCore.CurrentHealth + blueCore.CurrentHealth, 0f, totalMaxHealth);
+                return;
+            }
             float maxHealthSum = 0f;
             float currentHealthSum = 0f;
 
@@ -433,6 +558,9 @@ namespace Vampire
         private void ResolveCorePart()
         {
             corePart = null;
+
+            // 단일 Core용 기믹이 임의의 색상 하나를 대표 Core로 사용하지 않게 합니다.
+            if (useFiveCoreHealth) return;
 
             int coreCount = 0;
 
@@ -523,6 +651,14 @@ namespace Vampire
                         part.SetVisualEnabled(false);
                     }
                 }
+
+                if (useFiveCoreHealth)
+                {
+                    Transform visualRoot = bossDeathVisualRoot != null ? bossDeathVisualRoot : partsSearchRoot;
+                    if (visualRoot == null) visualRoot = transform.parent != null ? transform.parent : transform;
+                    foreach (SpriteRenderer renderer in visualRoot.GetComponentsInChildren<SpriteRenderer>(true))
+                        renderer.enabled = false;
+                }
             }
 
             if (debugLog)
@@ -543,6 +679,11 @@ namespace Vampire
         [ContextMenu("Reset Whole Test Boss")]
         public void ResetWholeTestBoss()
         {
+            if (useFiveCoreHealth && runtimeInitialized)
+            {
+                Debug.LogWarning("[UFO Boss] 보상/패턴 상태까지 초기화하려면 테스트 스포너에서 보스를 새로 생성하세요.", this);
+                return;
+            }
             bossDead = false;
 
             brokenPartIds.Clear();
@@ -592,6 +733,7 @@ namespace Vampire
 
         private void SyncPartsArray()
         {
+            brokenPartCount = brokenPartIds.Count;
             parts =
                 registeredParts.ToArray();
         }

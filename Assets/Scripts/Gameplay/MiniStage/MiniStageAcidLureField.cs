@@ -75,17 +75,11 @@ namespace Vampire
         [SerializeField] private bool disableAllRenderersOnComplete = true;
 
         [Header("Render Order")]
-        [Tooltip("위산 장판과 진행도 마커의 Sorting Layer/Order를 이 스크립트에서 강제로 적용할지 여부입니다.")]
-        [SerializeField] private bool forceRenderOrder = true;
 
-        [Tooltip("위산 장판 SpriteRenderer에 적용할 Sorting Layer 이름입니다. 현재 프로젝트에서는 Default를 추천합니다.")]
-        [SerializeField] private string acidSortingLayerName = "Default";
 
         [Tooltip("위산 장판 SpriteRenderer에 적용할 Order in Layer입니다. 배경보다 위, 몬스터/플레이어보다 아래가 되도록 -700을 추천합니다.")]
         [SerializeField] private int acidSortingOrder = -700;
 
-        [Tooltip("진행도 마커 SpriteRenderer에 적용할 Sorting Layer 이름입니다.")]
-        [SerializeField] private string markerSortingLayerName = "Default";
 
         [Tooltip("진행도 마커 SpriteRenderer에 적용할 Order in Layer입니다. 위산 장판보다 살짝 위, 몬스터/플레이어보다 아래가 되도록 -690을 추천합니다.")]
         [SerializeField] private int markerSortingOrder = -690;
@@ -144,6 +138,17 @@ namespace Vampire
         public int CurrentKillCount => currentKillCount;
         public int RequiredKillCount => requiredKillCount;
         public bool IsCompleted => isCompleted;
+
+        private void OnEnable() { Monster.Died += OnMonsterDiedOnField; }
+        private void OnDisable() { Monster.Died -= OnMonsterDiedOnField; }
+
+        private void OnMonsterDiedOnField(Monster monster)
+        {
+            if (isCompleted || monster == null || !monster.IsMiniStageOwned || triggerCollider == null) return;
+            // Check at death, before the hitbox is disabled and before the corpse animation finishes.
+            if (triggerCollider.OverlapPoint(monster.transform.position))
+                TryCountMonsterForField(monster, false, false);
+        }
 
         private void Reset()
         {
@@ -605,7 +610,7 @@ namespace Vampire
                 }
                 else
                 {
-                    monster.TakeDamage(damageThisTick, Vector2.zero, false);
+                    monster.TakePeriodicDamage(damageThisTick, Vector2.zero, false);
                 }
             }
         }
@@ -740,10 +745,10 @@ namespace Vampire
 
             Debug.LogWarning(
                 "[MiniStageAcidLureField] Monster.currentHealth 필드를 찾지 못했습니다. " +
-                "임시로 Monster.TakeDamage() 막타 처리를 사용합니다."
+                "임시로 Monster.TakePeriodicDamage() 막타 처리를 사용합니다."
             );
 
-            monster.TakeDamage(monster.HP, Vector2.zero, false);
+            monster.TakePeriodicDamage(monster.HP, Vector2.zero, false);
         }
 
         private void CompleteField()
@@ -1059,15 +1064,9 @@ namespace Vampire
 
         private void ApplyRenderOrder()
         {
-            if (!forceRenderOrder)
-            {
-                return;
-            }
-
             if (acidSpriteRenderer != null)
             {
-                acidSpriteRenderer.sortingLayerName = acidSortingLayerName;
-                acidSpriteRenderer.sortingOrder = acidSortingOrder;
+                GroundVisualSorting.Apply(acidSpriteRenderer, acidSortingOrder);
             }
 
             if (progressMarkerRoot == null)
@@ -1084,8 +1083,7 @@ namespace Vampire
                     continue;
                 }
 
-                markerRenderers[i].sortingLayerName = markerSortingLayerName;
-                markerRenderers[i].sortingOrder = markerSortingOrder;
+                GroundVisualSorting.Apply(markerRenderers[i], markerSortingOrder);
             }
         }
 

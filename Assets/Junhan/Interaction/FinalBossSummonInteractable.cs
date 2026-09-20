@@ -1,10 +1,11 @@
+using System.Collections;
 using UnityEngine;
 
 namespace Vampire
 {
     /// <summary>
-    /// 상호작용 시 LevelBlueprint의 Final Boss를 즉시 소환하는 오브젝트.
-    /// 소환 시점에 따라 보스 HP / 데미지 / 패턴 데미지를 강화한다.
+    /// 상호작용 시 LevelBlueprint의 Final Boss를 송신과 하강 연출 후 소환하는 오브젝트.
+    /// 수동/자동 호출 모두 같은 연출과 고정 전투 수치를 사용한다.
     /// </summary>
     public class FinalBossSummonInteractable : InteractableEventObject
     {
@@ -19,39 +20,6 @@ namespace Vampire
 
         [SerializeField] private Transform fixedSpawnPoint;
 
-        [Header("Time Based Boss Scaling")]
-        [Tooltip("체크하면 현재 플레이 시간에 따라 보스 HP와 데미지가 변경됩니다.")]
-        [SerializeField] private bool applyTimeBasedScaling = true;
-
-        [Tooltip("true면 LevelManager의 LevelDuration을 기준으로 분 단위를 계산합니다.")]
-        [SerializeField] private bool useLevelDurationAsMaxMinute = true;
-
-        [Tooltip("useLevelDurationAsMaxMinute이 꺼져 있을 때 사용할 최대 기준 분입니다.")]
-        [SerializeField] private float manualMaxScaleMinute = 20f;
-
-        [Tooltip("현재 플레이 시간 기준 HP 배율입니다. X축은 분, Y축은 배율입니다.")]
-        [SerializeField]
-        private AnimationCurve hpMultiplierByMinute = new AnimationCurve(
-            new Keyframe(0f, 0.70f),
-            new Keyframe(5f, 0.85f),
-            new Keyframe(10f, 1.00f),
-            new Keyframe(15f, 1.30f),
-            new Keyframe(20f, 1.70f)
-        );
-
-        [Tooltip("현재 플레이 시간 기준 데미지 배율입니다. 기본 공격, 접촉 피해, 패턴 피해에 적용됩니다.")]
-        [SerializeField]
-        private AnimationCurve damageMultiplierByMinute = new AnimationCurve(
-            new Keyframe(0f, 0.70f),
-            new Keyframe(5f, 0.85f),
-            new Keyframe(10f, 1.00f),
-            new Keyframe(15f, 1.20f),
-            new Keyframe(20f, 1.45f)
-        );
-
-        [Tooltip("체크하면 보스 스케일링 로그를 출력합니다.")]
-        [SerializeField] private bool debugBossScaling = true;
-
         [Header("Duplicate Prevention")]
         [Tooltip("true면 이미 보스가 존재할 때 추가 소환하지 않습니다.")]
         [SerializeField] private bool preventDuplicateBoss = true;
@@ -59,21 +27,56 @@ namespace Vampire
         [Tooltip("true면 상호작용으로 보스를 소환한 뒤 기존 BossLevelSpawner를 비활성화합니다.")]
         [SerializeField] private bool disableBossLevelSpawnersAfterSpawn = true;
 
-        private static bool bossSummonedByInteraction = false;
+        private static FinalBossSummonInteractable pendingSummon;
+        public static bool IsSummoning => pendingSummon != null;
+        private BossSummonPresentation presentation;
+        private bool summoning;
+        protected override bool KeepVisibleAfterInteraction => true;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetStaticStateOnPlayStart()
         {
-            bossSummonedByInteraction = false;
+            pendingSummon = null;
         }
 
         protected override void Awake()
         {
-            // 다시하기로 씬이 재로드될 때 static 값이 남아서
-            // 실제 보스가 없는데도 "이미 보스가 존재"한다고 판단하는 문제 방지.
-            bossSummonedByInteraction = false;
-
             base.Awake();
+            presentation = gameObject.AddComponent<BossSummonPresentation>();
+            presentation.Initialize(GetComponent<SpriteRenderer>());
+        }
+
+        protected override void OnDisable()
+        {
+            StopAllCoroutines();
+            if (presentation != null) presentation.ResetStandby();
+            if (pendingSummon == this) pendingSummon = null;
+            if (summoning) ResetInteractionAvailability();
+            summoning = false;
+            base.OnDisable();
+        }
+
+        public bool TryAutomaticSummon()
+        {
+            if (!isActiveAndEnabled || HasInteracted || Time.timeScale <= 0f ||
+                MiniStageRuntimeState.IsInsideMiniStage) return false;
+            if (levelManager == null) levelManager = FindObjectOfType<LevelManager>();
+            if (levelManager == null || levelManager.IsRunFlowPaused || levelManager.IsLevelEnded) return false;
+            if (!ExecuteInteraction(levelManager.PlayerCharacter)) return false;
+            // A player can leave the terminal far behind. Keep automatic transmission visible.
+            Camera camera = Camera.main;
+            if (camera != null)
+            {
+                Vector3 viewport = camera.WorldToViewportPoint(transform.position);
+                if (viewport.z <= 0f || viewport.x < .15f || viewport.x > .85f || viewport.y < .15f || viewport.y > .85f)
+                {
+                    float depth = camera.WorldToViewportPoint(levelManager.PlayerCharacter.transform.position).z;
+                    Vector3 visible = camera.ViewportToWorldPoint(new Vector3(.5f, .6f, depth));
+                    transform.position = new Vector3(visible.x, visible.y, transform.position.z);
+                }
+            }
+            CompleteInteraction();
+            return true;
         }
 
         protected override bool ExecuteInteraction(Character player)
@@ -106,7 +109,7 @@ namespace Vampire
                 return false;
             }
 
-            if (preventDuplicateBoss && IsBossAlreadyPresent())
+            if (summoning || IsSummoning || (preventDuplicateBoss && IsBossAlreadyPresent()))
             {
                 if (debugLog)
                 {
@@ -116,38 +119,41 @@ namespace Vampire
                 return false;
             }
 
-            float currentMinute = GetCurrentLevelMinute();
-            float hpMultiplier = 1f;
-            float damageMultiplier = 1f;
+            pendingSummon = this;
+            summoning = true;
+            StartCoroutine(SummonSequence(player, levelBlueprint));
+            return true;
+        }
 
-            if (applyTimeBasedScaling)
+        private IEnumerator SummonSequence(Character player, LevelBlueprint blueprint)
+        {
+            bool success = false;
+            try
             {
-                hpMultiplier = BossTimeScalingUtility.EvaluateMultiplier(
-                    hpMultiplierByMinute,
-                    currentMinute,
-                    1f
-                );
-
-                damageMultiplier = BossTimeScalingUtility.EvaluateMultiplier(
-                    damageMultiplierByMinute,
-                    currentMinute,
-                    1f
-                );
+                yield return presentation.Transmit();
+                if (levelManager == null || levelManager.CurrentLevelBlueprint != blueprint) yield break;
+                Vector3 landing = GetSpawnPosition(player);
+                yield return presentation.Descend(blueprint.finalBoss.bossPrefab, landing);
+                if (levelManager == null || levelManager.CurrentLevelBlueprint != blueprint) yield break;
+                success = SpawnConfiguredBoss(blueprint, landing);
+                presentation.FinishArrival();
             }
+            finally
+            {
+                if (pendingSummon == this) pendingSummon = null;
+                summoning = false;
+                if (!success)
+                {
+                    presentation.ResetStandby();
+                    ResetInteractionAvailability();
+                }
+            }
+        }
 
-            float bossHpBuff = applyTimeBasedScaling
-                ? BossTimeScalingUtility.CalculateMonsterHpBuff(levelBlueprint.finalBoss.bossBlueprint, hpMultiplier)
-                : 0f;
-
-            int bossPoolIndex = levelBlueprint.monsters.Length;
-            Vector3 spawnPosition = GetSpawnPosition(player);
-
-            Monster spawnedBoss = levelManager.EntityManager.SpawnMonster(
-                bossPoolIndex,
-                spawnPosition,
-                levelBlueprint.finalBoss.bossBlueprint,
-                bossHpBuff
-            );
+        private bool SpawnConfiguredBoss(LevelBlueprint levelBlueprint, Vector3 spawnPosition)
+        {
+            GameObject spawnedBoss = levelManager.EntityManager.SpawnFinalBoss(
+                levelBlueprint, spawnPosition);
 
             if (spawnedBoss == null)
             {
@@ -155,7 +161,9 @@ namespace Vampire
                 return false;
             }
 
-            spawnedBoss.OnKilled.AddListener(levelManager.LevelPassed);
+            Monster legacyBoss = spawnedBoss.GetComponent<Monster>();
+            if (legacyBoss != null) legacyBoss.OnKilled.AddListener(levelManager.LevelPassed);
+            levelManager.NotifyExternalFinalBossSpawned();
 
             BossController bossController = spawnedBoss.GetComponent<BossController>();
 
@@ -169,17 +177,8 @@ namespace Vampire
                 bossController.SetPlayerCharacter(levelManager.PlayerCharacter);
             }
 
-            if (applyTimeBasedScaling)
-            {
-                BossTimeScalingUtility.ApplyToSpawnedBoss(
-                    spawnedBoss.gameObject,
-                    hpMultiplier,
-                    damageMultiplier,
-                    debugBossScaling
-                );
-            }
 
-            bossSummonedByInteraction = true;
+            GameAudioManager.StartBossAudio();
 
             if (disableBossLevelSpawnersAfterSpawn)
             {
@@ -190,8 +189,7 @@ namespace Vampire
             {
                 Debug.Log(
                     $"[FinalBossSummonInteractable] 최종보스 소환 완료 | " +
-                    $"Minute={currentMinute:0.##} | HP x{hpMultiplier:0.##} | Damage x{damageMultiplier:0.##} | " +
-                    $"HpBuff={bossHpBuff:0.##} | PoolIndex={bossPoolIndex} | Position={spawnPosition} | Boss={spawnedBoss.name}",
+                    $"Position={spawnPosition} | Boss={spawnedBoss.name}",
                     this
                 );
             }
@@ -199,26 +197,6 @@ namespace Vampire
             return true;
         }
 
-        private float GetCurrentLevelMinute()
-        {
-            if (levelManager == null)
-            {
-                return 0f;
-            }
-
-            float currentMinute = levelManager.CurrentLevelTime / 60f;
-
-            float maxMinute = manualMaxScaleMinute;
-
-            if (useLevelDurationAsMaxMinute && levelManager.LevelDuration > 0f)
-            {
-                maxMinute = levelManager.LevelDuration / 60f;
-            }
-
-            maxMinute = Mathf.Max(0.1f, maxMinute);
-
-            return Mathf.Clamp(currentMinute, 0f, maxMinute);
-        }
 
         private Vector3 GetSpawnPosition(Character player)
         {
@@ -252,7 +230,7 @@ namespace Vampire
 
         private bool IsBossAlreadyPresent()
         {
-            if (bossSummonedByInteraction)
+            if (IsSummoning)
             {
                 return true;
             }
@@ -265,13 +243,13 @@ namespace Vampire
 
         private void DisableBossLevelSpawners()
         {
-            BossLevelSpawner[] bossSpawners = FindObjectsOfType<BossLevelSpawner>();
+            TimedSpecialMonsterSpawner[] bossSpawners = FindObjectsOfType<TimedSpecialMonsterSpawner>();
 
             for (int i = 0; i < bossSpawners.Length; i++)
             {
                 if (bossSpawners[i] != null)
                 {
-                    bossSpawners[i].enabled = false;
+                    bossSpawners[i].DisableScheduledFinalBosses();
                 }
             }
 

@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Generic;
 using System.Reflection;
 using UnityEngine;
 
@@ -81,8 +82,6 @@ namespace Vampire
         [Tooltip("피 흔적의 최대 크기입니다.")]
         [SerializeField] private float bloodTrailMaxSize = 0.38f;
 
-        [Tooltip("피 흔적의 Sorting Layer 이름입니다. 바닥 위에 보이되 몬스터보다 뒤에 두는 값을 추천합니다.")]
-        [SerializeField] private string bloodTrailSortingLayerName = "Default";
 
         [Tooltip("피 흔적의 Order in Layer입니다. 값이 높을수록 앞에 보입니다.")]
         [SerializeField] private int bloodTrailSortingOrder = -5;
@@ -188,6 +187,11 @@ namespace Vampire
         /// </summary>
         protected override void Update()
         {
+            if (IsFieldRuntimeSuspended)
+            {
+                return;
+            }
+
             if (!alive)
             {
                 return;
@@ -203,6 +207,11 @@ namespace Vampire
         /// </summary>
         protected override void FixedUpdate()
         {
+            if (IsFieldRuntimeSuspended)
+            {
+                return;
+            }
+
             if (!alive || rb == null)
             {
                 return;
@@ -255,7 +264,15 @@ namespace Vampire
 
         private IEnumerator MovePhaseRoutine()
         {
-            yield return new WaitForSeconds(Mathf.Max(0.1f, moveDuration));
+            yield return WaitForFieldRuntimeSeconds(
+                Mathf.Max(0.1f, moveDuration)
+            );
+
+            if (!alive || currentState != LeechState.Moving)
+            {
+                stateRoutine = null;
+                yield break;
+            }
 
             stateRoutine = null;
             StartFeedingPhase();
@@ -290,7 +307,15 @@ namespace Vampire
 
         private IEnumerator FeedingPhaseRoutine()
         {
-            yield return new WaitForSeconds(Mathf.Max(0.1f, feedingDuration));
+            yield return WaitForFieldRuntimeSeconds(
+                Mathf.Max(0.1f, feedingDuration)
+            );
+
+            if (!alive || currentState != LeechState.Feeding)
+            {
+                stateRoutine = null;
+                yield break;
+            }
 
             stateRoutine = null;
 
@@ -300,13 +325,43 @@ namespace Vampire
 
                 if (debugLog)
                 {
-                    Debug.Log("[AcidLeechMonster] 흡혈 완료 - 랜덤 난이도 상승 시도", this);
+                    Debug.Log(
+                        "[AcidLeechMonster] 흡혈 완료 - 랜덤 난이도 상승 시도",
+                        this
+                    );
                 }
             }
 
             StartMovingPhase();
         }
+        /// <summary>
+        /// MiniStage 진행 중에는 elapsed를 증가시키지 않는 대기 함수.
+        ///
+        /// 일반 WaitForSeconds를 사용하면
+        /// 플레이어가 MiniStage에 있는 동안에도
+        /// 위산 거머리의 이동/흡혈 페이즈 시간이 진행되기 때문에
+        /// 이 몬스터의 gameplay timer는 이 함수를 사용한다.
+        /// </summary>
+        private IEnumerator WaitForFieldRuntimeSeconds(float duration)
+        {
+            float safeDuration = Mathf.Max(0f, duration);
+            float elapsed = 0f;
 
+            while (elapsed < safeDuration)
+            {
+                if (!alive)
+                {
+                    yield break;
+                }
+
+                if (!IsFieldRuntimeSuspended)
+                {
+                    elapsed += Time.deltaTime;
+                }
+
+                yield return null;
+            }
+        }
         private void PrepareCurvePath()
         {
             moveStartPosition = transform.position;
@@ -398,6 +453,8 @@ namespace Vampire
             }
         }
 
+        private readonly List<GameObject> bloodTrails = new List<GameObject>();
+
         private void SpawnBloodTrail(Vector2 position)
         {
             Sprite sprite = GetWhiteSprite();
@@ -408,6 +465,7 @@ namespace Vampire
             }
 
             GameObject trailObject = new GameObject("AcidLeech_BloodTrail");
+            bloodTrails.Add(trailObject);
             trailObject.transform.position = position;
 
             float minSize = Mathf.Max(0.01f, bloodTrailMinSize);
@@ -424,8 +482,7 @@ namespace Vampire
             SpriteRenderer sr = trailObject.AddComponent<SpriteRenderer>();
             sr.sprite = sprite;
             sr.color = bloodTrailColor;
-            sr.sortingLayerName = bloodTrailSortingLayerName;
-            sr.sortingOrder = bloodTrailSortingOrder;
+            GroundVisualSorting.Apply(sr, bloodTrailSortingOrder);
 
             StartCoroutine(FadeAndDestroyBloodTrail(sr, trailObject, bloodTrailLifetime));
         }
@@ -435,11 +492,13 @@ namespace Vampire
             GameObject trailObject,
             float lifetime)
         {
+            // Scheduled destruction survives the owner being disabled or its coroutines stopping.
+            Destroy(trailObject, Mathf.Max(0.1f, lifetime));
             float safeLifetime = Mathf.Max(0.1f, lifetime);
             float elapsed = 0f;
             Color startColor = sr != null ? sr.color : bloodTrailColor;
 
-            while (elapsed < safeLifetime)
+            while (elapsed < safeLifetime && trailObject != null)
             {
                 elapsed += Time.deltaTime;
 
@@ -452,6 +511,7 @@ namespace Vampire
                 yield return null;
             }
 
+            bloodTrails.Remove(trailObject);
             if (trailObject != null)
             {
                 Destroy(trailObject);
@@ -486,6 +546,12 @@ namespace Vampire
 
             while (alive)
             {
+                if (IsFieldRuntimeSuspended)
+                {
+                    yield return null;
+                    continue;
+                }
+
                 if (frames != null && frames.Length > 0)
                 {
                     monsterSpriteRenderer.sprite = frames[frameIndex];
@@ -555,6 +621,7 @@ namespace Vampire
             }
 
             currentState = LeechState.Dead;
+            ClearBloodTrails();
             RestoreMovementPhysicsSettings();
             StopRuntimeCoroutines();
 
@@ -754,8 +821,21 @@ namespace Vampire
             return whiteSprite;
         }
 
+        private void ClearBloodTrails()
+        {
+            foreach (GameObject trail in bloodTrails)
+            {
+                if (trail != null)
+                {
+                    trail.SetActive(false);
+                    Destroy(trail);
+                }
+            }
+            bloodTrails.Clear();
+        }
         private void OnDisable()
         {
+            ClearBloodTrails();
             RestoreMovementPhysicsSettings();
             StopRuntimeCoroutines();
         }

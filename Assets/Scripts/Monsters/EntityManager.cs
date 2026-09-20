@@ -180,6 +180,24 @@ namespace Vampire
         ////////////////////////////////////////////////////////////////////////////////
         /// Monster Spawning
         ////////////////////////////////////////////////////////////////////////////////
+        // UFO bosses own their five-core health and rewards; they are not MonsterPool entries.
+        public GameObject SpawnFinalBoss(LevelBlueprint blueprint, Vector2 position, float hpBuff = 0f)
+        {
+            if (ShouldBlockFieldMonsterSpawn(false) || blueprint == null ||
+                blueprint.finalBoss == null || blueprint.finalBoss.bossPrefab == null) return null;
+            GameObject prefab = blueprint.finalBoss.bossPrefab;
+            if (prefab.GetComponent<Monster>() != null)
+            {
+                Monster monster = SpawnMonster(blueprint.monsters.Length, position,
+                    blueprint.finalBoss.bossBlueprint, hpBuff);
+                return monster != null ? monster.gameObject : null;
+            }
+            var boss = Instantiate(prefab, position, Quaternion.identity, transform);
+            var controller = boss.GetComponentInChildren<BossController>(true);
+            if (controller != null) controller.SetPlayerCharacter(playerCharacter);
+            return boss;
+        }
+
         public Monster SpawnMonsterRandomPosition(
     int monsterPoolIndex,
     MonsterBlueprint monsterBlueprint,
@@ -259,8 +277,24 @@ namespace Vampire
             }
 
             Monster newMonster = monsterPools[monsterPoolIndex].Get();
-            newMonster.Setup(monsterPoolIndex, position, monsterBlueprint, hpBuff);
+
+            // 중요:
+            // Setup()보다 먼저 소유권을 설정해야 한다.
+            //
+            // 이유:
+            // SniperMonster / TrapMonster처럼 base.Setup()을 호출하지 않고
+            // 자체 Setup()을 사용하는 특수 몬스터도 있기 때문이다.
+            newMonster.PrepareForSpawnRuntime(allowDuringMiniStage);
+
+            newMonster.Setup(
+                monsterPoolIndex,
+                position,
+                monsterBlueprint,
+                hpBuff
+            );
+
             grid.InsertClient(newMonster);
+
             return newMonster;
         }
         private bool ShouldBlockFieldMonsterSpawn(bool allowDuringMiniStage)
@@ -271,6 +305,35 @@ namespace Vampire
             }
 
             return MiniStageRuntimeState.IsInsideMiniStage;
+        }
+        /// <summary>
+        /// 현재 살아있는 메인 필드 몬스터들의 행동을
+        /// MiniStage 진입/종료에 맞춰 정지 또는 재개합니다.
+        ///
+        /// MiniStage 전용 몬스터는 Monster 내부에서 자동 제외됩니다.
+        /// </summary>
+        public void SetFieldMonsterRuntimeSuspended(bool suspended)
+        {
+            foreach (var boss in FindObjectsOfType<BossController>()) boss.SetFieldRuntimeSuspended(suspended);
+            if (suspended)
+            {
+                foreach (var bullet in FindObjectsOfType<BossSimpleBullet>()) Destroy(bullet.gameObject);
+                foreach (var missile in FindObjectsOfType<BossHomingMissile>()) Destroy(missile.gameObject);
+            }
+            if (livingMonsters == null)
+            {
+                return;
+            }
+
+            foreach (Monster monster in livingMonsters.ToList())
+            {
+                if (monster == null)
+                {
+                    continue;
+                }
+
+                monster.SetFieldRuntimeSuspended(suspended);
+            }
         }
         public void DespawnMonster(int monsterPoolIndex, Monster monster, bool killedByPlayer = true)
         {
@@ -346,15 +409,30 @@ namespace Vampire
         ////////////////////////////////////////////////////////////////////////////////
         /// Exp Gem Spawning
         ////////////////////////////////////////////////////////////////////////////////
+        private readonly HashSet<ExpGem> miniStageGems = new HashSet<ExpGem>();
+        private readonly HashSet<Coin> miniStageCoins = new HashSet<Coin>();
+        public void ClearMiniStagePickups()
+        {
+            foreach (var gem in new List<ExpGem>(miniStageGems))
+                if (gem != null && gem.gameObject.activeSelf) DespawnGem(gem);
+            foreach (var coin in new List<Coin>(miniStageCoins))
+                if (coin != null && coin.gameObject.activeSelf) DespawnCoin(coin, false);
+            miniStageGems.Clear();
+            miniStageCoins.Clear();
+        }
+
         public ExpGem SpawnExpGem(Vector2 position, GemType gemType = GemType.White1, bool spawnAnimation = true)
         {
             ExpGem newGem = expGemPool.Get();
             newGem.Setup(position, gemType, spawnAnimation);
+            if (MiniStageRuntimeState.IsInsideMiniStage) miniStageGems.Add(newGem);
             return newGem;
         }
 
         public void DespawnGem(ExpGem gem)
         {
+            miniStageGems.Remove(gem);
+            if (MagneticCollectables.Contains(gem)) MagneticCollectables.Remove(gem);
             expGemPool.Release(gem);
         }
 
@@ -373,17 +451,35 @@ namespace Vampire
         ////////////////////////////////////////////////////////////////////////////////
         public Coin SpawnCoin(Vector2 position, CoinType coinType = CoinType.Bronze1, bool spawnAnimation = true)
         {
+            return SpawnCoin(position, coinType, spawnAnimation, true);
+        }
+
+        public Coin SpawnCoin(Vector2 position, CoinType coinType, bool spawnAnimation, bool collectableDuringSpawn)
+        {
             Coin newCoin = coinPool.Get();
-            newCoin.Setup(position, coinType, spawnAnimation);
+            newCoin.Setup(position, coinType, spawnAnimation, collectableDuringSpawn);
+            if (MiniStageRuntimeState.IsInsideMiniStage) miniStageCoins.Add(newCoin);
             return newCoin;
         }
 
         public void DespawnCoin(Coin coin, bool pickedUpByPlayer = true)
         {
+            miniStageCoins.Remove(coin);
+            if (MagneticCollectables.Contains(coin)) MagneticCollectables.Remove(coin);
             if (pickedUpByPlayer)
             {
                 int baseCoinValue = (int)coin.CoinType;
                 int finalCoinValue = StageEventRuntimeModifiers.ApplyCoinValueMultiplier(baseCoinValue);
+
+                PlayerGeneralStatRuntime statRuntime =
+                    playerCharacter != null
+                        ? playerCharacter.GetComponent<PlayerGeneralStatRuntime>()
+                        : null;
+
+                if (statRuntime != null)
+                {
+                    finalCoinValue = statRuntime.ApplyGoldGainMultiplier(finalCoinValue);
+                }
 
                 statsManager.IncreaseCoinsGained(finalCoinValue);
 

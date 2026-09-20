@@ -12,6 +12,7 @@ namespace Vampire
     {
         private readonly List<float> stackExpireTimes = new List<float>();
 
+        private SyringeAugmentVfx augmentVisual;
         private Monster ownerMonster;
         private EntityManager entityManager;
 
@@ -19,6 +20,7 @@ namespace Vampire
         private int requiredStacks = 3;
         private int maxStacks = 5;
         private int bonusGemCount = 1;
+        public float ExtraGemChance { get; set; }
         private GemType bonusGemType = GemType.White1;
         private float bonusGemSpawnRadius = 0.35f;
         private bool debugLog = false;
@@ -67,6 +69,10 @@ namespace Vampire
                 stackExpireTimes.RemoveAt(0);
             }
 
+            if (augmentVisual == null && SyringeAugmentVfx.IsLiving(this))
+                augmentVisual = SyringeAugmentVfx.Play("GutBacteriaNeedle", transform.position, SyringeAugmentVfx.FindTarget(ownerMonster));
+            if (augmentVisual != null) augmentVisual.SetStrength(Mathf.Lerp(0.4f, 1f, stackExpireTimes.Count / (float)this.maxStacks));
+
             if (this.debugLog)
             {
                 Debug.Log(
@@ -96,14 +102,19 @@ namespace Vampire
         {
             RemoveExpiredStacks();
 
+            if (!SyringeAugmentVfx.IsLiving(this))
+                SyringeAugmentVfx.ReleaseOwned(ref augmentVisual);
+
             if (stackExpireTimes.Count <= 0)
             {
+                SyringeAugmentVfx.ReleaseOwned(ref augmentVisual);
                 Destroy(this);
             }
         }
 
         private void OnOwnerKilled(Monster killedMonster)
         {
+            SyringeAugmentVfx.ReleaseOwned(ref augmentVisual);
             if (rewardGiven)
             {
                 return;
@@ -133,7 +144,8 @@ namespace Vampire
                 ? (Vector2)killedMonster.transform.position
                 : (Vector2)transform.position;
 
-            for (int i = 0; i < bonusGemCount; i++)
+            int finalGemCount = bonusGemCount + (Random.value < ExtraGemChance ? 1 : 0);
+            for (int i = 0; i < finalGemCount; i++)
             {
                 Vector2 offset = Random.insideUnitCircle * bonusGemSpawnRadius;
                 entityManager.SpawnExpGem(center + offset, bonusGemType, true);
@@ -161,8 +173,19 @@ namespace Vampire
             }
         }
 
+        private void OnDisable()
+        {
+            ExtraGemChance = 0;
+            SyringeAugmentVfx.ReleaseOwned(ref augmentVisual);
+            stackExpireTimes.Clear();
+            rewardGiven = false;
+            if (ownerMonster != null) ownerMonster.OnKilled.RemoveListener(OnOwnerKilled);
+            initialized = false;
+        }
+
         private void OnDestroy()
         {
+            SyringeAugmentVfx.ReleaseOwned(ref augmentVisual);
             if (ownerMonster != null)
             {
                 ownerMonster.OnKilled.RemoveListener(OnOwnerKilled);

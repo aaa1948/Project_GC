@@ -27,6 +27,8 @@ MonoBehaviour:
   walkSpriteSequence:
   - {fileID: -1159827789, guid: 5c133df4e168243918889aa50bab75fb, type: 3}
   walkFrameTime: 0.2
+  description: ??
+  resultSprite: {fileID: 0}
   meleeLayer:
     serializedVersion: 2
     m_Bits: 0
@@ -35,7 +37,7 @@ MonoBehaviour:
   useSourceCombatStats: 1
   useSourceLootTables: 1
   scaleMultiplier: 2
-  hpMultiplier: 4
+  hpMultiplier: 2.5
   silverRewardCalls: 2
   guaranteedExtraCoinCount: 2
   guaranteedExtraCoinType: 5

@@ -12,7 +12,7 @@ namespace Vampire
     public class OrganCompressionField : MonoBehaviour
     {
         private readonly Dictionary<int, float> nextDamageTimes = new Dictionary<int, float>();
-        private readonly List<LineRenderer> spiralLines = new List<LineRenderer>();
+        private SyringeAugmentVfx augmentVisual;
 
         private Vector2 center;
         private float radius;
@@ -23,14 +23,9 @@ namespace Vampire
         private LayerMask monsterLayer;
 
         private float endTime;
-        private float visualSpinAngle;
         private SyringeDartAbility sourceNeedleAbility;
-        private LineRenderer outerCircleLine;
-        private LineRenderer innerPulseLine;
+        private Character sourceCharacter;
 
-        private const int CirclePointCount = 96;
-        private const int SpiralArmCount = 4;
-        private const int SpiralPointCount = 42;
         private struct CompressionTarget
         {
             public IDamageable damageable;
@@ -55,6 +50,16 @@ SyringeDartAbility sourceNeedleAbility)
             this.pullSpeed = Mathf.Max(0f, pullSpeed);
             this.monsterLayer = monsterLayer;
             this.sourceNeedleAbility = sourceNeedleAbility;
+
+            // 장기압착 피해의 원본 플레이어를 캐시한다.
+            // SyringeDartAbility는 플레이어 쪽 Ability이므로 같은 오브젝트/부모에서 Character를 찾는다.
+            if (sourceNeedleAbility != null)
+            {
+                sourceCharacter =
+                    sourceNeedleAbility.GetComponent<Character>() ??
+                    sourceNeedleAbility.GetComponentInParent<Character>();
+            }
+
             transform.position = center;
             endTime = Time.time + this.duration;
 
@@ -75,6 +80,7 @@ SyringeDartAbility sourceNeedleAbility)
 
         private void ApplyCompression()
         {
+            if (sourceCharacter != null && sourceCharacter.IsTrapBound) return;
             List<CompressionTarget> targets = GetDamageableTargetsInRadius();
 
             for (int i = 0; i < targets.Count; i++)
@@ -284,6 +290,7 @@ SyringeDartAbility sourceNeedleAbility)
 
         private void PullTarget(CompressionTarget target)
         {
+            if (target.component.GetComponentInParent<BloodClotObstacle>() != null) return;
             Vector2 targetPosition = GetTargetWorldPosition(target);
             Vector2 toCenter = center - targetPosition;
             float distance = toCenter.magnitude;
@@ -345,6 +352,7 @@ SyringeDartAbility sourceNeedleAbility)
 
         private void TryDamageTarget(CompressionTarget target)
         {
+            if (sourceCharacter != null && sourceCharacter.IsTrapBound) return;
             if (target.damageable == null || target.component == null)
             {
                 return;
@@ -375,18 +383,40 @@ SyringeDartAbility sourceNeedleAbility)
                 finalDamage *= statusDamageMultiplier;
             }
 
-            target.damageable.TakeDamage(finalDamage, Vector2.zero, false);
+            target.damageable.TakePeriodicDamage(finalDamage, Vector2.zero, false);
+            var reaction = SyringeAugmentVfx.Play("OrganCompressionHit", GetTargetWorldPosition(target), SyringeAugmentVfx.FindTarget(target.component));
+            if (reaction != null) reaction.BindTo(target.component.transform);
+
+            // 장기압착은 Projectile.OnHitDamageable을 거치지 않는 독립 피해이므로
+            // 기존 전체 피해량 시스템에 여기서 정확히 1회 기록한다.
+            if (finalDamage > 0f &&
+                sourceCharacter != null &&
+                sourceCharacter.OnDealDamage != null)
+            {
+                sourceCharacter.OnDealDamage.Invoke(finalDamage);
+            }
+
+            // 결과 화면의 "가장 피해를 많이 준 증강" 계산에 장기압착 피해를 기록한다.
+            if (finalDamage > 0f &&
+                AugmentDamageTracker.Instance != null)
+            {
+                AugmentDamageTracker.Instance.RecordDamage(
+                    "장기압착",
+                    finalDamage
+                );
+            }
 
             if (sourceNeedleAbility != null)
             {
                 SyringeSpecialHitEffectUtility.ApplyPostHitEffects(
                     target.component,
                     runtime,
-                    null,
+                    sourceCharacter,
                     GetTargetWorldPosition(target),
                     monsterLayer,
                     target.component.gameObject,
-                    consumedNeedleMark
+                    consumedNeedleMark,
+                    finalDamage
                 );
             }
 
@@ -394,186 +424,18 @@ SyringeDartAbility sourceNeedleAbility)
         }
         private void CreateVisual()
         {
-            Color outerColor = new Color(0.78f, 0.05f, 1f, 0.9f);
-            Color innerColor = new Color(1f, 0.35f, 1f, 0.75f);
-            Color spiralColor = new Color(0.62f, 0.02f, 1f, 0.92f);
-
-            outerCircleLine = CreateLineRenderer(
-                "Outer Purple Compression Circle",
-                transform,
-                true,
-                0.075f,
-                outerColor,
-                870
-            );
-
-            innerPulseLine = CreateLineRenderer(
-                "Inner Purple Pulse Circle",
-                transform,
-                true,
-                0.045f,
-                innerColor,
-                872
-            );
-
-            for (int i = 0; i < SpiralArmCount; i++)
-            {
-                LineRenderer spiral = CreateLineRenderer(
-                    $"Purple Vortex Arm {i + 1}",
-                    transform,
-                    false,
-                    0.055f,
-                    spiralColor,
-                    875 + i
-                );
-
-                spiralLines.Add(spiral);
-            }
-
-            RebuildCircle(outerCircleLine, radius);
-            RebuildCircle(innerPulseLine, radius * 0.45f);
-            RebuildSpirals(0f, 1f);
-        }
-
-        private LineRenderer CreateLineRenderer(
-            string objectName,
-            Transform parent,
-            bool loop,
-            float width,
-            Color color,
-            int sortingOrder)
-        {
-            GameObject lineObject = new GameObject(objectName);
-            lineObject.transform.SetParent(parent, false);
-            lineObject.transform.localPosition = Vector3.zero;
-            lineObject.transform.localRotation = Quaternion.identity;
-            lineObject.transform.localScale = Vector3.one;
-
-            LineRenderer lr = lineObject.AddComponent<LineRenderer>();
-            lr.useWorldSpace = false;
-            lr.loop = loop;
-            lr.positionCount = loop ? CirclePointCount : SpiralPointCount;
-            lr.widthMultiplier = Mathf.Max(0.01f, width);
-            lr.numCapVertices = 4;
-            lr.numCornerVertices = 4;
-            lr.sortingOrder = sortingOrder;
-
-            Shader spriteShader = Shader.Find("Sprites/Default");
-
-            if (spriteShader != null)
-            {
-                lr.material = new Material(spriteShader);
-            }
-
-            lr.startColor = color;
-            lr.endColor = color;
-
-            return lr;
+            SyringeAugmentVfx.ReleaseOwned(ref augmentVisual);
+            augmentVisual = SyringeAugmentVfx.Play("OrganCompression", center);
+            if (augmentVisual != null) augmentVisual.SetGroundRadius(radius);
         }
 
         private void UpdateVisual()
         {
-            float remainingRatio = Mathf.Clamp01((endTime - Time.time) / duration);
-            float aliveRatio = 1f - remainingRatio;
-
-            visualSpinAngle += 360f * Time.deltaTime;
-
-            float pulse = 1f + Mathf.Sin(Time.time * 10f) * 0.055f;
-            float outerRadius = radius * pulse;
-
-            float innerPulse =
-                radius *
-                Mathf.Lerp(0.18f, 0.62f, Mathf.PingPong(Time.time * 1.8f, 1f));
-
-            RebuildCircle(outerCircleLine, outerRadius);
-            RebuildCircle(innerPulseLine, innerPulse);
-
-            float squeezeRatio = Mathf.Lerp(1f, 0.82f, aliveRatio);
-            RebuildSpirals(visualSpinAngle, squeezeRatio);
-
-            SetAlpha(outerCircleLine, Mathf.Lerp(0.15f, 0.9f, remainingRatio));
-            SetAlpha(innerPulseLine, Mathf.Lerp(0.08f, 0.65f, remainingRatio));
-
-            for (int i = 0; i < spiralLines.Count; i++)
-            {
-                SetAlpha(spiralLines[i], Mathf.Lerp(0.1f, 0.92f, remainingRatio));
-            }
+            if (augmentVisual == null) return;
+            augmentVisual.SetGroundRadius(radius);
+            augmentVisual.SetStrength(Mathf.Clamp01((endTime - Time.time) / Mathf.Min(0.3f, duration)));
         }
 
-        private void RebuildCircle(LineRenderer lr, float circleRadius)
-        {
-            if (lr == null)
-            {
-                return;
-            }
-
-            lr.positionCount = CirclePointCount;
-
-            for (int i = 0; i < CirclePointCount; i++)
-            {
-                float angle = i / (float)CirclePointCount * Mathf.PI * 2f;
-
-                lr.SetPosition(
-                    i,
-                    new Vector3(
-                        Mathf.Cos(angle) * circleRadius,
-                        Mathf.Sin(angle) * circleRadius,
-                        0f
-                    )
-                );
-            }
-        }
-
-        private void RebuildSpirals(float spinAngleDegrees, float squeezeRatio)
-        {
-            float spinRadians = spinAngleDegrees * Mathf.Deg2Rad;
-
-            for (int arm = 0; arm < spiralLines.Count; arm++)
-            {
-                LineRenderer lr = spiralLines[arm];
-
-                if (lr == null)
-                {
-                    continue;
-                }
-
-                lr.positionCount = SpiralPointCount;
-
-                float armOffset = arm / (float)SpiralArmCount * Mathf.PI * 2f;
-
-                for (int i = 0; i < SpiralPointCount; i++)
-                {
-                    float t = i / (float)(SpiralPointCount - 1);
-
-                    float spiralRadius = Mathf.Lerp(radius * squeezeRatio, 0.08f, t);
-                    float angle = armOffset + spinRadians + t * Mathf.PI * 2.8f;
-
-                    Vector3 point = new Vector3(
-                        Mathf.Cos(angle) * spiralRadius,
-                        Mathf.Sin(angle) * spiralRadius,
-                        0f
-                    );
-
-                    lr.SetPosition(i, point);
-                }
-            }
-        }
-
-        private void SetAlpha(LineRenderer lr, float alpha)
-        {
-            if (lr == null)
-            {
-                return;
-            }
-
-            Color start = lr.startColor;
-            Color end = lr.endColor;
-
-            start.a = alpha;
-            end.a = alpha;
-
-            lr.startColor = start;
-            lr.endColor = end;
-        }
+        private void OnDisable() { SyringeAugmentVfx.ReleaseOwned(ref augmentVisual); }
     }
 }

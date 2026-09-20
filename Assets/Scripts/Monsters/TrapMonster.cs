@@ -38,6 +38,7 @@ namespace Vampire
         private Character trappedCharacter;
         private IDamageable trappedDamageable;
         private PlayerTrapBindRuntime trappedBindRuntime;
+        private SeaweedTrapVisual seaweedVisual;
 
         private Coroutine stateAnimationCoroutine;
         private Coroutine tickDamageCoroutine;
@@ -98,6 +99,10 @@ namespace Vampire
             killStarted = false;
             setupCompleted = true;
             arrowProgress = 0;
+            // 중요:
+            // Pool에서 이전 사망 상태(Dead/Dying)가 남지 않도록
+            // 매 스폰마다 반드시 Dormant로 초기화한다.
+            currentState = TrapState.Dormant;
 
             if (!entityManager.LivingMonsters.Contains(this))
             {
@@ -117,6 +122,11 @@ namespace Vampire
             if (rb == null)
             {
                 rb = GetComponent<Rigidbody2D>();
+            }
+
+            if (trapSpriteRenderer != null)
+            {
+                trapSpriteRenderer.enabled = true;
             }
 
             Vector2 spawnPosition = position;
@@ -175,11 +185,18 @@ namespace Vampire
             StopTrapCoroutines();
             ReleaseTrappedPlayer();
 
-            
+            // Pool에서 다시 나온 뒤 Dormant 애니메이션도 반드시 다시 시작.
+            seaweedVisual = GetComponent<SeaweedTrapVisual>();
+            if (seaweedVisual == null) seaweedVisual = gameObject.AddComponent<SeaweedTrapVisual>();
+            if (!seaweedVisual.Configure(trapBlueprint, trapSpriteRenderer)) seaweedVisual = null;
+            ChangeState(TrapState.Dormant);
 
             if (debugLog)
             {
-                Debug.Log($"[TrapMonster] 스폰 완료 | 위치 {transform.position} | 휴면 상태", this);
+                Debug.Log(
+                    $"[TrapMonster] 스폰 완료 | 위치 {transform.position} | 휴면 상태",
+                    this
+                );
             }
         }
 
@@ -189,8 +206,13 @@ namespace Vampire
             // 함정 몬스터는 자체 상태머신으로만 동작한다.
         }
 
-        protected new void FixedUpdate()
+        protected override void FixedUpdate()
         {
+            if (IsFieldRuntimeSuspended)
+            {
+                return;
+            }
+
             if (rb != null)
             {
                 rb.velocity = Vector2.zero;
@@ -212,6 +234,11 @@ namespace Vampire
             Vector2 direction = default(Vector2),
             bool isCritical = false)
         {
+            if (IsFieldRuntimeSuspended)
+            {
+                return;
+            }
+
             if (!setupCompleted || trapBlueprint == null)
             {
                 return;
@@ -260,6 +287,15 @@ namespace Vampire
             killStarted = true;
             alive = false;
 
+            if (triggerCollider != null)
+            {
+                triggerCollider.enabled = false;
+            }
+            if (monsterHitbox != null)
+            {
+                monsterHitbox.enabled = false;
+            }
+
             ReleaseTrappedPlayer();
 
             ChangeState(TrapState.Dying);
@@ -285,6 +321,15 @@ namespace Vampire
             }
 
             currentState = TrapState.Dead;
+            if (stateAnimationCoroutine != null)
+            {
+                StopCoroutine(stateAnimationCoroutine);
+                stateAnimationCoroutine = null;
+            }
+            if (trapSpriteRenderer != null)
+            {
+                trapSpriteRenderer.enabled = false;
+            }
 
             if (debugLog)
             {
@@ -296,6 +341,10 @@ namespace Vampire
 
         private void OnTriggerEnter2D(Collider2D other)
         {
+            if (IsFieldRuntimeSuspended)
+            {
+                return;
+            }
             if (!setupCompleted || currentState != TrapState.Dormant)
             {
                 return;
@@ -394,7 +443,15 @@ namespace Vampire
                     yield break;
                 }
 
-                trappedDamageable.TakeDamage(trapBlueprint.tickDamage, Vector2.zero, false);
+                // 결과 화면용:
+                // 함정의 틱 데미지를 플레이어에게 줄 때
+                // 공격한 함정 몬스터의 Blueprint를 함께 전달합니다.
+                if (trapBlueprint.tickDamage > 0f) trappedCharacter.TakeDamageFromMonster(
+                    trapBlueprint.tickDamage,
+                    Vector2.zero,
+                    trapBlueprint,
+                    false
+                );
 
                 if (debugLog)
                 {
@@ -473,25 +530,31 @@ namespace Vampire
 
         private bool TryReadArrowInput(out TrapArrowDirection inputDirection)
         {
-            if (Input.GetKeyDown(KeyCode.UpArrow))
+            if (Time.timeScale <= 0f) { inputDirection = TrapArrowDirection.Up; return false; }
+            if (MobileGameplayInput.ConsumeArrow(out int mobileDirection))
+            {
+                inputDirection = (TrapArrowDirection)mobileDirection;
+                return true;
+            }
+            if (Vampire.GameInput.GetKeyDown(KeyCode.UpArrow))
             {
                 inputDirection = TrapArrowDirection.Up;
                 return true;
             }
 
-            if (Input.GetKeyDown(KeyCode.DownArrow))
+            if (Vampire.GameInput.GetKeyDown(KeyCode.DownArrow))
             {
                 inputDirection = TrapArrowDirection.Down;
                 return true;
             }
 
-            if (Input.GetKeyDown(KeyCode.LeftArrow))
+            if (Vampire.GameInput.GetKeyDown(KeyCode.LeftArrow))
             {
                 inputDirection = TrapArrowDirection.Left;
                 return true;
             }
 
-            if (Input.GetKeyDown(KeyCode.RightArrow))
+            if (Vampire.GameInput.GetKeyDown(KeyCode.RightArrow))
             {
                 inputDirection = TrapArrowDirection.Right;
                 return true;
@@ -614,7 +677,37 @@ namespace Vampire
                     return '?';
             }
         }
+        protected override void OnFieldRuntimeSuspended()
+        {
+            if (!setupCompleted || !alive)
+            {
+                return;
+            }
 
+            // MiniStage 포탈 진입 순간 Trap에 잡혀 있었다면
+            // PlayerTrapBindRuntime이 플레이어를 예전 필드 위치로 잡아당길 수 있으므로
+            // 반드시 구속 / 틱데미지 / 방향키 UI를 해제한다.
+            if (currentState == TrapState.Active)
+            {
+                ReleaseTrappedPlayer();
+
+                currentState = TrapState.Dormant;
+                ChangeState(TrapState.Dormant);
+
+                if (debugLog)
+                {
+                    Debug.Log(
+                        "[TrapMonster] MiniStage 진입 - 플레이어 구속 해제 및 Dormant 복귀",
+                        this
+                    );
+                }
+            }
+        }
+
+        protected override void OnFieldRuntimeResumed()
+        {
+            // Dormant 상태 그대로 다시 필드에서 작동하면 된다.
+        }
         private void ReleaseTrappedPlayer()
         {
             StopArrowMiniGame();
@@ -651,6 +744,7 @@ namespace Vampire
 
             if (arrowMiniGameUI != null)
             {
+                arrowMiniGameUI.gameObject.SetActive(false);
                 Destroy(arrowMiniGameUI.gameObject);
                 arrowMiniGameUI = null;
             }
@@ -700,6 +794,15 @@ namespace Vampire
 
             if (trapBlueprint == null)
             {
+                return;
+            }
+
+            if (seaweedVisual != null)
+            {
+                if (nextState == TrapState.Dormant) seaweedVisual.ResetDormant();
+                else if (nextState == TrapState.Active)
+                    seaweedVisual.Capture(trappedBindRuntime != null ? trappedBindRuntime.VisualRenderer : null);
+                else seaweedVisual.Hide();
                 return;
             }
 

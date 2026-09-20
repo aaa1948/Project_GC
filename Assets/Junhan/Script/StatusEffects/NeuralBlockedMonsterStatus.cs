@@ -9,12 +9,26 @@ namespace Vampire
     /// </summary>
     public class NeuralBlockedMonsterStatus : MonoBehaviour
     {
+        private SyringeAugmentVfx augmentVisual;
         private Monster monster;
         private Rigidbody2D rb;
         private Animator[] animators;
         private float[] originalAnimatorSpeeds;
 
         private float endTime = -1f;
+        private float iceEndTime = -1f;
+        public bool IceFrozen => Time.time < iceEndTime;
+        public void ApplyIce(float duration)
+        {
+            if (!initialized) CacheReferences();
+            iceEndTime=Mathf.Max(iceEndTime,Time.time+Mathf.Max(.05f,duration));
+            DisableMonsterMovementComponent(); SetAnimatorSpeed(0f); StopMovement();
+        }
+        public void ReleaseIce()
+        {
+            iceEndTime=-1f;
+            if (Time.time>=endTime) { RestoreMonsterMovementComponent(); RestoreAnimatorSpeed(); }
+        }
         private bool initialized = false;
 
         private bool capturedMonsterEnabled = false;
@@ -27,6 +41,9 @@ namespace Vampire
                 CacheReferences();
             }
 
+            if (!SyringeAugmentVfx.IsLiving(this)) return;
+            if (augmentVisual == null)
+                augmentVisual = SyringeAugmentVfx.Play("NeuralBlock", transform.position, SyringeAugmentVfx.FindTarget(monster));
             endTime = Mathf.Max(endTime, Time.time + Mathf.Max(0.05f, duration));
 
             DisableMonsterMovementComponent();
@@ -55,8 +72,10 @@ namespace Vampire
 
         private void Update()
         {
-            if (Time.time >= endTime)
+            if (Time.time >= endTime) SyringeAugmentVfx.ReleaseOwned(ref augmentVisual);
+            if (Time.time >= Mathf.Max(endTime,iceEndTime) || !SyringeAugmentVfx.IsLiving(this))
             {
+                SyringeAugmentVfx.ReleaseOwned(ref augmentVisual);
                 RestoreMonsterMovementComponent();
                 RestoreAnimatorSpeed();
                 Destroy(this);
@@ -69,7 +88,7 @@ namespace Vampire
 
         private void FixedUpdate()
         {
-            if (Time.time < endTime)
+            if (Time.time < Mathf.Max(endTime,iceEndTime))
             {
                 StopMovement();
             }
@@ -107,6 +126,7 @@ namespace Vampire
             }
 
             monster.enabled = originalMonsterEnabled;
+            capturedMonsterEnabled = false;
         }
 
         private void StopMovement()
@@ -150,8 +170,18 @@ namespace Vampire
             }
         }
 
+        private void OnDisable()
+        {
+            SyringeAugmentVfx.ReleaseOwned(ref augmentVisual);
+            RestoreMonsterMovementComponent();
+            RestoreAnimatorSpeed();
+            endTime = -1f;
+            iceEndTime = -1f;
+        }
+
         private void OnDestroy()
         {
+            SyringeAugmentVfx.ReleaseOwned(ref augmentVisual);
             RestoreMonsterMovementComponent();
             RestoreAnimatorSpeed();
         }

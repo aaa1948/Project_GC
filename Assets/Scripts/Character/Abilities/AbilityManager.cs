@@ -9,6 +9,10 @@ namespace Vampire
     {
         [Header("Augment Selection")]
         [SerializeField] private int selectionCount = 3;
+        [Header("Ver.4 Shared Needle Rewards")]
+        [SerializeField] private Ver4AugmentBalance ver4Balance;
+        public Ver4AugmentRuntime Ver4 { get; private set; }
+        public bool LegendaryRewardContext { get; set; }
 
         [Header("Base Tier Odds")]
         [SerializeField] private float baseGeneralChance = 55f;
@@ -98,6 +102,34 @@ namespace Vampire
                 ability.Init(abilityManager, entityManager, playerCharacter);
                 newAbilities.Add(ability);
             }
+            if (GetComponentInChildren<SyringeDartAbility>(true) != null)
+            {
+                if (ver4Balance == null) ver4Balance = Resources.Load<Ver4AugmentBalance>("Ver4AugmentBalance");
+                if (ver4Balance != null)
+                {
+                    for (int i=0; i<5; i++)
+                    {
+                        var obj=new GameObject("Ver4 Special " + ((SyringeSpecialAugmentAbility.SpecialAugmentType)(16+i)));
+                        obj.transform.SetParent(transform,false);
+                        var ability=obj.AddComponent<SyringeSpecialAugmentAbility>();
+                        ability.ConfigureNewAugment((SyringeSpecialAugmentAbility.SpecialAugmentType)(16+i),ver4Balance.plannedIcons[i]);
+                        ability.Init(abilityManager,entityManager,playerCharacter);
+                        newAbilities.Add(ability);
+                    }
+                    var objState=new GameObject("Ver4 Upgrade State"); objState.transform.SetParent(transform,false);
+                    Ver4=objState.AddComponent<Ver4AugmentRuntime>();
+                    Ver4.Configure(ver4Balance,abilityManager,entityManager,playerCharacter);
+                    ownedAbilities.Add(Ver4);
+                }
+            }
+        }
+
+        public bool AcquireVer4Ability(Ability ability)
+        {
+            if (ability==null || ability.Owned || !ability.RequirementsMet() || !newAbilities.Remove(ability)) return false;
+            ability.Select();
+            ownedAbilities.Add(ability);
+            return true;
         }
 
         public void RegisterUpgradeableValue(IUpgradeableValue upgradeableValue, bool inUse = false)
@@ -131,13 +163,34 @@ namespace Vampire
 
         public List<Ability> SelectAbilities()
         {
+            return SelectAbilities(null);
+        }
+
+        /// <summary>
+        /// 각 카드 슬롯마다 등급을 독립적으로 다시 굴려 증강을 선택합니다.
+        /// rerollExcludedAbilities는 새로고침 직전 카드이며, 다른 후보가 충분한 동안
+        /// 재등장하지 않습니다. 후보가 부족할 때만 빈 슬롯을 채우기 위해 재사용합니다.
+        /// </summary>
+        public List<Ability> SelectAbilities(IReadOnlyCollection<Ability> rerollExcludedAbilities)
+        {
+            if (Ver4 != null) return Ver4.CreateOffers(LegendaryRewardContext, selectionCount);
             List<Ability> selectedAbilities = new List<Ability>();
 
             WeightedAbilities availableOwnedAbilities = ExtractAvailableAbilities(ownedAbilities);
             WeightedAbilities availableNewAbilities = ExtractAvailableAbilities(newAbilities);
+            WeightedAbilities excludedOwnedAbilities = new WeightedAbilities();
+            WeightedAbilities excludedNewAbilities = new WeightedAbilities();
+
+            ExtractRerollExcludedAbilities(
+                availableOwnedAbilities,
+                availableNewAbilities,
+                rerollExcludedAbilities,
+                excludedOwnedAbilities,
+                excludedNewAbilities);
 
             for (int slotIndex = 0; slotIndex < selectionCount; slotIndex++)
             {
+                // 슬롯마다 호출해야 세 패널의 등급이 하나의 추첨값으로 고정되지 않는다.
                 Ability selectedAbility = PullAbilityForSlot(availableOwnedAbilities, availableNewAbilities);
 
                 if (selectedAbility == null)
@@ -147,6 +200,30 @@ namespace Vampire
 
                 selectedAbilities.Add(selectedAbility);
             }
+
+            // 이전 카드 제외 때문에 슬롯이 비었을 때만 해당 카드를 다시 후보로 허용한다.
+            if (selectedAbilities.Count < selectionCount)
+            {
+                MoveAll(excludedOwnedAbilities, availableOwnedAbilities);
+                MoveAll(excludedNewAbilities, availableNewAbilities);
+
+                while (selectedAbilities.Count < selectionCount)
+                {
+                    Ability selectedAbility = PullAbilityForSlot(
+                        availableOwnedAbilities,
+                        availableNewAbilities);
+
+                    if (selectedAbility == null)
+                    {
+                        break;
+                    }
+
+                    selectedAbilities.Add(selectedAbility);
+                }
+            }
+
+            MoveAll(excludedOwnedAbilities, availableOwnedAbilities);
+            MoveAll(excludedNewAbilities, availableNewAbilities);
 
             foreach (Ability ability in availableNewAbilities)
             {
@@ -161,6 +238,60 @@ namespace Vampire
             return selectedAbilities;
         }
 
+        private static void ExtractRerollExcludedAbilities(
+            WeightedAbilities availableOwnedAbilities,
+            WeightedAbilities availableNewAbilities,
+            IReadOnlyCollection<Ability> rerollExcludedAbilities,
+            WeightedAbilities excludedOwnedAbilities,
+            WeightedAbilities excludedNewAbilities)
+        {
+            if (rerollExcludedAbilities == null || rerollExcludedAbilities.Count == 0)
+            {
+                return;
+            }
+
+            foreach (Ability ability in rerollExcludedAbilities)
+            {
+                if (ability == null)
+                {
+                    continue;
+                }
+
+                WeightedAbilities source = ability.Owned
+                    ? availableOwnedAbilities
+                    : availableNewAbilities;
+                WeightedAbilities destination = ability.Owned
+                    ? excludedOwnedAbilities
+                    : excludedNewAbilities;
+
+                if (source.Remove(ability))
+                {
+                    destination.Add(ability);
+                }
+            }
+        }
+
+        private static void MoveAll(WeightedAbilities source, WeightedAbilities destination)
+        {
+            if (source == null || destination == null)
+            {
+                return;
+            }
+
+            List<Ability> abilitiesToMove = new List<Ability>();
+
+            foreach (Ability ability in source)
+            {
+                abilitiesToMove.Add(ability);
+            }
+
+            foreach (Ability ability in abilitiesToMove)
+            {
+                source.Remove(ability);
+                destination.Add(ability);
+            }
+        }
+
         public void ReturnAbilities(List<Ability> abilities)
         {
             if (abilities == null)
@@ -172,6 +303,11 @@ namespace Vampire
             {
                 if (ability == null)
                 {
+                    continue;
+                }
+                if (ability is Ver4AugmentOffer)
+                {
+                    Destroy(ability.gameObject);
                     continue;
                 }
 
@@ -199,6 +335,11 @@ namespace Vampire
 
         public bool HasAvailableAbilities()
         {
+            if (Ver4 != null)
+            {
+                if (!LegendaryRewardContext) return true;
+                return GetComponentsInChildren<SyringeLegendaryAugmentAbility>(true).Any(a=>!a.Owned && a.RequirementsMet());
+            }
             foreach (Ability ability in ownedAbilities)
             {
                 if (ability == null)
@@ -361,9 +502,10 @@ namespace Vampire
             return selected;
         }
 
-        private Ability.AugmentTier RollTier()
+        protected virtual Ability.AugmentTier RollTier()
         {
-            float luckBonus = Mathf.Max(0f, playerCharacter.Luck - 1f);
+            float playerLuck = playerCharacter != null ? playerCharacter.Luck : 1f;
+            float luckBonus = Mathf.Max(0f, playerLuck - 1f);
 
             float generalChance = baseGeneralChance - ((specialChancePerLuck + legendaryChancePerLuck) * luckBonus);
             float specialChance = baseSpecialChance + (specialChancePerLuck * luckBonus);
@@ -420,6 +562,300 @@ namespace Vampire
                     break;
             }
         }
+        /// <summary>
+        /// 현재 소유 중인 Ability의 종류, 레벨, 조건부 증강 ID를 저장합니다.
+        /// </summary>
+        public List<RunSceneAbilitySnapshot>
+            CaptureRunSceneAbilities()
+        {
+            List<RunSceneAbilitySnapshot> snapshots =
+                new List<RunSceneAbilitySnapshot>();
+
+            if (ownedAbilities == null)
+            {
+                return snapshots;
+            }
+
+            foreach (Ability ability in ownedAbilities)
+            {
+                if (ability == null ||
+                    !ability.Owned)
+                {
+                    continue;
+                }
+
+                RunSceneAbilitySnapshot snapshot =
+                    new RunSceneAbilitySnapshot
+                    {
+                        AbilityTypeName =
+                            GetRunSceneAbilityTypeName(
+                                ability),
+
+                        AbilityObjectName =
+                            GetRunSceneAbilityObjectName(
+                                ability),
+
+                        Level =
+                            ability.Level
+                    };
+
+                if (ability is IRunSceneConditionalAugmentState conditionalState)
+                {
+                    snapshot.ConditionalAugmentIds =
+                        conditionalState.CaptureRunSceneConditionalAugmentIds();
+                }
+
+                snapshots.Add(snapshot);
+            }
+
+            return snapshots;
+        }
+
+        /// <summary>
+        /// 새 씬에서 AbilityManager.Init 완료 후
+        /// 이전 씬의 소유 Ability와 레벨을 복원합니다.
+        /// </summary>
+        public int RestoreRunSceneAbilities(
+            List<RunSceneAbilitySnapshot> snapshots)
+        {
+            if (snapshots == null ||
+                snapshots.Count == 0)
+            {
+                return 0;
+            }
+
+            if (ownedAbilities == null ||
+                newAbilities == null)
+            {
+                Debug.LogWarning(
+                    "[RunSceneTransfer][AbilityManager] " +
+                    "AbilityManager.Init 이전이라 복원할 수 없습니다.",
+                    this);
+
+                return 0;
+            }
+
+            int restoredCount = 0;
+
+            // 부모 특수/전설 증강을 먼저 복원해야 조건부 증강의 보유 조건이
+            // 새 씬에서도 정확히 성립한다.
+            for (int restorePass = 0; restorePass < 2; restorePass++)
+            {
+                for (int i = 0;
+                     i < snapshots.Count;
+                     i++)
+                {
+                    RunSceneAbilitySnapshot snapshot =
+                        snapshots[i];
+
+                    if (snapshot == null)
+                    {
+                        continue;
+                    }
+
+                    Ability ability =
+                        FindRunSceneAbility(
+                            ownedAbilities,
+                            snapshot);
+
+                    bool cameFromNewAbilities =
+                        false;
+
+                    if (ability == null)
+                    {
+                        ability =
+                            FindRunSceneAbility(
+                                newAbilities,
+                                snapshot);
+
+                        cameFromNewAbilities =
+                            ability != null;
+                    }
+
+                    if (ability == null)
+                    {
+                        if (restorePass == 0)
+                        {
+                            Debug.LogWarning(
+                                $"[RunSceneTransfer][AbilityManager] " +
+                                $"복원할 Ability를 현재 LevelBlueprint에서 찾지 못했습니다. " +
+                                $"Type={snapshot.AbilityTypeName}, " +
+                                $"Object={snapshot.AbilityObjectName}",
+                                this);
+                        }
+
+                        continue;
+                    }
+
+                    bool isConditional =
+                        ability is IRunSceneConditionalAugmentState;
+
+                    if ((restorePass == 0 && isConditional) ||
+                        (restorePass == 1 && !isConditional))
+                    {
+                        continue;
+                    }
+
+                    if (cameFromNewAbilities)
+                    {
+                        newAbilities.Remove(
+                            ability);
+                    }
+
+                    int targetLevel =
+                        Mathf.Max(
+                            1,
+                            snapshot.Level);
+
+                    bool restoreFailed =
+                        false;
+
+                    if (ability is IRunSceneConditionalAugmentState conditionalState)
+                    {
+                        restoreFailed =
+                            !conditionalState.RestoreRunSceneConditionalAugments(
+                                snapshot.ConditionalAugmentIds ??
+                                new List<string>());
+                    }
+                    else
+                    {
+                        while (ability.Level <
+                               targetLevel)
+                        {
+                            if (!ability.RequirementsMet())
+                            {
+                                Debug.LogWarning(
+                                    $"[RunSceneTransfer][AbilityManager] " +
+                                    $"RequirementsMet=false로 Ability 복원을 중단했습니다. " +
+                                    $"Ability={ability.gameObject.name}, " +
+                                    $"Current={ability.Level}, " +
+                                    $"Target={targetLevel}",
+                                    ability);
+
+                                restoreFailed =
+                                    true;
+
+                                break;
+                            }
+
+                            ability.Select();
+                        }
+                    }
+
+                    if (cameFromNewAbilities)
+                    {
+                        if (ability.Owned)
+                        {
+                            ownedAbilities.Add(
+                                ability);
+                        }
+                        else
+                        {
+                            newAbilities.Add(
+                                ability);
+                        }
+                    }
+
+                    if (!restoreFailed &&
+                        ability.Level >= targetLevel)
+                    {
+                        restoredCount++;
+                    }
+                }
+            }
+
+            Debug.Log(
+                $"[RunSceneTransfer][AbilityManager] " +
+                $"Ability 복원 완료 | " +
+                $"Requested={snapshots.Count}, " +
+                $"Restored={restoredCount}",
+                this);
+
+            return restoredCount;
+        }
+
+        private Ability FindRunSceneAbility(
+            WeightedAbilities abilities,
+            RunSceneAbilitySnapshot snapshot)
+        {
+            if (abilities == null ||
+                snapshot == null)
+            {
+                return null;
+            }
+
+            foreach (Ability ability in abilities)
+            {
+                if (ability == null)
+                {
+                    continue;
+                }
+
+                string typeName =
+                    GetRunSceneAbilityTypeName(
+                        ability);
+
+                string objectName =
+                    GetRunSceneAbilityObjectName(
+                        ability);
+
+                if (typeName ==
+                        snapshot.AbilityTypeName &&
+                    objectName ==
+                        snapshot.AbilityObjectName)
+                {
+                    return ability;
+                }
+            }
+
+            return null;
+        }
+
+        private static string
+            GetRunSceneAbilityTypeName(
+                Ability ability)
+        {
+            if (ability == null)
+            {
+                return string.Empty;
+            }
+
+            string fullName =
+                ability.GetType().FullName;
+
+            return !string.IsNullOrEmpty(fullName)
+                ? fullName
+                : ability.GetType().Name;
+        }
+
+        private static string
+            GetRunSceneAbilityObjectName(
+                Ability ability)
+        {
+            if (ability == null ||
+                ability.gameObject == null)
+            {
+                return string.Empty;
+            }
+
+            string objectName =
+                ability.gameObject.name;
+
+            const string cloneSuffix =
+                "(Clone)";
+
+            if (objectName.EndsWith(
+                    cloneSuffix))
+            {
+                objectName =
+                    objectName.Substring(
+                        0,
+                        objectName.Length -
+                        cloneSuffix.Length);
+            }
+
+            return objectName.Trim();
+        }
 
         private class WeightedAbilities : IEnumerable<Ability>
         {
@@ -442,14 +878,16 @@ namespace Vampire
                 abilities.Add(ability);
             }
 
-            public void Remove(Ability ability)
+            public bool Remove(Ability ability)
             {
                 if (ability == null)
                 {
-                    return;
+                    return false;
                 }
 
+                int previousCount = abilities.Count;
                 abilities.Remove(ability);
+                return abilities.Count < previousCount;
             }
 
             public IEnumerator<Ability> GetEnumerator()

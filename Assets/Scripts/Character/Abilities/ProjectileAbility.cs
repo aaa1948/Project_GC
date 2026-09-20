@@ -6,135 +6,275 @@ namespace Vampire
     public class ProjectileAbility : Ability
     {
         [Header("Projectile Stats")]
-        [Tooltip("¹ß»çÇÒ Åõ»çÃ¼ ÇÁ¸®ÆÕÀÔ´Ï´Ù.")]
+        [Tooltip("ë°œì‚¬í•  íˆ¬ì‚¬ì²´ í”„ë¦¬íŒ¹ì…ë‹ˆë‹¤.")]
         [SerializeField] protected GameObject projectilePrefab;
 
-        [Tooltip("Åõ»çÃ¼°¡ ¸ÂÃâ ¸ó½ºÅÍ ·¹ÀÌ¾îÀÔ´Ï´Ù.")]
+        [Tooltip("íˆ¬ì‚¬ì²´ê°€ ë§ì¶œ ëª¬ìŠ¤í„° ë ˆì´ì–´ì…ë‹ˆë‹¤.")]
         [SerializeField] protected LayerMask monsterLayer;
 
-        [Tooltip("Åõ»çÃ¼ ±âº» ÇÇÇØ·®ÀÔ´Ï´Ù.")]
+        [Tooltip("íˆ¬ì‚¬ì²´ ê¸°ë³¸ í”¼í•´ëŸ‰ì…ë‹ˆë‹¤.")]
         [SerializeField] protected UpgradeableDamage damage;
 
-        [Tooltip("Åõ»çÃ¼ ÀÌµ¿ ¼ÓµµÀÔ´Ï´Ù.")]
+        [Tooltip("íˆ¬ì‚¬ì²´ ì´ë™ ì†ë„ì…ë‹ˆë‹¤.")]
         [SerializeField] protected UpgradeableProjectileSpeed speed;
 
-        [Tooltip("Åõ»çÃ¼ ³Ë¹é ¼öÄ¡ÀÔ´Ï´Ù.")]
+        [Tooltip("íˆ¬ì‚¬ì²´ ë„‰ë°± ìˆ˜ì¹˜ì…ë‹ˆë‹¤.")]
         [SerializeField] protected UpgradeableKnockback knockback;
 
-        [Tooltip("Åõ»çÃ¼ ¹ß»ç ÄğÅ¸ÀÓÀÔ´Ï´Ù.")]
+        [Tooltip("íˆ¬ì‚¬ì²´ ë°œì‚¬ ì¿¨íƒ€ì„ì…ë‹ˆë‹¤.")]
         [SerializeField] protected UpgradeableWeaponCooldown cooldown;
 
-        [Header("Projectile Spawn Position / Åõ»çÃ¼ »ı¼º À§Ä¡")]
-        [Tooltip("Ã¼Å©ÇÏ¸é Ä³¸¯ÅÍ Áß½ÉÀÌ ¾Æ´Ï¶ó Ä³¸¯ÅÍ ¾ÕÂÊ/¾Æ·¡ÂÊÀ¸·Î º¸Á¤µÈ À§Ä¡¿¡¼­ Åõ»çÃ¼°¡ »ı¼ºµË´Ï´Ù.")]
+
+        [Header("Projectile Spawn Position / íˆ¬ì‚¬ì²´ ìƒì„± ìœ„ì¹˜")]
+        [Tooltip(
+            "ì²´í¬í•˜ë©´ ìºë¦­í„° ì¤‘ì‹¬ì´ ì•„ë‹ˆë¼ " +
+            "ìºë¦­í„° ì•ìª½/ì•„ë˜ìª½ìœ¼ë¡œ ë³´ì •ëœ ìœ„ì¹˜ì—ì„œ íˆ¬ì‚¬ì²´ê°€ ìƒì„±ë©ë‹ˆë‹¤."
+        )]
         [SerializeField] protected bool useProjectileSpawnOffset = true;
 
-        [Tooltip("Ä³¸¯ÅÍ°¡ ¹Ù¶óº¸´Â ¹æÇâÀ¸·Î Åõ»çÃ¼ »ı¼º À§Ä¡¸¦ ¾ó¸¶³ª ¾Õ´ç±æÁö Á¤ÇÕ´Ï´Ù. ¼Õ ÂÊ¿¡¼­ ³ª°¡°Ô ÇÏ·Á¸é 0.2~0.45 »çÀÌ·Î Á¶ÀıÇÏ¼¼¿ä.")]
+        [Tooltip(
+            "ìºë¦­í„°ê°€ ë°”ë¼ë³´ëŠ” ë°©í–¥ìœ¼ë¡œ íˆ¬ì‚¬ì²´ ìƒì„± ìœ„ì¹˜ë¥¼ ì–¼ë§ˆë‚˜ ì•ë‹¹ê¸¸ì§€ ì •í•©ë‹ˆë‹¤. " +
+            "ì† ìª½ì—ì„œ ë‚˜ê°€ê²Œ í•˜ë ¤ë©´ 0.2~0.45 ì‚¬ì´ë¡œ ì¡°ì ˆí•˜ì„¸ìš”."
+        )]
         [SerializeField] protected float projectileSpawnForwardOffset = 0.28f;
 
-        [Tooltip("Åõ»çÃ¼ »ı¼º À§Ä¡¸¦ Ä³¸¯ÅÍ Áß½É¿¡¼­ ¾Æ·¡·Î ¾ó¸¶³ª ³»¸±Áö Á¤ÇÕ´Ï´Ù. ¸Ó¸®¿¡¼­ ³ª°¡¸é ÀÌ °ªÀ» ¿Ã¸®¼¼¿ä.")]
+        [Tooltip(
+            "íˆ¬ì‚¬ì²´ ìƒì„± ìœ„ì¹˜ë¥¼ ìºë¦­í„° ì¤‘ì‹¬ì—ì„œ ì•„ë˜ë¡œ ì–¼ë§ˆë‚˜ ë‚´ë¦´ì§€ ì •í•©ë‹ˆë‹¤. " +
+            "ë¨¸ë¦¬ì—ì„œ ë‚˜ê°€ë©´ ì´ ê°’ì„ ì˜¬ë¦¬ì„¸ìš”."
+        )]
         [SerializeField] protected float projectileSpawnDownOffset = 0.18f;
 
-        [Tooltip("Á÷Á¢ ÁöÁ¤ÇÑ ¹ß»ç À§Ä¡ TransformÀÔ´Ï´Ù. ºñ¿öµÎ¸é CharacterÀÇ CenterTransformÀ» ±âÁØÀ¸·Î À§ º¸Á¤°ªÀ» Àû¿ëÇÕ´Ï´Ù.")]
+        [Tooltip(
+            "ì§ì ‘ ì§€ì •í•œ ë°œì‚¬ ìœ„ì¹˜ Transformì…ë‹ˆë‹¤. " +
+            "ë¹„ì›Œë‘ë©´ Characterì˜ CenterTransformì„ ê¸°ì¤€ìœ¼ë¡œ ìœ„ ë³´ì •ê°’ì„ ì ìš©í•©ë‹ˆë‹¤."
+        )]
         [SerializeField] protected Transform projectileSpawnPoint;
 
-        [Tooltip("Ã¼Å©ÇÏ¸é ºÎÃ¤²Ã ¹ß»ç ½Ã °¢ Åõ»çÃ¼ÀÇ ¹ú¾îÁø ¹æÇâÀ» ±âÁØÀ¸·Î »ı¼º À§Ä¡¸¦ Á¶±İ¾¿ ´Ù¸£°Ô Àâ½À´Ï´Ù. ²¨µÎ¸é ¸ğµç Åõ»çÃ¼°¡ °°Àº ¼Õ À§Ä¡¿¡¼­ ³ª°©´Ï´Ù.")]
+        [Tooltip(
+            "ì²´í¬í•˜ë©´ ë¶€ì±„ê¼´ ë°œì‚¬ ì‹œ ê° íˆ¬ì‚¬ì²´ì˜ ë²Œì–´ì§„ ë°©í–¥ì„ ê¸°ì¤€ìœ¼ë¡œ " +
+            "ìƒì„± ìœ„ì¹˜ë¥¼ ì¡°ê¸ˆì”© ë‹¤ë¥´ê²Œ ì¡ìŠµë‹ˆë‹¤. " +
+            "êº¼ë‘ë©´ ëª¨ë“  íˆ¬ì‚¬ì²´ê°€ ê°™ì€ ì† ìœ„ì¹˜ì—ì„œ ë‚˜ê°‘ë‹ˆë‹¤."
+        )]
         [SerializeField] protected bool useSpreadDirectionForSpawnOffset = false;
 
-        [Header("Spread Settings / ºÎÃ¤²Ã ¹ß»ç")]
-        [Tooltip("Ãß°¡ Åõ»çÃ¼°¡ ÀÖÀ» ¶§ °¢ Åõ»çÃ¼ »çÀÌÀÇ °¢µµÀÔ´Ï´Ù.")]
+
+        [Header("Spread Settings / ë¶€ì±„ê¼´ ë°œì‚¬")]
+        [Tooltip("ì¶”ê°€ íˆ¬ì‚¬ì²´ê°€ ìˆì„ ë•Œ ê° íˆ¬ì‚¬ì²´ ì‚¬ì´ì˜ ê°ë„ì…ë‹ˆë‹¤.")]
         [SerializeField] protected float spreadAngle = 30f;
 
+
         [Header("Debug")]
-        [Tooltip("Ã¼Å©ÇÏ¸é Åõ»çÃ¼ ¹ß»ç ·Î±×¸¦ Console¿¡ Ãâ·ÂÇÕ´Ï´Ù.")]
+        [Tooltip("ì²´í¬í•˜ë©´ íˆ¬ì‚¬ì²´ ë°œì‚¬ ë¡œê·¸ë¥¼ Consoleì— ì¶œë ¥í•©ë‹ˆë‹¤.")]
         [SerializeField] protected bool debugProjectileLog = false;
+
 
         protected float timeSinceLastAttack;
         protected int projectileIndex;
+
+
+        // =========================================================
+        // Use
+        // =========================================================
 
         protected override void Use()
         {
             base.Use();
 
             gameObject.SetActive(true);
+
             timeSinceLastAttack = cooldown.Value;
-            projectileIndex = entityManager.AddPoolForProjectile(projectilePrefab);
+
+            projectileIndex =
+                entityManager.AddPoolForProjectile(projectilePrefab);
         }
+
+
+        // =========================================================
+        // Update
+        // =========================================================
 
         protected virtual void Update()
         {
+            if (AttacksBlocked) return;
             timeSinceLastAttack += Time.deltaTime;
 
-            float attackSpeedMultiplier = Mathf.Max(0.01f, playerCharacter.AttackSpeedMultiplier);
-            float effectiveCooldown = cooldown.Value / attackSpeedMultiplier;
+
+            float attackSpeedMultiplier =
+                Mathf.Max(
+                    0.01f,
+                    playerCharacter.AttackSpeedMultiplier
+                );
+
+
+            float effectiveCooldown =
+                cooldown.Value / attackSpeedMultiplier;
+
 
             if (timeSinceLastAttack >= effectiveCooldown)
             {
-                timeSinceLastAttack = Mathf.Repeat(timeSinceLastAttack, effectiveCooldown);
+                timeSinceLastAttack =
+                    Mathf.Repeat(
+                        timeSinceLastAttack,
+                        effectiveCooldown
+                    );
+
                 Attack();
             }
         }
+
+
+        // =========================================================
+        // Attack
+        // =========================================================
 
         protected virtual void Attack()
         {
             LaunchProjectile();
         }
 
+
+        // =========================================================
+        // Launch Projectile
+        // =========================================================
+
         protected virtual void LaunchProjectile()
         {
-            int extra = playerCharacter.AdditionalProjectiles;
-            int total = 1 + extra;
+            int extra =
+                playerCharacter.AdditionalProjectiles;
+
+            int total =
+                1 + extra;
+
 
             if (debugProjectileLog)
             {
-                Debug.Log($"<color=orange>[LaunchProjectile È£Ãâ]</color> ÃÑ {total}¹ß ºÎÃ¤²Ã ¹ß»ç ½Ãµµ");
+                Debug.Log(
+                    $"<color=orange>[LaunchProjectile í˜¸ì¶œ]</color> " +
+                    $"ì´ {total}ë°œ ë¶€ì±„ê¼´ ë°œì‚¬ ì‹œë„"
+                );
             }
 
-            float totalDamage = damage.Value * playerCharacter.DamageMultiplier;
-            Vector2 baseDirection = GetBaseFireDirection();
+
+            float totalDamage =
+                damage.Value *
+                playerCharacter.DamageMultiplier;
+
+
+            Vector2 baseDirection =
+                GetBaseFireDirection();
+
 
             for (int i = 0; i < total; i++)
             {
-                float offsetAngle = (i - (total - 1) / 2f) * spreadAngle;
-                Quaternion rotation = Quaternion.Euler(0f, 0f, offsetAngle);
+                float offsetAngle =
+                    (i - (total - 1) / 2f) *
+                    spreadAngle;
 
-                Vector2 shotDirection = rotation * baseDirection;
+
+                Quaternion rotation =
+                    Quaternion.Euler(
+                        0f,
+                        0f,
+                        offsetAngle
+                    );
+
+
+                Vector2 shotDirection =
+                    rotation *
+                    baseDirection;
+
 
                 if (shotDirection.sqrMagnitude <= 0.0001f)
                 {
                     shotDirection = Vector2.right;
                 }
 
+
                 shotDirection.Normalize();
 
-                Vector2 spawnOffsetDirection = useSpreadDirectionForSpawnOffset
-                    ? shotDirection
-                    : baseDirection;
 
-                Vector2 spawnPosition = GetProjectileSpawnPosition(spawnOffsetDirection);
+                Vector2 spawnOffsetDirection =
+                    useSpreadDirectionForSpawnOffset
+                        ? shotDirection
+                        : baseDirection;
 
-                Projectile projectile = entityManager.SpawnProjectile(
-                    projectileIndex,
-                    spawnPosition,
-                    totalDamage,
-                    knockback.Value,
-                    speed.Value,
-                    monsterLayer
-                );
+
+                Vector2 spawnPosition =
+                    GetProjectileSpawnPosition(
+                        spawnOffsetDirection
+                    );
+
+
+                Projectile projectile =
+                SpawnPlayerProjectile(
+                        projectileIndex,
+                        spawnPosition,
+                        totalDamage,
+                        knockback.Value,
+                        speed.Value,
+                        monsterLayer
+                    );
+
 
                 if (projectile == null)
                 {
                     continue;
                 }
 
+
                 if (debugProjectileLog)
                 {
-                    Debug.Log($"<color=cyan>[»ı¼º ¿Ï·á]</color> {i + 1}¹øÂ° ¹ß»çÃ¼ ID: {projectile.gameObject.GetInstanceID()} | °¢µµ: {offsetAngle} | »ı¼º À§Ä¡: {spawnPosition}");
+                    Debug.Log(
+                        $"<color=cyan>[ìƒì„± ì™„ë£Œ]</color> " +
+                        $"{i + 1}ë²ˆì§¸ ë°œì‚¬ì²´ " +
+                        $"ID: {projectile.gameObject.GetInstanceID()} | " +
+                        $"ê°ë„: {offsetAngle} | " +
+                        $"ìƒì„± ìœ„ì¹˜: {spawnPosition}"
+                    );
                 }
 
-                projectile.OnHitDamageable.AddListener(playerCharacter.OnDealDamage.Invoke);
-                projectile.Launch(shotDirection);
+
+                // =================================================
+                // í”¼í•´ ê¸°ë¡
+                // =================================================
+                //
+                // ê¸°ì¡´:
+                //
+                // projectile.OnHitDamageable.AddListener(
+                //     playerCharacter.OnDealDamage.Invoke
+                // );
+                //
+                // ë³€ê²½:
+                //
+                // ì‹¤ì œë¡œ ì ì—ê²Œ ì¤€ í”¼í•´ê°€ ë°œìƒí•˜ë©´
+                // Ability.ReportDamage()ë¥¼ í˜¸ì¶œí•©ë‹ˆë‹¤.
+                //
+                // ReportDamageì—ì„œëŠ”:
+                //
+                // 1. Character.OnDealDamage
+                //    â†’ ê¸°ì¡´ StatsManager ì´ í”¼í•´ëŸ‰ ê¸°ë¡
+                //
+                // 2. AugmentDamageTracker
+                //    â†’ ì´ Abilityì˜ ëˆ„ì  í”¼í•´ëŸ‰ ê¸°ë¡
+                //
+                // ë‘ ì‘ì—…ì„ ë™ì‹œì— ì²˜ë¦¬í•©ë‹ˆë‹¤.
+                // =================================================
+
+                projectile.OnHitDamageable.AddListener(
+                    ReportDamage
+                );
+
+
+                projectile.Launch(
+                    shotDirection
+                );
             }
         }
+
+
+        // =========================================================
+        // Base Fire Direction
+        // =========================================================
 
         protected virtual Vector2 GetBaseFireDirection()
         {
@@ -143,37 +283,67 @@ namespace Vampire
                 return Vector2.right;
             }
 
-            Vector2 lookDirection = playerCharacter.LookDirection;
+
+            Vector2 lookDirection =
+                playerCharacter.LookDirection;
+
 
             if (lookDirection.sqrMagnitude <= 0.0001f)
             {
                 return Vector2.right;
             }
 
+
             return lookDirection.normalized;
         }
 
-        protected virtual Vector2 GetProjectileSpawnPosition(Vector2 fireDirection)
+
+        // =========================================================
+        // Projectile Spawn Position
+        // =========================================================
+
+        public Vector2 GetReturnCatchPosition(Vector2 direction) => GetProjectileSpawnPosition(direction);
+
+        protected virtual Vector2 GetProjectileSpawnPosition(
+            Vector2 fireDirection
+        )
         {
-            Vector2 spawnPosition = GetProjectileSpawnBasePosition();
+            Vector2 spawnPosition =
+                GetProjectileSpawnBasePosition();
+
 
             if (!useProjectileSpawnOffset)
             {
                 return spawnPosition;
             }
 
+
             if (fireDirection.sqrMagnitude <= 0.0001f)
             {
                 fireDirection = Vector2.right;
             }
 
+
             fireDirection.Normalize();
 
-            spawnPosition += fireDirection * projectileSpawnForwardOffset;
-            spawnPosition += Vector2.down * projectileSpawnDownOffset;
+
+            spawnPosition +=
+                fireDirection *
+                projectileSpawnForwardOffset;
+
+
+            spawnPosition +=
+                Vector2.down *
+                projectileSpawnDownOffset;
+
 
             return spawnPosition;
         }
+
+
+        // =========================================================
+        // Projectile Spawn Base Position
+        // =========================================================
 
         protected virtual Vector2 GetProjectileSpawnBasePosition()
         {
@@ -182,15 +352,23 @@ namespace Vampire
                 return projectileSpawnPoint.position;
             }
 
-            if (playerCharacter != null && playerCharacter.CenterTransform != null)
+
+            if (playerCharacter != null &&
+                playerCharacter.CenterTransform != null)
             {
-                return playerCharacter.CenterTransform.position;
+                return playerCharacter
+                    .CenterTransform
+                    .position;
             }
+
 
             if (playerCharacter != null)
             {
-                return playerCharacter.transform.position;
+                return playerCharacter
+                    .transform
+                    .position;
             }
+
 
             return transform.position;
         }

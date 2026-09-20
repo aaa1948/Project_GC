@@ -31,34 +31,58 @@ namespace Vampire
         protected Coroutine hitAnimationCoroutine = null;
         protected bool alive = true;
         protected Transform centerTransform;
-        //�����߰�
+        //상현추가
         protected float currentAcceleration;
         protected float runtimeMoveSpeed;
+        // ============================================================
+        // Mini Stage Runtime Ownership / Suspend
+        // ============================================================
+
+        // true면 미니 스테이지 방에서 생성된 몬스터.
+        // false면 기존 메인 필드 몬스터.
+        private bool miniStageOwned = false;
+
+        // 현재 메인 필드 런타임 정지 상태인지 여부.
+        private bool fieldRuntimeSuspended = false;
+
+        // 미니 스테이지 진입 전에 Rigidbody2D.simulated가 어떤 값이었는지 보존한다.
+        // 특수 몬스터가 원래 simulated=false 상태였을 가능성도 고려한다.
+        private bool cachedRigidbodySimulated = true;
+        private bool hasCachedRigidbodySimulated = false;
+
 
         private Vector3 originalLocalScale = Vector3.one;
 
+        public bool IsMiniStageOwned => miniStageOwned;
+        public bool IsFieldRuntimeSuspended => fieldRuntimeSuspended;
         public Transform CenterTransform { get => centerTransform; }
 
-        // �ٸ� �ڵ忡�� OnKilled.AddListener(OnEliteKilled(Monster)) ������ ���� �����Ƿ� Monster ���ڸ� �ѱ��.
+        // 다른 코드에서 OnKilled.AddListener(OnEliteKilled(Monster)) 식으로 쓰고 있으므로 Monster 인자를 넘긴다.
         public UnityEvent<Monster> OnKilled { get; } = new UnityEvent<Monster>();
 
         public float HP => currentHealth;
+        public float SpawnMaxHealth { get; private set; }
+        public bool WasKilledByPlayer { get; private set; }
+
+        // 결과 화면 및 공격 출처 추적용
+        public MonsterBlueprint Blueprint => monsterBlueprint;
+
         public Vector2 Position => transform.position;
         public Vector2 Size => monsterLegsCollider != null ? monsterLegsCollider.bounds.size : Vector2.one;
 
         public Dictionary<int, int> ListIndexByCellIndex { get; set; }
         public int QueryID { get; set; } = -1;
-        //�����߰�
+        //상현추가
         public float moveSpeed
         {
             get => runtimeMoveSpeed;
             set
             {
-                // �ӵ��� 0 ���Ϸ� �������� ���Ѵ� �巡�װ� �ɸ��� ���� ����
+                // 속도가 0 이하로 내려가서 무한대 드래그가 걸리는 것을 방지
                 runtimeMoveSpeed = Mathf.Max(0.05f, value);
                 if (rb != null)
                 {
-                    //  �ӵ��� ���ϸ� ���ӵ��� ����Ͽ� ���� ������(drag)�� �ǽð����� �����մϴ�!
+                    //  속도가 변하면 가속도와 비례하여 물리 마찰력(drag)을 실시간으로 재계산합니다!
                     rb.drag = currentAcceleration / (runtimeMoveSpeed * runtimeMoveSpeed);
                 }
             }
@@ -103,7 +127,7 @@ namespace Vampire
 
                 string objectName = renderer.gameObject.name.ToLower();
 
-                // �׸��ڿ� SpriteRenderer�� ���� ���� �̹����� ���� �ʰ� ����
+                // 그림자용 SpriteRenderer를 메인 몬스터 이미지로 잡지 않게 방지
                 if (objectName.Contains("shadow"))
                 {
                     continue;
@@ -145,7 +169,110 @@ namespace Vampire
                 zPositioner.Init(playerCharacter.transform);
             }
         }
+        /// <summary>
+        /// EntityManager가 Pool에서 몬스터를 꺼낸 직후 Setup()보다 먼저 호출합니다.
+        ///
+        /// allowDuringMiniStage=true로 생성된 몬스터는
+        /// 미니 스테이지 전용 몬스터로 취급합니다.
+        ///
+        /// Pool에서 이전 사용 상태가 남아 있더라도
+        /// Rigidbody / Suspend 상태를 안전하게 초기화합니다.
+        /// </summary>
+        public void PrepareForSpawnRuntime(bool isMiniStageOwned)
+        {
+            miniStageOwned = isMiniStageOwned;
+            nextHitFlashTime = 0f;
+            deathStarted = false;
 
+            fieldRuntimeSuspended = false;
+            hasCachedRigidbodySimulated = false;
+
+            if (rb == null)
+            {
+                rb = GetComponent<Rigidbody2D>();
+            }
+
+            if (rb != null)
+            {
+                rb.simulated = true;
+                rb.velocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+            }
+        }
+
+        /// <summary>
+        /// 메인 필드 몬스터만 일시 정지/재개합니다.
+        ///
+        /// 미니 스테이지 소유 몬스터는 이 호출을 무시하므로
+        /// MiniStageSniper / ExplodingRush 같은 방 몬스터는 정상 동작합니다.
+        /// </summary>
+        public void SetFieldRuntimeSuspended(bool suspended)
+        {
+            // 미니 스테이지에서 생성한 몬스터는
+            // 필드 정지 대상이 아니다.
+            if (miniStageOwned)
+            {
+                return;
+            }
+
+            if (fieldRuntimeSuspended == suspended)
+            {
+                return;
+            }
+
+            fieldRuntimeSuspended = suspended;
+
+            if (suspended)
+            {
+                if (rb != null)
+                {
+                    cachedRigidbodySimulated = rb.simulated;
+                    hasCachedRigidbodySimulated = true;
+
+                    rb.velocity = Vector2.zero;
+                    rb.angularVelocity = 0f;
+
+                    // Physics2D Solver 자체에서 제외한다.
+                    // 따라서 다른 몬스터에게 밀리거나 이동하는 것도 막힌다.
+                    rb.simulated = false;
+                }
+
+                OnFieldRuntimeSuspended();
+                return;
+            }
+
+            // Resume
+            if (rb != null)
+            {
+                if (hasCachedRigidbodySimulated)
+                {
+                    rb.simulated = cachedRigidbodySimulated;
+                }
+
+                rb.velocity = Vector2.zero;
+                rb.angularVelocity = 0f;
+            }
+
+            hasCachedRigidbodySimulated = false;
+
+            OnFieldRuntimeResumed();
+        }
+
+        /// <summary>
+        /// 특수 몬스터가 MiniStage 진입 시
+        /// 자체 Coroutine / Warning / UI 등을 정리하고 싶을 때 Override.
+        /// </summary>
+        protected virtual void OnFieldRuntimeSuspended()
+        {
+        }
+
+        /// <summary>
+        /// 특수 몬스터가 MiniStage 종료 후
+        /// 자체 행동을 다시 시작하고 싶을 때 Override.
+        /// </summary>
+        protected virtual void OnFieldRuntimeResumed()
+        {
+        }
         public virtual void Setup(
             int monsterIndex,
             Vector2 position,
@@ -214,6 +341,8 @@ namespace Vampire
             }
 
             currentHealth = finalHp;
+            SpawnMaxHealth = finalHp;
+            WasKilledByPlayer = false;
             alive = true;
 
             if (entityManager != null)
@@ -277,7 +406,7 @@ namespace Vampire
                 centerTransform.position = transform.position;
             }
 
-            // ��������
+            // 상현수정
             float baseMoveSpeed = monsterBlueprint != null ? monsterBlueprint.movespeed : 1f;
             currentAcceleration = monsterBlueprint != null ? monsterBlueprint.acceleration : 1f;
 
@@ -292,8 +421,8 @@ namespace Vampire
                 baseMoveSpeed + 0.1f
             );
 
-            // �߿�: ���� ���� ������Ƽ�� �����Ͽ� �⺻ �ӵ��� �����մϴ�.
-            // ������Ƽ ������ set ������ �۵��ϸ鼭 rb.drag(������)�� �ڵ����� ���Ǿ� ���ϴ�!
+            // 중요: 새로 만든 프로퍼티에 대입하여 기본 속도를 세팅합니다.
+            // 프로퍼티 내부의 set 구문이 작동하면서 rb.drag(마찰력)도 자동으로 계산되어 들어갑니다!
             this.moveSpeed = spd;
 
             if (rb != null)
@@ -320,6 +449,11 @@ namespace Vampire
 
         protected virtual void Update()
         {
+            if (fieldRuntimeSuspended)
+            {
+                return;
+            }
+
             if (playerCharacter == null || monsterSpriteRenderer == null || rb == null)
             {
                 return;
@@ -335,7 +469,7 @@ namespace Vampire
 
         public override void Knockback(Vector2 knockback)
         {
-            if (rb == null)
+            if (fieldRuntimeSuspended || rb == null)
             {
                 return;
             }
@@ -343,12 +477,17 @@ namespace Vampire
             rb.velocity += knockback * Mathf.Sqrt(Mathf.Max(0.01f, rb.drag));
         }
 
+        public static event System.Action<Monster> Died;
+        private float nextHitFlashTime;
+        private bool deathStarted;
+
         public override void TakeDamage(
     float damage,
     Vector2 knockback = default(Vector2),
     bool isCritical = false)
         {
-            if (!alive)
+            if (!alive || fieldRuntimeSuspended)
+
             {
                 return;
             }
@@ -372,8 +511,8 @@ namespace Vampire
                 );
             }
 
-            // ġ��Ÿ �����̸鼭 ���� ���ذ� 0���� Ŭ ����
-            // ġ��Ÿ ȿ������ 1ȸ ����մϴ�.
+            // 치명타 판정이면서 실제 피해가 0보다 클 때만
+            // 치명타 효과음을 1회 재생합니다.
             if (isCritical && damage > 0f)
             {
                 GameAudioManager.PlaySfx(
@@ -381,11 +520,6 @@ namespace Vampire
                 );
             }
 
-
-            if (hitAnimationCoroutine != null)
-            {
-                StopCoroutine(hitAnimationCoroutine);
-            }
 
             if (knockback != default(Vector2) && rb != null)
             {
@@ -395,7 +529,12 @@ namespace Vampire
 
             if (currentHealth > 0)
             {
-                hitAnimationCoroutine = StartCoroutine(HitAnimation());
+                // Do not restart a white flash on every rapid hit. Leave a visible rest between flashes.
+                if (!SuppressHitFlash && damage > 0f && Time.time >= nextHitFlashTime)
+                {
+                    nextHitFlashTime = Time.time + .22f;
+                    hitAnimationCoroutine = StartCoroutine(HitAnimation());
+                }
             }
             else
             {
@@ -410,7 +549,7 @@ namespace Vampire
                 monsterSpriteRenderer.sharedMaterial = whiteMaterial;
             }
 
-            yield return new WaitForSeconds(0.15f);
+            yield return new WaitForSeconds(0.06f);
 
             if (monsterSpriteRenderer != null && defaultMaterial != null)
             {
@@ -418,11 +557,16 @@ namespace Vampire
             }
 
             knockedBack = false;
+            hitAnimationCoroutine = null;
         }
 
         public virtual IEnumerator Killed(bool killedByPlayer = true)
         {
+            if (deathStarted) yield break;
+            deathStarted = true;
             alive = false;
+            WasKilledByPlayer = killedByPlayer;
+            Died?.Invoke(this);
 
             if (monsterHitbox != null)
             {
@@ -450,7 +594,8 @@ namespace Vampire
                 deathParticles.Play();
             }
 
-            yield return HitAnimation();
+            if (!SuppressHitFlash) yield return HitAnimation();
+            else yield return null;
 
             if (deathParticles != null)
             {
@@ -482,7 +627,11 @@ namespace Vampire
 
             if (entityManager != null)
             {
-                entityManager.DespawnMonster(monsterIndex, this, true);
+                entityManager.DespawnMonster(
+                    monsterIndex,
+                    this,
+                    killedByPlayer
+                );
             }
         }
 

@@ -23,6 +23,7 @@ namespace Vampire
     /// </summary>
     public static class SyringeSpecialHitEffectUtility
     {
+        public static void ReapplyVer4Mark(Component target, SyringeSpecialRuntime runtime) => ApplyNeedleMark(target,runtime);
         private static bool hasWarnedHealMethodMissing = false;
 
         public static bool TryGetValidDamageableTarget(
@@ -142,6 +143,7 @@ namespace Vampire
                 multiplier *= GetCorrosionDamageMultiplier(damageableComponent);
             }
 
+            multiplier *= Ver4HitEffects.BeforeHit(damageableComponent,runtime);
             return Mathf.Max(0.01f, multiplier);
         }
 
@@ -152,7 +154,8 @@ namespace Vampire
             Vector2 hitPosition,
             LayerMask damageableLayer,
             GameObject originalTarget,
-            bool consumedNeedleMark)
+            bool consumedNeedleMark,
+            float appliedNeedleDamage = -1f)
         {
             if (damageableComponent == null)
             {
@@ -161,7 +164,11 @@ namespace Vampire
 
             if (runtime.poisonEnabled)
             {
-                ApplyPoison(damageableComponent, runtime);
+                ApplyPoison(
+                    damageableComponent,
+                    runtime,
+                    sourceCharacter
+                );
             }
 
             if (runtime.honeyEnabled)
@@ -181,12 +188,17 @@ namespace Vampire
 
             if (runtime.digestiveAcidSacEnabled)
             {
-                ApplyDigestiveAcidSac(damageableComponent, runtime);
+                ApplyDigestiveAcidSac(
+                    damageableComponent,
+                    runtime,
+                    sourceCharacter
+                );
             }
 
             if (runtime.hungerNeedleEnabled)
             {
                 ApplyHungerNeedleHit(sourceCharacter, runtime);
+                SyringeAugmentVfx.PlayHungerHit(damageableComponent, sourceCharacter, runtime.hungerMaxStacks);
             }
 
             if (runtime.gutBacteriaEnabled)
@@ -209,6 +221,8 @@ namespace Vampire
                     originalTarget
                 );
             }
+            if(appliedNeedleDamage>=0) runtime.ver4HitDamage=appliedNeedleDamage;
+            Ver4HitEffects.AfterHit(damageableComponent,runtime,sourceCharacter,damageableLayer,consumedNeedleMark);
         }
 
         private static Monster GetMonster(Component damageableComponent)
@@ -250,7 +264,10 @@ namespace Vampire
             return objectName.Contains("Boss") || objectName.Contains("보스");
         }
 
-        private static void ApplyPoison(Component damageableComponent, SyringeSpecialRuntime runtime)
+        private static void ApplyPoison(
+            Component damageableComponent,
+            SyringeSpecialRuntime runtime,
+            Character sourceCharacter)
         {
             Monster monster = GetMonster(damageableComponent);
 
@@ -269,7 +286,9 @@ namespace Vampire
             poisonStatus.Apply(
                 runtime.poisonDuration,
                 runtime.poisonTickInterval,
-                runtime.poisonTickDamage
+                runtime.poisonTickDamage,
+                sourceCharacter,
+                "독침"
             );
         }
 
@@ -379,7 +398,10 @@ namespace Vampire
             markStatus.Apply(runtime.markDuration);
         }
 
-        private static void ApplyDigestiveAcidSac(Component damageableComponent, SyringeSpecialRuntime runtime)
+        private static void ApplyDigestiveAcidSac(
+            Component damageableComponent,
+            SyringeSpecialRuntime runtime,
+            Character sourceCharacter)
         {
             Monster monster = GetMonster(damageableComponent);
 
@@ -405,7 +427,9 @@ namespace Vampire
                 runtime.digestiveAcidPuddleRadius,
                 runtime.digestiveAcidPuddleDamagePerSecond,
                 runtime.digestiveAcidPuddleTickInterval,
-                runtime.digestiveAcidPuddleColor
+                runtime.digestiveAcidPuddleColor,
+                sourceCharacter,
+                "소화액낭침"
             );
         }
 
@@ -474,10 +498,10 @@ namespace Vampire
                 healAmount *= runtime.mosquitoBossHealMultiplier;
             }
 
-            TryHealPlayer(sourceCharacter, healAmount);
+            TryHealPlayer(sourceCharacter, healAmount, damageableComponent);
         }
 
-        private static void TryHealPlayer(Character sourceCharacter, float healAmount)
+        private static void TryHealPlayer(Character sourceCharacter, float healAmount, Component impactSource)
         {
             if (sourceCharacter == null || healAmount <= 0f)
             {
@@ -526,6 +550,7 @@ namespace Vampire
             }
 
             healMethod.Invoke(sourceCharacter, new object[] { healAmount });
+            SyringeAugmentVfx.PlayAbsorption(impactSource, sourceCharacter);
         }
 
         private static void ApplyExplosion(
@@ -535,6 +560,8 @@ namespace Vampire
             LayerMask damageableLayer,
             GameObject originalTarget)
         {
+            SyringeAugmentVfx.Play("Explosion", hitPosition,
+                originalTarget != null ? SyringeAugmentVfx.FindTarget(originalTarget.transform) : null);
             Collider2D[] hits = Physics2D.OverlapCircleAll(
                 hitPosition,
                 runtime.explosionRadius,
@@ -581,7 +608,33 @@ namespace Vampire
                     continue;
                 }
 
-                splashDamageable.TakeDamage(runtime.explosionDamage, Vector2.zero, false);
+                float finalDamage = runtime.explosionDamage * Ver4HitEffects.ExplosionCenterMultiplier(splashComponent,hitPosition,runtime);
+
+                splashDamageable.TakeDamage(
+                    finalDamage,
+                    Vector2.zero,
+                    false
+                );
+
+                // 이 폭발은 메인 적중 이벤트와 별개의 독립 피해이므로
+                // 기존 전체 피해량과 증강별 피해량에 각각 1회 기록한다.
+                if (finalDamage > 0f &&
+                    sourceCharacter != null &&
+                    sourceCharacter.OnDealDamage != null)
+                {
+                    sourceCharacter.OnDealDamage.Invoke(
+                        finalDamage
+                    );
+                }
+
+                if (finalDamage > 0f &&
+                    AugmentDamageTracker.Instance != null)
+                {
+                    AugmentDamageTracker.Instance.RecordDamage(
+                        "폭발침",
+                        finalDamage
+                    );
+                }
             }
         }
     }

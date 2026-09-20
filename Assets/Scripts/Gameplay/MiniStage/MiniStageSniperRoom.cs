@@ -44,13 +44,9 @@ namespace Vampire
         [Tooltip("SniperMonsterBlueprint의 스폰 거리 보정 때문에 위치가 바뀌는 경우를 막기 위해, 스폰 직후 지정 위치로 한 번 더 고정합니다.")]
         [SerializeField] private bool forcePositionAfterSpawn = true;
 
-        [Header("Debug")]
-        [Tooltip("스나이퍼 스폰/처치 로그를 출력합니다.")]
-        [SerializeField] private bool debugLog = true;
 
         private readonly List<Monster> spawnedSnipers = new List<Monster>();
         private int remainingSniperCount;
-        private Vector3 lastSniperKilledPosition;
 
         protected override void OnBeginRoom()
         {
@@ -62,20 +58,19 @@ namespace Vampire
             if (entityManager == null)
             {
                 Debug.LogWarning("[MiniStageSniperRoom] EntityManager가 없어 스나이퍼를 생성할 수 없습니다.");
-                CompleteRoom(transform.position);
+                CompleteRoom();
                 return;
             }
 
             if (sniperBlueprint == null)
             {
                 Debug.LogWarning("[MiniStageSniperRoom] Sniper Blueprint가 비어 있습니다.");
-                CompleteRoom(transform.position);
+                CompleteRoom();
                 return;
             }
 
             spawnedSnipers.Clear();
             remainingSniperCount = 0;
-            lastSniperKilledPosition = transform.position;
 
             int spawnCount = GetSpawnCount();
 
@@ -117,7 +112,7 @@ namespace Vampire
             if (remainingSniperCount <= 0)
             {
                 Debug.LogWarning("[MiniStageSniperRoom] 생성된 스나이퍼가 없습니다. 방을 즉시 클리어 처리합니다.");
-                CompleteRoom(transform.position);
+                CompleteRoom();
             }
         }
 
@@ -235,7 +230,6 @@ namespace Vampire
             if (killedMonster != null)
             {
                 killedMonster.OnKilled.RemoveListener(OnSniperKilled);
-                lastSniperKilledPosition = killedMonster.transform.position;
             }
 
             remainingSniperCount = Mathf.Max(0, remainingSniperCount - 1);
@@ -247,7 +241,7 @@ namespace Vampire
 
             if (remainingSniperCount <= 0)
             {
-                CompleteRoom(lastSniperKilledPosition);
+                CompleteRoom();
             }
         }
 

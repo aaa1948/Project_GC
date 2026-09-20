@@ -7,8 +7,25 @@ namespace Vampire
     // 몬스터의 Rigidbody2D.drag를 일정 시간 증가시켜 이동 체감 속도를 낮춘다.
     public class HoneySlowStatus : MonoBehaviour
     {
+        private SyringeAugmentVfx augmentVisual;
+        private void EnsureAugmentVisual()
+        {
+            if (augmentVisual != null || !SyringeAugmentVfx.IsLiving(this)) return;
+            var renderer = SyringeAugmentVfx.FindTarget(this);
+            if (renderer != null) augmentVisual = SyringeAugmentVfx.Play("Honey", renderer.bounds.center, renderer);
+        }
+        private void ReleaseAugmentVisual()
+        {
+            if (augmentVisual != null) augmentVisual.Release();
+            augmentVisual = null;
+        }
+        private void LateUpdate()
+        {
+            if (!SyringeAugmentVfx.IsLiving(this)) ReleaseAugmentVisual();
+        }
         private Rigidbody2D targetRigidbody;
         private Coroutine slowCoroutine;
+        public bool IsActive => slowCoroutine != null;
 
         private bool hasOriginalDrag = false;
         private float originalDrag;
@@ -60,6 +77,7 @@ namespace Vampire
             }
 
             slowCoroutine = StartCoroutine(SlowRoutine(duration));
+            EnsureAugmentVisual();
         }
 
         private IEnumerator SlowRoutine(float duration)
@@ -71,6 +89,7 @@ namespace Vampire
 
         private void RestoreOriginalDrag()
         {
+            ReleaseAugmentVisual();
             if (targetRigidbody != null && hasOriginalDrag)
             {
                 targetRigidbody.drag = originalDrag;

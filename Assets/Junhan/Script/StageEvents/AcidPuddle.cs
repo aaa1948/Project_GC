@@ -34,11 +34,7 @@ namespace Vampire
         [SerializeField] private float warningDuration = 0.4f;
 
         [Header("Visual Sorting")]
-        [Tooltip("체크하면 위산 장판의 Sorting Layer와 Order in Layer를 코드에서 강제로 적용합니다.")]
-        [SerializeField] private bool forceVisualSorting = true;
 
-        [Tooltip("위산 장판에 적용할 Sorting Layer 이름입니다. 프로젝트에 없는 이름이면 Default로 유지됩니다.")]
-        [SerializeField] private string puddleSortingLayerName = "Default";
 
         [Tooltip("위산 장판의 Order in Layer입니다. 몬스터/플레이어보다 낮고, 배경보다 높게 맞추세요.")]
         [SerializeField] private int puddleOrderInLayer = -5;
@@ -98,6 +94,11 @@ namespace Vampire
 
         private void Update()
         {
+            if (MiniStageRuntimeState.IsInsideMiniStage)
+            {
+                return;
+            }
+
             UpdateLifetime();
             UpdateWarningState();
             UpdateDamageTick();
@@ -145,7 +146,7 @@ namespace Vampire
 
             if (tickTimer <= 0f)
             {
-                targetCharacter.TakeDamage(damagePerTick);
+                targetCharacter.TakePeriodicDamage(damagePerTick);
                 tickTimer = tickInterval;
             }
         }
@@ -160,7 +161,11 @@ namespace Vampire
             }
 
             targetCharacter = character;
-            tickTimer = damageImmediatelyOnEnter ? 0f : tickInterval;
+            // 위치 이동에 따른 접촉 정보는 갱신하되, 정지 중 피해 타이머는 보존합니다.
+            if (!MiniStageRuntimeState.IsInsideMiniStage)
+            {
+                tickTimer = damageImmediatelyOnEnter ? 0f : tickInterval;
+            }
         }
 
         private void OnTriggerExit2D(Collider2D other)
@@ -208,11 +213,6 @@ namespace Vampire
 
         private void ApplyVisualSorting()
         {
-            if (!forceVisualSorting)
-            {
-                return;
-            }
-
             CacheSpriteRenderersIfNeeded();
 
             if (spriteRenderers == null || spriteRenderers.Length == 0)
@@ -229,8 +229,7 @@ namespace Vampire
                     continue;
                 }
 
-                renderer.sortingLayerName = puddleSortingLayerName;
-                renderer.sortingOrder = puddleOrderInLayer;
+                GroundVisualSorting.Apply(renderer, puddleOrderInLayer);
             }
         }
     }

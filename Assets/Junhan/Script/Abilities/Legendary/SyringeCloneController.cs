@@ -5,6 +5,8 @@ namespace Vampire
 {
     public class SyringeCloneController : MonoBehaviour
     {
+        private SyringeAugmentVfx augmentVisual;
+        private float visualReadyAt;
         private Character sourceCharacter;
         private EntityManager entityManager;
         private SyringeDartAbility sourceSyringeAbility;
@@ -20,51 +22,129 @@ namespace Vampire
         private LayerMask monsterLayer;
         private GameObject projectilePrefab;
 
+
+        // =========================================================
+        // Clone Follow
+        // =========================================================
+
         [Header("Clone Follow")]
         [SerializeField] private float followOffsetDistance = 1.2f;
         [SerializeField] private float followLerpSpeed = 12f;
+
+
+        // =========================================================
+        // Clone Safety
+        // =========================================================
 
         [Header("Clone Safety")]
         [SerializeField] private float spawnInvincibleDuration = 2f;
 
         private float spawnInvincibleTimer = 0f;
 
+
+        // =========================================================
+        // Create
+        // =========================================================
+
         public static SyringeCloneController Create(
             Character sourceCharacter,
             EntityManager entityManager,
-            SyringeDartAbility sourceSyringeAbility)
+            SyringeDartAbility sourceSyringeAbility
+        )
         {
-            if (sourceCharacter == null || entityManager == null || sourceSyringeAbility == null)
+            if (sourceCharacter == null ||
+                entityManager == null ||
+                sourceSyringeAbility == null)
             {
-                Debug.LogWarning("[∫–Ω≈] ª˝º∫ Ω«∆–: sourceCharacter/entityManager/sourceSyringeAbility ¡ﬂ «œ≥™∞° æ¯Ω¿¥œ¥Ÿ.");
+                Debug.LogWarning(
+                    "[Î∂ÑÏã†] ÏÉùÏÑ± Ïã§Ìå®: " +
+                    "sourceCharacter/entityManager/sourceSyringeAbility Ï§ë ÌïòÎÇòÍ∞Ä ÏóÜÏäµÎãàÎã§."
+                );
+
                 return null;
             }
 
-            GameObject cloneObject = new GameObject("Syringe Clone");
 
-            SpriteRenderer sourceRenderer = sourceCharacter.GetComponentInChildren<SpriteRenderer>();
-            SpriteRenderer cloneRenderer = cloneObject.AddComponent<SpriteRenderer>();
+            GameObject cloneObject =
+                new GameObject(
+                    "Syringe Clone"
+                );
+
+
+            // =====================================================
+            // Sprite
+            // =====================================================
+
+            SpriteRenderer sourceRenderer =
+                sourceCharacter.GetComponentInChildren<SpriteRenderer>();
+
+
+            SpriteRenderer cloneRenderer =
+                cloneObject.AddComponent<SpriteRenderer>();
+
 
             if (sourceRenderer != null)
             {
-                cloneRenderer.sprite = sourceRenderer.sprite;
-                cloneRenderer.sortingLayerID = sourceRenderer.sortingLayerID;
-                cloneRenderer.sortingOrder = sourceRenderer.sortingOrder - 1;
-                cloneRenderer.color = new Color(1f, 1f, 1f, 0.75f);
+                cloneRenderer.sprite =
+                    sourceRenderer.sprite;
+
+
+                cloneRenderer.sortingLayerID =
+                    sourceRenderer.sortingLayerID;
+
+
+                cloneRenderer.sortingOrder =
+                    sourceRenderer.sortingOrder - 1;
+
+
+                cloneRenderer.color =
+                    new Color(
+                        1f,
+                        1f,
+                        1f,
+                        0.75f
+                    );
             }
 
-            Rigidbody2D cloneRb = cloneObject.AddComponent<Rigidbody2D>();
+
+            // =====================================================
+            // Rigidbody
+            // =====================================================
+
+            Rigidbody2D cloneRb =
+                cloneObject.AddComponent<Rigidbody2D>();
+
+
             cloneRb.gravityScale = 0f;
             cloneRb.drag = 0f;
             cloneRb.angularDrag = 0f;
-            cloneRb.constraints = RigidbodyConstraints2D.FreezeRotation;
-            cloneRb.bodyType = RigidbodyType2D.Kinematic;
 
-            CircleCollider2D cloneCollider = cloneObject.AddComponent<CircleCollider2D>();
+            cloneRb.constraints =
+                RigidbodyConstraints2D.FreezeRotation;
+
+            cloneRb.bodyType =
+                RigidbodyType2D.Kinematic;
+
+
+            // =====================================================
+            // Collider
+            // =====================================================
+
+            CircleCollider2D cloneCollider =
+                cloneObject.AddComponent<CircleCollider2D>();
+
+
             cloneCollider.isTrigger = true;
             cloneCollider.radius = 0.3f;
 
-            SyringeCloneController controller = cloneObject.AddComponent<SyringeCloneController>();
+
+            // =====================================================
+            // Controller
+            // =====================================================
+
+            SyringeCloneController controller =
+                cloneObject.AddComponent<SyringeCloneController>();
+
 
             controller.Init(
                 sourceCharacter,
@@ -75,8 +155,14 @@ namespace Vampire
                 cloneCollider
             );
 
+
             return controller;
         }
+
+
+        // =========================================================
+        // Init
+        // =========================================================
 
         private void Init(
             Character sourceCharacter,
@@ -84,53 +170,121 @@ namespace Vampire
             SyringeDartAbility sourceSyringeAbility,
             SpriteRenderer spriteRenderer,
             Rigidbody2D rb,
-            CircleCollider2D hitCollider)
+            CircleCollider2D hitCollider
+        )
         {
-            this.sourceCharacter = sourceCharacter;
-            this.entityManager = entityManager;
-            this.sourceSyringeAbility = sourceSyringeAbility;
-            this.spriteRenderer = spriteRenderer;
-            this.rb = rb;
-            this.hitCollider = hitCollider;
+            this.sourceCharacter =
+                sourceCharacter;
 
-            statRuntime = PlayerGeneralStatRuntime.GetOrCreate(sourceCharacter);
+            this.entityManager =
+                entityManager;
 
-            projectilePrefab = sourceSyringeAbility.ProjectilePrefab;
-            monsterLayer = sourceSyringeAbility.MonsterLayer;
-            projectilePoolIndex = entityManager.AddPoolForProjectile(projectilePrefab);
+            this.sourceSyringeAbility =
+                sourceSyringeAbility;
 
-            transform.position = GetSourceCenterPosition() + Vector3.right * followOffsetDistance;
+            this.spriteRenderer =
+                spriteRenderer;
 
-            spawnInvincibleTimer = spawnInvincibleDuration;
+            this.rb =
+                rb;
+
+            this.hitCollider =
+                hitCollider;
+
+
+            statRuntime =
+                PlayerGeneralStatRuntime.GetOrCreate(
+                    sourceCharacter
+                );
+
+
+            projectilePrefab =
+                sourceSyringeAbility.ProjectilePrefab;
+
+
+            monsterLayer =
+                sourceSyringeAbility.MonsterLayer;
+
+
+            projectilePoolIndex =
+                entityManager.AddPoolForProjectile(
+                    projectilePrefab
+                );
+
+
+            transform.position =
+                GetSourceCenterPosition()
+                +
+                Vector3.right *
+                followOffsetDistance;
+
+
+            spawnInvincibleTimer =
+                spawnInvincibleDuration;
+
+            visualReadyAt = Time.time + 0.24f;
+            var spawn = SyringeAugmentVfx.Play("CloneSpawn", transform.position, spriteRenderer);
+            if (spawn != null) spawn.BindTo(transform);
 
             if (sourceCharacter.OnDeath != null)
             {
-                sourceCharacter.OnDeath.AddListener(DestroySelf);
+                sourceCharacter.OnDeath.AddListener(
+                    DestroySelf
+                );
             }
         }
+
+
+        // =========================================================
+        // Update
+        // =========================================================
 
         private void Update()
         {
-            if (sourceCharacter == null || sourceSyringeAbility == null || entityManager == null)
+            if (sourceCharacter == null ||
+                sourceSyringeAbility == null ||
+                entityManager == null)
             {
                 Destroy(gameObject);
+
                 return;
             }
 
+            if (sourceCharacter.CurrentHealth <= 0f || !sourceCharacter.gameObject.activeInHierarchy)
+            {
+                DestroySelf();
+                return;
+            }
+            if (augmentVisual == null && Time.time >= visualReadyAt)
+                augmentVisual = SyringeAugmentVfx.Play("CloneCulture", transform.position, spriteRenderer);
+
             if (statRuntime == null)
             {
-                statRuntime = PlayerGeneralStatRuntime.GetOrCreate(sourceCharacter);
+                statRuntime =
+                    PlayerGeneralStatRuntime.GetOrCreate(
+                        sourceCharacter
+                    );
             }
+
 
             if (spawnInvincibleTimer > 0f)
             {
-                spawnInvincibleTimer -= Time.deltaTime;
+                spawnInvincibleTimer -=
+                    Time.deltaTime;
             }
 
+
             UpdateFollowPosition();
+
             UpdateVisual();
+
             UpdateAttack();
         }
+
+
+        // =========================================================
+        // Source Position
+        // =========================================================
 
         private Vector3 GetSourceCenterPosition()
         {
@@ -139,175 +293,422 @@ namespace Vampire
                 return transform.position;
             }
 
+
             if (sourceCharacter.CenterTransform != null)
             {
-                return sourceCharacter.CenterTransform.position;
+                return sourceCharacter
+                    .CenterTransform
+                    .position;
             }
 
-            return sourceCharacter.transform.position;
+
+            return sourceCharacter
+                .transform
+                .position;
         }
+
+
+        // =========================================================
+        // Follow
+        // =========================================================
 
         private void UpdateFollowPosition()
         {
-            Vector2 lookDirection = sourceCharacter.LookDirection;
+            Vector2 lookDirection =
+                sourceCharacter.LookDirection;
+
 
             if (lookDirection == Vector2.zero)
             {
-                lookDirection = Vector2.right;
+                lookDirection =
+                    Vector2.right;
             }
 
-            Vector2 sideDirection = new Vector2(-lookDirection.y, lookDirection.x);
+
+            Vector2 sideDirection =
+                new Vector2(
+                    -lookDirection.y,
+                    lookDirection.x
+                );
+
 
             if (sideDirection == Vector2.zero)
             {
-                sideDirection = Vector2.right;
+                sideDirection =
+                    Vector2.right;
             }
 
-            Vector3 targetPosition =
-                GetSourceCenterPosition() +
-                (Vector3)(sideDirection.normalized * followOffsetDistance);
 
-            transform.position = Vector3.Lerp(
-                transform.position,
-                targetPosition,
-                followLerpSpeed * Time.deltaTime
-            );
+            Vector3 targetPosition =
+                GetSourceCenterPosition()
+                +
+                (Vector3)(
+                    sideDirection.normalized *
+                    followOffsetDistance
+                );
+
+
+            transform.position =
+                Vector3.Lerp(
+                    transform.position,
+                    targetPosition,
+                    followLerpSpeed *
+                    Time.deltaTime
+                );
+
 
             if (rb != null)
             {
-                rb.velocity = Vector2.zero;
-                rb.angularVelocity = 0f;
+                rb.velocity =
+                    Vector2.zero;
+
+                rb.angularVelocity =
+                    0f;
             }
         }
+
+
+        // =========================================================
+        // Visual
+        // =========================================================
 
         private void UpdateVisual()
         {
-            SpriteRenderer sourceRenderer = sourceCharacter.GetComponentInChildren<SpriteRenderer>();
+            SpriteRenderer sourceRenderer =
+                sourceCharacter
+                    .GetComponentInChildren<SpriteRenderer>();
 
-            if (sourceRenderer != null && spriteRenderer != null)
+
+            if (sourceRenderer != null &&
+                spriteRenderer != null)
             {
-                spriteRenderer.sprite = sourceRenderer.sprite;
-                spriteRenderer.flipX = sourceRenderer.flipX;
+                spriteRenderer.sprite =
+                    sourceRenderer.sprite;
+
+
+                spriteRenderer.flipX =
+                    sourceRenderer.flipX;
+
 
                 if (spawnInvincibleTimer > 0f)
                 {
-                    spriteRenderer.color = new Color(1f, 1f, 1f, 0.45f);
+                    spriteRenderer.color =
+                        new Color(
+                            1f,
+                            1f,
+                            1f,
+                            0.45f
+                        );
                 }
                 else
                 {
-                    spriteRenderer.color = new Color(1f, 1f, 1f, 0.75f);
+                    spriteRenderer.color =
+                        new Color(
+                            1f,
+                            1f,
+                            1f,
+                            0.75f
+                        );
                 }
             }
         }
 
+
+        // =========================================================
+        // Attack
+        // =========================================================
+
         private void UpdateAttack()
         {
+            if (sourceCharacter != null && sourceCharacter.IsTrapBound) return;
             float cloneAttackSpeedMultiplier =
-                statRuntime != null ? statRuntime.CloneAttackSpeedMultiplier : 1f;
+                statRuntime != null
+                    ? statRuntime.CloneAttackSpeedMultiplier
+                    : 1f;
+
 
             float effectiveCooldown =
-                sourceSyringeAbility.GetCloneCooldown() /
-                Mathf.Max(0.1f, cloneAttackSpeedMultiplier);
+                sourceSyringeAbility.GetCloneCooldown()
+                /
+                Mathf.Max(
+                    0.1f,
+                    cloneAttackSpeedMultiplier
+                );
 
-            effectiveCooldown = Mathf.Max(0.05f, effectiveCooldown);
 
-            fireTimer += Time.deltaTime;
+            effectiveCooldown =
+                Mathf.Max(
+                    0.05f,
+                    effectiveCooldown
+                );
+
+
+            fireTimer +=
+                Time.deltaTime;
+
 
             if (fireTimer >= effectiveCooldown)
             {
-                fireTimer = Mathf.Repeat(fireTimer, effectiveCooldown);
-                StartCoroutine(FireRoutine());
+                fireTimer =
+                    Mathf.Repeat(
+                        fireTimer,
+                        effectiveCooldown
+                    );
+
+
+                StartCoroutine(
+                    FireRoutine()
+                );
             }
         }
 
+
+        // =========================================================
+        // Fire Routine
+        // =========================================================
+
         private IEnumerator FireRoutine()
         {
-            Vector2 baseDirection = sourceCharacter.LookDirection;
+            Vector2 baseDirection =
+                sourceCharacter.LookDirection;
+
 
             if (baseDirection == Vector2.zero)
             {
-                baseDirection = Vector2.right;
+                baseDirection =
+                    Vector2.right;
             }
 
-            int projectileCount = sourceSyringeAbility.GetCloneProjectileCount();
+
+            int projectileCount =
+                sourceSyringeAbility
+                    .GetCloneProjectileCount();
+
 
             float cloneDamageMultiplier =
-                statRuntime != null ? statRuntime.CloneDamageMultiplier : 1f;
+                statRuntime != null
+                    ? statRuntime.CloneDamageMultiplier
+                    : 1f;
 
-            float damage = sourceSyringeAbility.GetCloneDamage() * cloneDamageMultiplier;
-            float knockback = sourceSyringeAbility.GetCloneKnockback();
-            float projectileSpeed = sourceSyringeAbility.GetCloneSpeed();
 
-            float projectileSizeMultiplier = sourceSyringeAbility.GetEffectiveProjectileSizeMultiplier();
-            float rangeMultiplier = sourceSyringeAbility.GetEffectiveRangeMultiplier();
+            float damage =
+                sourceSyringeAbility
+                    .GetCloneDamage()
+                *
+                cloneDamageMultiplier;
 
-            SyringeSpecialRuntime currentRuntime = sourceSyringeAbility.GetCurrentSpecialRuntime();
 
-            for (int i = 0; i < projectileCount; i++)
+            float knockback =
+                sourceSyringeAbility
+                    .GetCloneKnockback();
+
+
+            float projectileSpeed =
+                sourceSyringeAbility
+                    .GetCloneSpeed();
+
+
+            float projectileSizeMultiplier =
+                sourceSyringeAbility
+                    .GetEffectiveProjectileSizeMultiplier();
+
+
+            float rangeMultiplier =
+                sourceSyringeAbility
+                    .GetEffectiveRangeMultiplier();
+
+
+            SyringeSpecialRuntime currentRuntime =
+                sourceSyringeAbility
+                    .GetCurrentSpecialRuntime();
+
+
+            for (
+                int i = 0;
+                i < projectileCount;
+                i++
+            )
             {
-                Vector2 spreadDirection = sourceSyringeAbility.GetSpreadDirection(
-                    baseDirection,
-                    i,
-                    projectileCount
-                );
+                Vector2 spreadDirection =
+                    sourceSyringeAbility
+                        .GetSpreadDirection(
+                            baseDirection,
+                            i,
+                            projectileCount
+                        );
 
-                Projectile projectile = entityManager.SpawnProjectile(
-                    projectilePoolIndex,
-                    transform.position,
-                    damage,
-                    knockback,
-                    projectileSpeed,
-                    monsterLayer
-                );
+
+                Projectile projectile =
+                    sourceSyringeAbility.SpawnPlayerProjectile(
+                        projectilePoolIndex,
+                        transform.position,
+                        damage,
+                        knockback,
+                        projectileSpeed,
+                        monsterLayer
+                    );
+
 
                 if (projectile == null)
                 {
                     continue;
                 }
 
-                // «ŸΩ… ºˆ¡§:
-                // «Æ∏µµ» ≈ıªÁ√º∞° ¿Ã¿¸ ≈©±‚∏¶ µÈ∞Ì ≥™ø¿¡ˆ æ µµ∑œ ∫–Ω≈µµ ∏≈π¯ ∏ÌΩ√¿˚¿∏∑Œ ≈©±‚∏¶ ºº∆√«—¥Ÿ.
-                projectile.transform.localScale = Vector3.one * projectileSizeMultiplier;
-                projectile.maxDistance *= rangeMultiplier;
+
+                // =================================================
+                // Projectile Size
+                // =================================================
+                //
+                // ÌíÄÎßÅÎêú Ìà¨ÏÇ¨Ï≤¥Í∞Ä Ïù¥Ï†Ñ ÌÅ¨Í∏∞Î•º
+                // Îì§Í≥† ÎÇòÏò§ÏßÄ ÏïäÎèÑÎ°ù
+                // Î∂ÑÏã†ÎèÑ Îß§Î≤à ÌÅ¨Í∏∞Î•º Î™ÖÏãúÏ†ÅÏúºÎ°ú ÏÑ§Ï†ï
+                // =================================================
+
+                projectile.transform.localScale =
+                    Vector3.one *
+                    projectileSizeMultiplier;
+
+
+                // =================================================
+                // Range
+                // =================================================
+
+                projectile.maxDistance *=
+                    rangeMultiplier;
+
+
+                // =================================================
+                // Syringe Specials
+                // =================================================
 
                 if (projectile is SyringeProjectile syringeProjectile)
                 {
-                    syringeProjectile.ConfigureSpecials(currentRuntime);
+                    syringeProjectile.ConfigureSpecials(
+                        currentRuntime
+                    );
                 }
                 else
                 {
                     Debug.LogWarning(
-                        $"[∫–Ω≈] Spawned projectile is '{projectile.GetType().Name}', not 'SyringeProjectile'. " +
-                        "Projectile Prefab ø¨∞·¿ª ¥ŸΩ√ »Æ¿Œ«œººø‰."
+                        $"[Î∂ÑÏã†] Spawned projectile is " +
+                        $"'{projectile.GetType().Name}', " +
+                        $"not 'SyringeProjectile'. " +
+                        "Projectile Prefab Ïó∞Í≤∞ÏùÑ Îã§Ïãú ÌôïÏù∏ÌïòÏÑ∏Ïöî."
                     );
                 }
 
-                projectile.OnHitDamageable.AddListener(sourceCharacter.OnDealDamage.Invoke);
-                projectile.Launch(spreadDirection);
+
+                // =================================================
+                // Damage Report
+                // =================================================
+                //
+                // Î∂ÑÏã†Ïù¥ Ïã§Ï†úÎ°ú Ï†ÅÏóêÍ≤å Ï†ÅÏ§ëÌñàÏùÑ Îïå
+                // ÏµúÏ¢Ö ÌîºÌï¥ÎüâÏùÑ ReportCloneDamage()Î°ú Ï†ÑÎã¨
+                // =================================================
+
+                projectile.OnHitDamageable.AddListener(
+                    ReportCloneDamage
+                );
+
+
+                // =================================================
+                // Launch
+                // =================================================
+
+                projectile.Launch(
+                    spreadDirection
+                );
+
 
                 yield return null;
             }
         }
 
-        private void OnTriggerEnter2D(Collider2D other)
-        {
-            // ∫–Ω≈¿∫ ∏ÛΩ∫≈Õ ¡¢√À¿∏∑Œ ªÁ∂Û¡ˆ¡ˆ æ ¥¬¥Ÿ.
-            // «√∑π¿ÃæÓ ªÁ∏¡ Ω√ø°∏∏ ¡¶∞≈µ»¥Ÿ.
-        }
 
-        private void DestroySelf()
+        // =========================================================
+        // Clone Damage Report
+        // =========================================================
+
+        private void ReportCloneDamage(
+            float dealtDamage
+        )
         {
-            if (gameObject != null)
+            if (dealtDamage <= 0f)
             {
-                Destroy(gameObject);
+                return;
+            }
+
+
+            // =====================================================
+            // Í∏∞Ï°¥ Ï†ÑÏ≤¥ ÌîºÌï¥Îüâ ÏãúÏä§ÌÖú Ïú†ÏßÄ
+            // =====================================================
+
+            if (sourceCharacter != null &&
+                sourceCharacter.OnDealDamage != null)
+            {
+                sourceCharacter
+                    .OnDealDamage
+                    .Invoke(
+                        dealtDamage
+                    );
+            }
+
+
+            // =====================================================
+            // Ï¶ùÍ∞ïÎ≥Ñ ÌîºÌï¥Îüâ
+            // =====================================================
+
+            if (AugmentDamageTracker.Instance != null)
+            {
+                AugmentDamageTracker.Instance
+                    .RecordDamage(
+                        "Î∂ÑÏã†Î∞∞Ïñë",
+                        dealtDamage
+                    );
             }
         }
 
+
+        // =========================================================
+        // Trigger
+        // =========================================================
+
+        private void OnTriggerEnter2D(
+            Collider2D other
+        )
+        {
+            // Î∂ÑÏã†ÏùÄ Î™¨Ïä§ÌÑ∞ Ï†ëÏ¥âÏúºÎ°ú ÏÇ¨ÎùºÏßÄÏßÄ ÏïäÎäîÎã§.
+            // ÌîåÎ†àÏù¥Ïñ¥ ÏÇ¨Îßù ÏãúÏóêÎßå Ï†úÍ±∞ÎêúÎã§.
+        }
+
+
+        // =========================================================
+        // Destroy
+        // =========================================================
+
+        private void DestroySelf()
+        {
+            if (isActiveAndEnabled && augmentVisual != null)
+                SyringeAugmentVfx.Play("CloneDisappear", transform.position, spriteRenderer);
+            SyringeAugmentVfx.ReleaseOwned(ref augmentVisual);
+            if (gameObject != null)
+            {
+                Destroy(
+                    gameObject
+                );
+            }
+        }
+
+        private void OnDisable() { SyringeAugmentVfx.ReleaseOwned(ref augmentVisual); }
+
         private void OnDestroy()
         {
+            SyringeAugmentVfx.ReleaseOwned(ref augmentVisual);
             if (sourceCharacter != null && sourceCharacter.OnDeath != null)
             {
-                sourceCharacter.OnDeath.RemoveListener(DestroySelf);
+                sourceCharacter.OnDeath.RemoveListener(
+                    DestroySelf
+                );
             }
         }
     }

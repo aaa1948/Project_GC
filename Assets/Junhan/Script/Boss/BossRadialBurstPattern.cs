@@ -139,6 +139,7 @@ namespace Vampire
 
         private void FireRadialBurst(int bulletCount, float angleOffset)
         {
+            if (bossController != null && bossController.UsesFiveCoreSkills && !bossController.FiveCoreSkills.CanContinue(this)) return;
             if (bulletPrefab == null)
             {
                 Debug.LogWarning("[BossRadialBurstPattern] Bullet Prefab이 비어 있습니다.");
@@ -151,7 +152,7 @@ namespace Vampire
                 return;
             }
 
-            Vector3 spawnPosition = bossController.BossCenterPosition;
+            Vector3 spawnPosition = bossController.AttackOriginPosition;
 
             for (int i = 0; i < bulletCount; i++)
             {
@@ -208,6 +209,7 @@ namespace Vampire
             float finalSpeed = bossController.GetModifiedProjectileSpeed(bulletSpeed);
             float finalDamage = bossController.GetModifiedDamage(bulletDamage);
 
+            BossPatternArt.Bullet(bullet, bossController.CurrentPhase);
             simpleBullet.Init(direction, finalSpeed, finalDamage);
         }
 

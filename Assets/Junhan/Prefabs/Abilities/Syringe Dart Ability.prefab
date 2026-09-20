@@ -71,7 +71,7 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1088
   damage:
-    value: 5
+    value: 10
     upgrades:
     - 1
     - 1
@@ -131,21 +131,21 @@ MonoBehaviour:
   cursorControlEnabled: 0
   poisonDuration: 3
   poisonTickInterval: 0.5
-  poisonTickDamage: 2
+  poisonTickDamage: 4
   explosionRadius: 1
-  explosionDamage: 2
+  explosionDamage: 4
   specialExplosionChance: 1
   homingRange: 5
   homingLerpSpeed: 8
   fiberTrailLifetime: 2
-  fiberTrailDamagePerSecond: 2
+  fiberTrailDamagePerSecond: 4
   fiberTrailTickInterval: 0.5
   fiberTrailWidth: 0.12
   fiberTrailMinSegmentDistance: 0.25
   fiberTrailColor: {r: 0.75, g: 1, b: 0.95, a: 0.75}
   digestiveAcidPuddleLifetime: 3
   digestiveAcidPuddleRadius: 1
-  digestiveAcidPuddleDamagePerSecond: 2
+  digestiveAcidPuddleDamagePerSecond: 4
   digestiveAcidPuddleTickInterval: 0.5
   digestiveAcidPuddleColor: {r: 0.6, g: 1, b: 0.15, a: 0.75}
   hungerStackDuration: 3
@@ -174,11 +174,11 @@ MonoBehaviour:
   gastricWaveDuration: 0.65
   gastricWaveThickness: 0.35
   gastricWaveColor: {r: 0.55, g: 1, b: 0.15, a: 0.65}
-  debugGastricWave: 1
+  debugGastricWave: 0
   mucosalFortressNoDamageSeconds: 5
   mucosalFortressMaxStacks: 3
   mucosalFortressShieldColor: {r: 0.85, g: 1, b: 0.75, a: 0.6}
-  debugMucosalFortress: 1
+  debugMucosalFortress: 0
   bipolarNeedleBonusProjectileCount: 1
   bipolarNeedleBackAngleOffset: 180
   bipolarNeedleFrontGetsExtraProjectile: 1
@@ -246,7 +246,7 @@ MonoBehaviour:
   heavyChargePreviewVfxPrefab: {fileID: 0}
   heavyChargePreviewAlpha: 0.9
   heavyChargePreviewSortingOrderBonus: 30
-  debugHeavySnipe: 1
+  debugHeavySnipe: 0
   hungrySpiritStackInterval: 2
   hungrySpiritMaxStacks: 8
   hungrySpiritDamageBonusPerStack: 0.05
@@ -269,23 +269,23 @@ MonoBehaviour:
   needleShotgunAmmoTextSortingOrder: 200
   needleShotgunAmmoTextColor: {r: 1, g: 1, b: 1, a: 1}
   debugNeedleShotgun: 0
-  neuralBlockInterval: 30
-  neuralBlockFreezeDuration: 5
+  neuralBlockInterval: 12
+  neuralBlockFreezeDuration: 1
   neuralBlockScreenPadding: 0.08
-  debugNeuralBlock: 1
+  debugNeuralBlock: 0
   poisonContagionRadius: 1
   poisonContagionDurationMultiplier: 1
   poisonContagionDamageMultiplier: 1
-  debugPoisonContagion: 1
+  debugPoisonContagion: 0
   organCompressionInterval: 20
   organCompressionClusterSearchRadius: 2.5
   organCompressionFieldRadius: 1
   organCompressionFieldDuration: 3
   organCompressionDamageTickInterval: 0.5
-  organCompressionDamagePerTick: 2
+  organCompressionDamagePerTick: 4
   organCompressionPullSpeed: 2.5
   organCompressionScreenPadding: 0.08
-  debugOrganCompression: 1
+  debugOrganCompression: 0
   cursorNeedleFollowSpeed: 3
   cursorNeedleOrbitVisualAngleOffset: 180
   cursorNeedleBackDisplayBaseAngle: 90

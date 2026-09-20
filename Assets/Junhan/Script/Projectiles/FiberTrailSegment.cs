@@ -4,15 +4,34 @@ using UnityEngine;
 namespace Vampire
 {
     // 섬유침이 남기는 짧은 선분 피해 오브젝트
-    // LineRenderer로 선을 보여주고, BoxCollider2D Trigger로 선 위의 몬스터에게 지속 피해를 준다.
+    // Pooled pixel-art fibers visualize the unchanged BoxCollider2D damage segment.
     public class FiberTrailSegment : MonoBehaviour
     {
-        private readonly Dictionary<int, float> nextDamageTimesByTarget = new Dictionary<int, float>();
+        private readonly Dictionary<int, float> nextDamageTimesByTarget =
+            new Dictionary<int, float>();
 
+        private SyringeAugmentVfx augmentVisual;
+        private float createdAt;
+        private float endsAt;
+        private float visualAlpha = 1f;
+        [SerializeField, Tooltip("Seconds used to reveal the fiber residue; capped by its gameplay lifetime.")]
+        private float fadeInSeconds = 0.1f;
+        [SerializeField, Tooltip("Seconds used to fade the residue before the damage segment expires.")]
+        private float fadeOutSeconds = 0.2f;
+        [SerializeField, Tooltip("Order within GroundEffects; always above backgrounds and below actors and projectiles.") ]
+        private int groundSortingOrder = -50;
         private LayerMask targetLayer;
         private float damagePerSecond = 2f;
         private float tickInterval = 0.5f;
 
+        // 피해 출처
+        private Character sourceCharacter;
+        private string damageSourceName = "섬유침";
+
+        /// <summary>
+        /// 기존 호출부 호환용 Init.
+        /// 아직 sourceCharacter를 넘기지 않는 코드도 그대로 컴파일되도록 유지한다.
+        /// </summary>
         public void Init(
             Vector2 startPosition,
             Vector2 endPosition,
@@ -23,9 +42,45 @@ namespace Vampire
             float width,
             Color lineColor)
         {
+            Init(
+                startPosition,
+                endPosition,
+                targetLayer,
+                lifetime,
+                damagePerSecond,
+                tickInterval,
+                width,
+                lineColor,
+                null,
+                "섬유침"
+            );
+        }
+
+        /// <summary>
+        /// 섬유침 선분 초기화.
+        /// sourceCharacter를 전달하면 기존 전체 피해량(OnDealDamage)에도 포함된다.
+        /// </summary>
+        public void Init(
+            Vector2 startPosition,
+            Vector2 endPosition,
+            LayerMask targetLayer,
+            float lifetime,
+            float damagePerSecond,
+            float tickInterval,
+            float width,
+            Color lineColor,
+            Character sourceCharacter,
+            string damageSourceName)
+        {
             this.targetLayer = targetLayer;
             this.damagePerSecond = Mathf.Max(0f, damagePerSecond);
             this.tickInterval = Mathf.Max(0.05f, tickInterval);
+
+            this.sourceCharacter = sourceCharacter;
+            this.damageSourceName =
+                string.IsNullOrWhiteSpace(damageSourceName)
+                    ? "섬유침"
+                    : damageSourceName;
 
             Vector2 direction = endPosition - startPosition;
             float length = direction.magnitude;
@@ -52,26 +107,35 @@ namespace Vampire
             boxCollider.isTrigger = true;
             boxCollider.size = new Vector2(length, width);
 
-            LineRenderer lineRenderer = gameObject.AddComponent<LineRenderer>();
-            lineRenderer.useWorldSpace = false;
-            lineRenderer.positionCount = 2;
-            lineRenderer.SetPosition(0, new Vector3(-length * 0.5f, 0f, 0f));
-            lineRenderer.SetPosition(1, new Vector3(length * 0.5f, 0f, 0f));
-            lineRenderer.widthMultiplier = width;
-            lineRenderer.numCapVertices = 2;
-            lineRenderer.sortingOrder = 20;
-
-            Shader spriteShader = Shader.Find("Sprites/Default");
-            if (spriteShader != null)
+            SyringeAugmentVfx.ReleaseOwned(ref augmentVisual);
+            augmentVisual = SyringeAugmentVfx.Play("FiberNeedle", center);
+            if (augmentVisual != null)
             {
-                lineRenderer.material = new Material(spriteShader);
+                augmentVisual.transform.rotation = transform.rotation;
+                augmentVisual.SetWorldSize(new Vector2(length, width), new Vector2(0.84f, 0.22f));
+                augmentVisual.SetGroundSorting(groundSortingOrder);
             }
-
-            lineRenderer.startColor = lineColor;
-            lineRenderer.endColor = lineColor;
+            createdAt = Time.time;
+            endsAt = Time.time + Mathf.Max(0.05f, lifetime);
+            visualAlpha = Mathf.Clamp01(lineColor.a);
+            UpdateVisual();
 
             Destroy(gameObject, Mathf.Max(0.05f, lifetime));
         }
+
+        private void Update() { UpdateVisual(); }
+
+        private void UpdateVisual()
+        {
+            if (augmentVisual == null) return;
+            float duration = Mathf.Max(0.05f, endsAt - createdAt);
+            float reveal = Mathf.Clamp01((Time.time - createdAt) / Mathf.Max(0.001f, Mathf.Min(fadeInSeconds, duration * 0.25f)));
+            float fade = Mathf.Clamp01((endsAt - Time.time) / Mathf.Max(0.001f, Mathf.Min(fadeOutSeconds, duration * 0.4f)));
+            augmentVisual.SetStrength(visualAlpha * reveal * fade);
+        }
+
+        private void OnDisable() { SyringeAugmentVfx.ReleaseOwned(ref augmentVisual); }
+        private void OnDestroy() { SyringeAugmentVfx.ReleaseOwned(ref augmentVisual); }
 
         private void OnTriggerEnter2D(Collider2D other)
         {
@@ -114,7 +178,9 @@ namespace Vampire
 
             int targetId = monster.gameObject.GetInstanceID();
 
-            if (nextDamageTimesByTarget.TryGetValue(targetId, out float nextDamageTime))
+            if (nextDamageTimesByTarget.TryGetValue(
+                    targetId,
+                    out float nextDamageTime))
             {
                 if (Time.time < nextDamageTime)
                 {
@@ -122,10 +188,41 @@ namespace Vampire
                 }
             }
 
-            float damage = damagePerSecond * tickInterval;
-            monster.TakeDamage(damage);
+            // 현재 섬유침의 실제 TakeDamage 값.
+            // 이 값이 몬스터에게 전달되는 최종 계산 피해량이다.
+            float finalDamage =
+                damagePerSecond * tickInterval;
 
-            nextDamageTimesByTarget[targetId] = Time.time + tickInterval;
+            if (finalDamage <= 0f)
+            {
+                nextDamageTimesByTarget[targetId] =
+                    Time.time + tickInterval;
+
+                return;
+            }
+
+            monster.TakePeriodicDamage(finalDamage);
+
+            // 기존 전체 피해량 시스템에도 포함
+            if (sourceCharacter != null &&
+                sourceCharacter.OnDealDamage != null)
+            {
+                sourceCharacter.OnDealDamage.Invoke(
+                    finalDamage
+                );
+            }
+
+            // 가장 피해를 많이 준 증강 계산에 포함
+            if (AugmentDamageTracker.Instance != null)
+            {
+                AugmentDamageTracker.Instance.RecordDamage(
+                    damageSourceName,
+                    finalDamage
+                );
+            }
+
+            nextDamageTimesByTarget[targetId] =
+                Time.time + tickInterval;
         }
     }
 }

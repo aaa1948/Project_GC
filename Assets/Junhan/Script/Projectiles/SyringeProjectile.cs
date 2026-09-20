@@ -16,7 +16,44 @@ namespace Vampire
         }
 
         private SyringeSpecialRuntime specials;
+        private int ver4PiercedTargets;
+        private Transform ver4HomingTarget;
+        private SyringeAugmentVfx bipolarVisual;
+        private bool heavyImpactVisual;
+
+        public void ConfigureFlightVfx(bool bipolar, bool heavy)
+        {
+            SyringeAugmentVfx.ReleaseOwned(ref bipolarVisual);
+            heavyImpactVisual = heavy;
+            if (bipolar)
+            {
+                bipolarVisual = SyringeAugmentVfx.Play("BipolarNeedle", transform.position, projectileSpriteRenderer);
+                if (bipolarVisual != null) bipolarVisual.BindTo(transform);
+            }
+        }
+
+        private void LateUpdate()
+        {
+            if (bipolarVisual == null) return;
+            if (isDespawning) { SyringeAugmentVfx.ReleaseOwned(ref bipolarVisual); return; }
+            bipolarVisual.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(direction.y, direction.x) * Mathf.Rad2Deg + 180f);
+        }
+
+        private void OnDisable()
+        {
+            SyringeAugmentVfx.ReleaseOwned(ref bipolarVisual);
+            heavyImpactVisual = false;
+        }
+        [SerializeField, Tooltip("Minimum seconds between homing trail pulses.")]
+        private float homingVfxInterval = 0.16f;
+        private float nextHomingVfxTime;
         private int remainingPierces;
+        // 일반 몬스터용 기존 Pierce.
+
+       
+        private int remainingBossPierces;
+        // 보스 파츠 전용 별도 Pierce.
+        // 일반 Pierce / 대물침 무한관통과 절대로 공유하지 않습니다.
         private int remainingReflects;
         // 섬유침 선분 생성용 위치 기록
         private Vector2 fiberSegmentStartPosition;
@@ -109,8 +146,14 @@ namespace Vampire
         {
             base.Setup(projectileIndex, position, damage, knockback, speed, targetLayer);
 
+            ConfigureFlightVfx(false, false);
             specials = default;
+            ver4PiercedTargets = 0;
+            ver4HomingTarget = null;
+            nextHomingVfxTime = 0f;
             remainingPierces = 0;
+            remainingBossPierces = 0;
+
             remainingReflects = 0;
             hitTargetIds.Clear();
             fiberSegmentStartPosition = position;
@@ -126,19 +169,40 @@ namespace Vampire
             maxDistance = baseMaxDistance;
         }
 
-        public void ConfigureSpecials(SyringeSpecialRuntime runtime)
+        public void ConfigureSpecials(
+    SyringeSpecialRuntime runtime)
         {
             specials = runtime;
-            remainingReflects = runtime.reflectCount;
 
+            remainingReflects =
+                runtime.reflectCount;
+
+            // --------------------------------------------------
+            // 일반 Pierce
+            // --------------------------------------------------
             if (runtime.pierceEnabled)
             {
-                remainingPierces = Mathf.Max(0, runtime.pierceCount);
+                remainingPierces =
+                    Mathf.Max(
+                        0,
+                        runtime.pierceCount
+                    );
             }
             else
             {
                 remainingPierces = 0;
             }
+
+            // --------------------------------------------------
+            // Boss Pierce
+            //
+            // 일반 Pierce와 완전히 독립입니다.
+            // 대물침의 int.MaxValue 관통도 이 값에는 영향을 주지 않습니다.
+            // --------------------------------------------------
+            remainingBossPierces =
+                BossPierceRuntime.GetBossPierceCount(
+                    playerCharacter
+                );
         }
 
         public override void Launch(Vector2 direction)
@@ -299,12 +363,14 @@ namespace Vampire
         private void UpdateHomingDirection()
         {
             Transform target = FindClosestTarget();
+            ver4HomingTarget = target;
 
             if (target == null)
             {
                 return;
             }
 
+            Vector2 previousDirection = direction;
             Vector2 desiredDirection =
                 ((Vector2)target.position - (Vector2)transform.position).normalized;
 
@@ -313,6 +379,11 @@ namespace Vampire
                 desiredDirection,
                 specials.homingLerpSpeed * Time.deltaTime
             ).normalized;
+            if (Time.deltaTime > 0f && Vector2.Angle(previousDirection, desiredDirection) > 1f && Time.time >= nextHomingVfxTime)
+            {
+                SyringeAugmentVfx.PlayDirected("Homing", transform.position, direction, projectileSpriteRenderer);
+                nextHomingVfxTime = Time.time + Mathf.Max(0.08f, homingVfxInterval);
+            }
         }
 
         private void ApplyVisualRotationToDirection(Vector2 moveDirection)
@@ -380,7 +451,9 @@ namespace Vampire
             poisonStatus.Apply(
                 specials.poisonDuration,
                 specials.poisonTickInterval,
-                specials.poisonTickDamage
+                specials.poisonTickDamage,
+                playerCharacter,
+                "독침"
             );
         }
 
@@ -437,7 +510,9 @@ namespace Vampire
                 specials.fiberTrailDamagePerSecond,
                 specials.fiberTrailTickInterval,
                 specials.fiberTrailWidth,
-                specials.fiberTrailColor
+                specials.fiberTrailColor,
+                playerCharacter,
+                "섬유침"
             );
 
             fiberSegmentStartPosition = currentPosition;
@@ -569,7 +644,9 @@ namespace Vampire
                 specials.digestiveAcidPuddleRadius,
                 specials.digestiveAcidPuddleDamagePerSecond,
                 specials.digestiveAcidPuddleTickInterval,
-                specials.digestiveAcidPuddleColor
+                specials.digestiveAcidPuddleColor,
+                playerCharacter,
+                "소화액낭침"
             );
         }
 
@@ -663,7 +740,7 @@ namespace Vampire
                 healAmount *= specials.mosquitoBossHealMultiplier;
             }
 
-            TryHealPlayer(healAmount);
+            TryHealPlayer(healAmount, damageableComponent);
         }
 
         private bool IsBossLikeTarget(Component damageableComponent)
@@ -684,7 +761,7 @@ namespace Vampire
             return objectName.Contains("Boss") || objectName.Contains("보스");
         }
 
-        private void TryHealPlayer(float healAmount)
+        private void TryHealPlayer(float healAmount, Component impactSource)
         {
             if (playerCharacter == null || healAmount <= 0f) return;
 
@@ -715,6 +792,7 @@ namespace Vampire
             }
 
             healMethod.Invoke(playerCharacter, new object[] { healAmount });
+            SyringeAugmentVfx.PlayAbsorption(impactSource, playerCharacter);
         }
 
         // =====================================================================
@@ -775,88 +853,291 @@ namespace Vampire
             return closestTarget;
         }
 
-        protected override void OnTriggerEnter2D(Collider2D collider)
+        protected override void OnTriggerEnter2D(
+    Collider2D collider)
         {
-            if (isDespawning || !gameObject.activeInHierarchy) return;
+            if (isDespawning ||
+                !gameObject.activeInHierarchy)
+            {
+                return;
+            }
 
-            bool isInTargetLayer = (targetLayer & (1 << collider.gameObject.layer)) != 0;
+            bool isInTargetLayer =
+                (
+                    targetLayer &
+                    (1 << collider.gameObject.layer)
+                ) != 0;
+
             Monster monsterTarget;
-            bool isValidMonsterTarget = TryGetValidMonsterTarget(collider, out monsterTarget);
+
+            bool isValidMonsterTarget =
+                TryGetValidMonsterTarget(
+                    collider,
+                    out monsterTarget
+                );
 
             if (!isValidMonsterTarget)
             {
-                if (monsterTarget != null) return;
-                if (!isInTargetLayer) return;
+                if (monsterTarget != null)
+                {
+                    return;
+                }
+
+                if (!isInTargetLayer)
+                {
+                    return;
+                }
             }
 
             IDamageable damageable = null;
             Component damageableComponent = null;
             int targetId;
 
-            if (isValidMonsterTarget && monsterTarget != null)
+            if (isValidMonsterTarget &&
+                monsterTarget != null)
             {
-                damageable = monsterTarget as IDamageable;
-                damageableComponent = monsterTarget;
-                targetId = monsterTarget.gameObject.GetInstanceID();
+                damageable =
+                    monsterTarget as IDamageable;
+
+                damageableComponent =
+                    monsterTarget;
+
+                targetId =
+                    monsterTarget.gameObject
+                        .GetInstanceID();
             }
             else
             {
-                damageable = collider.GetComponentInParent<IDamageable>();
-                damageableComponent = damageable as Component;
+                damageable =
+                    collider.GetComponentInParent
+                    <
+                        IDamageable
+                    >();
+
+                damageableComponent =
+                    damageable as Component;
+
                 if (damageableComponent == null)
                 {
-                    if (!IsReturnMode) HitNothing();
+                    if (!IsReturnMode)
+                    {
+                        HitNothing();
+                    }
+
                     return;
                 }
-                targetId = damageableComponent.gameObject.GetInstanceID();
+
+                targetId =
+                    damageableComponent.gameObject
+                        .GetInstanceID();
             }
 
-            if (damageable == null || damageableComponent == null)
+            if (damageable == null ||
+                damageableComponent == null)
             {
-                if (!IsReturnMode) HitNothing();
+                if (!IsReturnMode)
+                {
+                    HitNothing();
+                }
+
                 return;
             }
 
-            if (hitTargetIds.Contains(targetId)) return;
+            if (hitTargetIds.Contains(targetId))
+            {
+                return;
+            }
+
             hitTargetIds.Add(targetId);
 
-            float rawDamage = IsReturnMode
-                ? damage * Mathf.Max(0.01f, specials.returnNeedleDamageMultiplier)
-                : damage;
+            // --------------------------------------------------
+            // 이 대상이 테스트용 보스 파츠인지 확인합니다.
+            // --------------------------------------------------
+            BossPartDamageTestPart bossPartTarget =
+                damageableComponent
+                    as BossPartDamageTestPart;
 
-            Vector3 hitPosition = GetProjectileVisualWorldPosition();
-            Quaternion hitRotation = GetProjectileVisualWorldRotation();
-            Vector3 hitScale = GetProjectileVisualWorldScale();
+            if (bossPartTarget == null)
+            {
+                bossPartTarget =
+                    damageableComponent
+                        .GetComponentInParent
+                        <
+                            BossPartDamageTestPart
+                        >(true);
+            }
 
-            DamageTarget(damageable, damageableComponent, rawDamage);
+            float rawDamage =
+                IsReturnMode
+                    ? damage *
+                      Mathf.Max(
+                          0.01f,
+                          specials.returnNeedleDamageMultiplier
+                      )
+                    : damage;
 
-            TryCreateStuckNeedleVisual(damageableComponent, hitPosition, hitRotation, hitScale);
+            Vector3 hitPosition =
+                GetProjectileVisualWorldPosition();
 
-            if (IsReturnMode) return;
+            Quaternion hitRotation =
+                GetProjectileVisualWorldRotation();
 
-            bool canPierce = specials.pierceEnabled && remainingPierces > 0;
+            Vector3 hitScale =
+                GetProjectileVisualWorldScale();
+
+            DamageTarget(
+                damageable,
+                damageableComponent,
+                rawDamage
+            );
+
+            TryCreateStuckNeedleVisual(
+                damageableComponent,
+                hitPosition,
+                hitRotation,
+                hitScale
+            );
+
+            // ==================================================
+            // ★ BOSS PART 전용 관통 규칙
+            //
+            // 이 블록이 일반 Pierce보다 반드시 먼저 실행되어야 합니다.
+            // ==================================================
+            if (bossPartTarget != null)
+            {
+                // ----------------------------------------------
+                // Boss Pierce가 남아 있으면
+                // 다음 보스 파츠까지 진행할 수 있습니다.
+                //
+                // 예:
+                // Boss Pierce 1
+                // LeftArm -> Core
+                // ----------------------------------------------
+                if (remainingBossPierces > 0)
+                {
+                    remainingBossPierces--;
+
+                    if (col != null)
+                    {
+                        StartCoroutine(
+                            ReenableColliderNextFrame()
+                        );
+                    }
+
+                    return;
+                }
+
+                // ----------------------------------------------
+                // 이미 귀환 중인 침이 또 다른 보스 파츠에
+                // 닿았는데 Boss Pierce가 없다면 종료합니다.
+                //
+                // 따라서
+                // Arm -> Core 식의 귀환 관통이 발생하지 않습니다.
+                // ----------------------------------------------
+                if (IsReturnMode)
+                {
+                    DestroyProjectile();
+                    return;
+                }
+
+                // ----------------------------------------------
+                // 구강청결제 반사는 Pierce가 아니므로
+                // 기존 순서를 최대한 유지합니다.
+                //
+                // 보스 파츠를 뚫는 것이 아니라
+                // 맞은 위치에서 다른 방향으로 튕겨나갑니다.
+                // ----------------------------------------------
+                if (remainingReflects > 0)
+                {
+                    remainingReflects--;
+
+                    if (TryReflect(direction))
+                    {
+                        return;
+                    }
+                }
+
+                // ----------------------------------------------
+                // 귀환침
+                //
+                // 기존 BeginReturnNeedleSequence는
+                // 적중 후 앞으로 0.65 정도 더 진행한 뒤
+                // 곡선 복귀하기 때문에
+                // Arm 뒤 Core까지 맞힐 가능성이 있습니다.
+                //
+                // 보스에서는 Forward Pass를 생략하고
+                // 즉시 곡선 귀환으로 전환합니다.
+                // ----------------------------------------------
+                if (specials.returnNeedleEnabled)
+                {
+                    BeginReturnNeedleFromRangeEnd(
+                        direction
+                    );
+
+                    if (col != null &&
+                        !isDespawning)
+                    {
+                        StartCoroutine(
+                            ReenableColliderNextFrame()
+                        );
+                    }
+
+                    return;
+                }
+
+                // Boss Pierce도 없고
+                // 반사/귀환도 없으면 여기서 종료.
+                DestroyProjectile();
+                return;
+            }
+
+            // ==================================================
+            // 이하 일반 몬스터:
+            // 기존 로직을 그대로 유지합니다.
+            // ==================================================
+
+            if (IsReturnMode)
+            {
+                return;
+            }
+
+            bool canPierce =
+                specials.pierceEnabled &&
+                remainingPierces > 0;
+
             if (canPierce)
             {
                 remainingPierces--;
-                if (col != null) StartCoroutine(ReenableColliderNextFrame());
+                SyringeAugmentVfx.PlayDirected("Pierce", transform.position, direction, projectileSpriteRenderer);
+
+                if (col != null)
+                {
+                    StartCoroutine(
+                        ReenableColliderNextFrame()
+                    );
+                }
+
                 return;
             }
 
-            //  구강 청결제 중첩 반사 로직: 남은 반사 횟수가 있다면 깎으면서 또 튕깁니다!
-            // ---------------------------------------------------------------------------------
+            // 구강 청결제 기존 반사 로직.
             if (remainingReflects > 0)
             {
-                remainingReflects--; // 반사 횟수 1회 차감!
+                remainingReflects--;
 
                 if (TryReflect(direction))
                 {
-                    return; // 튕기는 데 성공했다면 소멸하지 않고 계속 날아감!
+                    return;
                 }
             }
 
             if (specials.returnNeedleEnabled)
             {
-                BeginReturnNeedleSequence(monsterTarget, direction);
+                BeginReturnNeedleSequence(
+                    monsterTarget,
+                    direction
+                );
+
                 return;
             }
 
@@ -945,6 +1226,18 @@ namespace Vampire
             }
         }
 
+        private SyringeDartAbility returnWeapon;
+        private Vector2 ReturnCatchPosition
+        {
+            get
+            {
+                if (returnWeapon == null) returnWeapon = SyringeAbilityResolver.FindOwnedOrFirst(FindObjectOfType<AbilityManager>());
+                var weapon = returnWeapon;
+                Vector2 facing = returnForwardDirection;
+                return weapon != null ? weapon.GetReturnCatchPosition(facing) : (Vector2)playerCharacter.CenterTransform.position + facing.normalized * .28f + Vector2.down * .18f;
+            }
+        }
+
         private void BeginReturnCurveToPlayer()
         {
             if (playerCharacter == null || playerCharacter.CenterTransform == null)
@@ -954,7 +1247,7 @@ namespace Vampire
             }
 
             Vector2 start = transform.position;
-            Vector2 playerPosition = playerCharacter.CenterTransform.position;
+            Vector2 playerPosition = ReturnCatchPosition;
             Vector2 toPlayer = playerPosition - start;
 
             if (toPlayer.sqrMagnitude <= 0.0001f) toPlayer = -returnForwardDirection;
@@ -975,6 +1268,7 @@ namespace Vampire
 
             returnCurveTimer = 0f;
             flightState = NeedleFlightState.ReturnCurveToPlayer;
+            SyringeAugmentVfx.PlayDirected("ReturnNeedle", transform.position, returnForwardDirection, projectileSpriteRenderer);
         }
 
         private void MoveReturnCurveToPlayer()
@@ -999,6 +1293,7 @@ namespace Vampire
             float easedT = Mathf.SmoothStep(0f, 1f, t);
 
             Vector2 previousPosition = transform.position;
+            returnCurveEnd = ReturnCatchPosition;
             Vector2 nextPosition = CubicBezier(returnCurveStart, returnCurveControl1, returnCurveControl2, returnCurveEnd, easedT);
 
             transform.position = nextPosition;
@@ -1042,7 +1337,7 @@ namespace Vampire
             }
 
             Vector2 currentPosition = transform.position;
-            Vector2 targetPosition = playerCharacter.CenterTransform.position;
+            Vector2 targetPosition = ReturnCatchPosition;
             Vector2 toPlayer = targetPosition - currentPosition;
 
             if (toPlayer.magnitude <= Mathf.Max(0.05f, specials.returnNeedleArriveDistance))
@@ -1053,100 +1348,271 @@ namespace Vampire
 
             direction = toPlayer.normalized;
             float returnStep = speed * Mathf.Max(0.01f, specials.returnNeedleSpeedMultiplier) * Time.deltaTime;
-            transform.position += returnStep * (Vector3)direction;
+            transform.position = Vector2.MoveTowards(currentPosition, targetPosition, returnStep);
             ApplyVisualRotationToDirection(direction);
 
             return true;
         }
 
-        private void DamageTarget(IDamageable damageable, Component damageableComponent, float rawDamage)
+        private void DamageTarget(
+     IDamageable damageable,
+     Component damageableComponent,
+     float rawDamage)
         {
-            PlayerGeneralStatRuntime statRuntime = PlayerGeneralStatRuntime.GetOrCreate(playerCharacter);
-            bool isCritical = false;
-            // 압력침: 침이 날아간 거리에 따라 기본 피해를 먼저 증가시킨다.
-            rawDamage = ApplyPressureDamageIfNeeded(rawDamage);
+            PlayerGeneralStatRuntime statRuntime =
+                PlayerGeneralStatRuntime.GetOrCreate(
+                    playerCharacter
+                );
 
-            float finalDamage = rawDamage;
+            bool isCritical = false;
+
+            rawDamage *= Ver4HitEffects.BeforeHit(damageableComponent,specials);
+            if (specials.ver4 != null)
+            {
+                if (specials.pierceEnabled && !IsReturnMode)
+                    rawDamage *= 1f + .06f * specials.ver4.Count(SyringeSpecialAugmentAbility.SpecialAugmentType.Pierce,2) * ver4PiercedTargets++;
+                if (specials.homingEnabled && ver4HomingTarget != null &&
+                    (ver4HomingTarget == damageableComponent.transform || ver4HomingTarget.IsChildOf(damageableComponent.transform)))
+                    rawDamage *= specials.ver4.Factor(SyringeSpecialAugmentAbility.SpecialAugmentType.Homing,2,.08f);
+            }
+            float damageBeforePressure = rawDamage;
+            // 압력침:
+            // 이동 거리에 따라 기본 피해 증가.
+            rawDamage =
+                ApplyPressureDamageIfNeeded(
+                    rawDamage
+                );
+
+            if (specials.pressureEnabled && rawDamage > damageBeforePressure)
+                SyringeAugmentVfx.Play("PressureNeedle", transform.position, SyringeAugmentVfx.FindTarget(damageableComponent));
+
+            float finalDamage =
+                rawDamage;
 
             if (statRuntime != null)
             {
-                finalDamage = statRuntime.CalculateOffensiveDamage(playerCharacter, damageableComponent, rawDamage, out isCritical);
+                finalDamage =
+                    statRuntime.CalculateOffensiveDamage(
+                        playerCharacter,
+                        damageableComponent,
+                        rawDamage,
+                        out isCritical
+                    );
             }
 
-            // 부식침: 이미 걸려 있는 부식 스택만큼 이번 피해를 증가시킨다.
-            finalDamage = ApplyCorrosionDamageTakenMultiplier(damageableComponent, finalDamage);
+            // 부식침:
+            // 기존 부식 스택만큼 피해 증가.
+            finalDamage =
+                ApplyCorrosionDamageTakenMultiplier(
+                    damageableComponent,
+                    finalDamage
+                );
 
-            // 표식침: 표식이 이미 있으면 표식을 소모하고 추가 피해를 더한다.
-            bool consumedNeedleMark = TryConsumeNeedleMark(damageableComponent);
+            // 표식침.
+            bool consumedNeedleMark =
+                TryConsumeNeedleMark(
+                    damageableComponent
+                );
 
             if (consumedNeedleMark)
             {
-                finalDamage += finalDamage * Mathf.Max(0f, specials.markBonusDamageMultiplier);
+                finalDamage +=
+                    finalDamage *
+                    Mathf.Max(
+                        0f,
+                        specials.markBonusDamageMultiplier
+                    );
             }
 
-            float finalKnockback = knockback;
+            float finalKnockback =
+                knockback;
+            if (specials.ver4 != null && specials.pressureEnabled &&
+                Vector2.Distance(pressureLaunchPosition,transform.position)*specials.pressureDamageBonusPerDistance >= specials.pressureMaxDamageBonus)
+                finalKnockback *= specials.ver4.Factor(SyringeSpecialAugmentAbility.SpecialAugmentType.PressureNeedle,2,.15f);
+
             if (statRuntime != null)
             {
-                finalKnockback *= statRuntime.KnockbackMultiplier;
+                finalKnockback *=
+                    statRuntime.KnockbackMultiplier;
             }
 
-            damageable.TakeDamage(finalDamage, finalKnockback * direction, isCritical);
-            OnHitDamageable?.Invoke(finalDamage);
+            // --------------------------------------------------
+            // 보스 파츠 여부 확인.
+            // --------------------------------------------------
+            BossPartDamageTestPart bossPart =
+                damageableComponent
+                    as BossPartDamageTestPart;
 
-            if (isCritical) Debug.Log($"[치명타] 침 공격 치명타 발생 | 피해 {finalDamage:0.##}");
+            if (bossPart == null)
+            {
+                bossPart =
+                    damageableComponent
+                        .GetComponentInParent
+                        <
+                            BossPartDamageTestPart
+                        >(true);
+            }
+
+            float actualReportedDamage =
+                finalDamage;
+
+            if (bossPart != null)
+            {
+                // --------------------------------------------------
+                // 보스 파츠:
+                // 명확하게 PlayerProjectile 출처로 전달합니다.
+                //
+                // Core Open/Groggy 배율 역시
+                // BossPartDamageRules에서 여기 들어온 피해에 적용됩니다.
+                // --------------------------------------------------
+                actualReportedDamage =
+                    bossPart.TakeDamageFromSource(
+                        finalDamage,
+                        finalKnockback * direction,
+                        isCritical,
+                        BossDamageSourceType.PlayerProjectile
+                    );
+            }
+            else
+            {
+                // 일반 몬스터:
+                // 기존 IDamageable 경로 그대로 유지.
+                damageable.TakeDamage(
+                    finalDamage,
+                    finalKnockback * direction,
+                    isCritical
+                );
+            }
+
+            // 보스 파츠는 Core Open 배율과
+            // 남은 HP까지 반영된 실제 피해를 전달합니다.
+            OnHitDamageable?.Invoke(
+                actualReportedDamage
+            );
+
+            // 침귀환 상태의 적중 피해는 기존 OnHitDamageable을 통해
+            // 전체 피해량에는 이미 1회 기록되므로 Tracker에만 별도 기록합니다.
+            if (IsReturnMode)
+            {
+                RecordAugmentDamageOnly(
+                    "침귀환",
+                    actualReportedDamage
+                );
+            }
+
+            if (isCritical)
+            {
+                Debug.Log(
+                    $"[치명타] 침 공격 치명타 발생 | " +
+                    $"피해 {actualReportedDamage:0.##}"
+                );
+            }
 
             // --------------------------------------------------
-            // 🎯 특수 기능 조건부 트리거 작동 구역
+            // 기존 특수 기능 로직은 그대로 유지.
             // --------------------------------------------------
+            if (IsReturnMode && specials.ver4 != null && playerCharacter != null)
+            {
+                int strength=specials.ver4.Count(SyringeSpecialAugmentAbility.SpecialAugmentType.ReturnNeedle,2);
+                if (strength>0)
+                {
+                    var body=damageableComponent.GetComponent<Rigidbody2D>();
+                    // Monster.Knockback multiplies by sqrt(drag). Compensate
+                    // once more so the free-space travel approaches 2 units/stack.
+                    float dragCompensation=body!=null ? Mathf.Sqrt(Mathf.Max(.01f,body.drag)) : 1f;
+                    damageable.Knockback(((Vector2)damageableComponent.transform.position-(Vector2)playerCharacter.transform.position).normalized*(2f*strength*dragCompensation));
+                }
+            }
+
             if (specials.poisonEnabled)
             {
-                ApplyPoison(damageableComponent);
+                ApplyPoison(
+                    damageableComponent
+                );
             }
-            if (specials.slowChance > 0 && Random.value < specials.slowChance)
+
+            if (specials.slowChance > 0 &&
+                Random.value < specials.slowChance)
             {
-                ApplySlow(damageableComponent);
+                ApplySlow(
+                    damageableComponent
+                );
             }
-            if (specials.burnChance > 0 && UnityEngine.Random.value < specials.burnChance)
+
+            if (heavyImpactVisual)
+                SyringeAugmentVfx.PlayDirected("HeavySnipeImpact", transform.position, direction, SyringeAugmentVfx.FindTarget(damageableComponent));
+
+            if (specials.burnChance > 0 &&
+                UnityEngine.Random.value <
+                specials.burnChance)
             {
-                ApplyBurn(damageableComponent);
+                ApplyBurn(
+                    damageableComponent
+                );
             }
+
             if (specials.honeyEnabled)
             {
-                ApplyHoneySlow(damageableComponent);
+                ApplyHoneySlow(
+                    damageableComponent
+                );
             }
+
             if (specials.mosquitoEnabled)
             {
-                ApplyMosquitoHeal(damageableComponent);
-
+                ApplyMosquitoHeal(
+                    damageableComponent
+                );
             }
+
             if (specials.corrosionEnabled)
             {
-                ApplyCorrosion(damageableComponent);
+                ApplyCorrosion(
+                    damageableComponent
+                );
             }
+
             if (specials.digestiveAcidSacEnabled)
             {
-                ApplyDigestiveAcidSac(damageableComponent);
+                ApplyDigestiveAcidSac(
+                    damageableComponent
+                );
             }
 
             if (specials.hungerNeedleEnabled)
             {
                 ApplyHungerNeedleHit();
+                SyringeAugmentVfx.PlayHungerHit(damageableComponent, playerCharacter, specials.hungerMaxStacks);
             }
 
             if (specials.gutBacteriaEnabled)
             {
-                ApplyGutBacteria(damageableComponent);
+                ApplyGutBacteria(
+                    damageableComponent
+                );
             }
-            if (specials.markEnabled && !consumedNeedleMark)
-            {
-                ApplyNeedleMark(damageableComponent);
-            }
-            if (specials.explosionEnabled && UnityEngine.Random.value < specials.explosionChance)
-            {
-                ApplyExplosion(damageableComponent.gameObject);
-            }
-        }
 
+            if (specials.markEnabled &&
+                !consumedNeedleMark)
+            {
+                ApplyNeedleMark(
+                    damageableComponent
+                );
+            }
+
+            if (specials.explosionEnabled &&
+                UnityEngine.Random.value <
+                specials.explosionChance)
+            {
+                ApplyExplosion(
+                    damageableComponent.gameObject
+                );
+            }
+            var hitRuntime=specials;
+            hitRuntime.ver4HitDamage=finalDamage;
+            hitRuntime.ver4Knockback=finalKnockback;
+            Ver4HitEffects.AfterHit(damageableComponent,hitRuntime,playerCharacter,targetLayer,consumedNeedleMark);
+        }
         private void TryCreateStuckNeedleVisual(Component damageableComponent, Vector3 hitPosition, Quaternion hitRotation, Vector3 hitScale)
         {
             if (!enableStuckNeedleVisual || IsReturnMode || specials.returnNeedleEnabled || specials.pierceEnabled || damageableComponent == null) return;
@@ -1206,6 +1672,10 @@ namespace Vampire
             {
                 Instantiate(explosionEffectPrefab, transform.position, Quaternion.identity);
             }
+            else
+            {
+                SyringeAugmentVfx.Play("Explosion", transform.position, SyringeAugmentVfx.FindTarget(originalTarget.transform));
+            }
 
             Debug.Log($"<color=orange><b>[💥 항생제 폭탄 발동]</b></color> 중심 타겟: {originalTarget.name} | 폭발 반경: {specials.explosionRadius}");
 
@@ -1228,7 +1698,7 @@ namespace Vampire
 
                 damagedIds.Add(splashId);
 
-                float splashDamage = specials.explosionDamage;
+                float splashDamage = specials.explosionDamage * Ver4HitEffects.ExplosionCenterMultiplier(splashComponent,transform.position,specials);
                 bool isCritical = false;
 
                 if (statRuntime != null)
@@ -1237,9 +1707,67 @@ namespace Vampire
                 }
 
                 splashDamageable.TakeDamage(splashDamage, Vector2.zero);
+
+                // 폭발침 스플래시는 OnHitDamageable을 거치지 않는 독립 피해이므로
+                // 기존 전체 피해량과 증강별 피해량에 직접 기록합니다.
+                ReportStandaloneAugmentDamage(
+                    "폭발침",
+                    splashDamage
+                );
+
                 Debug.Log($"<color=yellow><b> └ [↳ 💥 스플래시 피해 완수]</b></color> 휩쓸린 몹: {monster.gameObject.name} | 입은 피해: {splashDamage}");
             }
         }
+
+        // =====================================================================
+        // 📊 증강 피해 기록 헬퍼
+        // =====================================================================
+
+        /// <summary>
+        /// 기존 공격 적중 이벤트가 전체 피해량을 이미 기록하는 경우,
+        /// AugmentDamageTracker에 증강 피해만 추가합니다.
+        /// </summary>
+        private void RecordAugmentDamageOnly(string augmentName, float finalDamage)
+        {
+            if (finalDamage <= 0f)
+            {
+                return;
+            }
+
+            if (AugmentDamageTracker.Instance != null)
+            {
+                AugmentDamageTracker.Instance.RecordDamage(
+                    augmentName,
+                    finalDamage
+                );
+            }
+        }
+
+        /// <summary>
+        /// OnHitDamageable을 거치지 않는 독립 증강 피해를
+        /// 기존 전체 피해량과 AugmentDamageTracker에 동시에 기록합니다.
+        /// </summary>
+        private void ReportStandaloneAugmentDamage(string augmentName, float finalDamage)
+        {
+            if (finalDamage <= 0f)
+            {
+                return;
+            }
+
+            if (playerCharacter != null &&
+                playerCharacter.OnDealDamage != null)
+            {
+                playerCharacter.OnDealDamage.Invoke(
+                    finalDamage
+                );
+            }
+
+            RecordAugmentDamageOnly(
+                augmentName,
+                finalDamage
+            );
+        }
+
 
         // =====================================================================
         // 💡 구강 청결제 반사 전용 엔진

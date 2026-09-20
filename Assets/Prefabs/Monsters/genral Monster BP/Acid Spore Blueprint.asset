@@ -13,12 +13,12 @@ MonoBehaviour:
   m_Name: Acid Spore Blueprint
   m_EditorClassIdentifier: 
   name: "\uC704\uC0B0 \uD3EC\uC790"
-  hp: 20
+  hp: 25
   atk: 0
   recovery: 0
   armor: 0
   atkspeed: 1
-  movespeed: 6
+  movespeed: 4
   acceleration: 120
   gemLootTable:
     lootTable:
@@ -38,6 +38,8 @@ MonoBehaviour:
       coinType: 0
   walkSpriteSequence: []
   walkFrameTime: 0
+  description: "\uC704\uC0B0 \uD3EC\uC790?"
+  resultSprite: {fileID: 0}
   playerLayer:
     serializedVersion: 2
     m_Bits: 0

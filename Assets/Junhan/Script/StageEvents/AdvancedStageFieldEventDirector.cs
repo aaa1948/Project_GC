@@ -1,3 +1,4 @@
+using static UnityEngine.Object;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -5,19 +6,16 @@ using UnityEngine;
 namespace Vampire
 {
     /// <summary>
-    /// 기존 StageEventDirector를 건드리지 않고,
-    /// 추가 필드 이벤트 3종을 따로 관리하는 보조 디렉터입니다.
-    ///
-    /// 담당 이벤트:
-    /// 1. 산성 역류 파도
-    /// 2. 연동운동 기류
-    /// 3. 커피수혈 타임
-    ///
-    /// 기존 StageEventDirector가 이미 몬스터 증가 / 골드 / 위산분비를 관리하므로,
-    /// 이 스크립트는 같은 오브젝트에 추가해서 확장용으로 사용합니다.
+    /// StageEventDirector가 소유하는 산성 역류·연동운동·커피수혈 설정과 실행 모듈.
+    /// 씬에 별도 컴포넌트로 부착하지 않습니다.
     /// </summary>
-    public class AdvancedStageFieldEventDirector : MonoBehaviour
+    [System.Serializable]
+    public class AdvancedStageFieldEventDirector : RuntimeModule
     {
+        protected override void OnSuspended()
+        {
+            if (mainCamera != null && hasOriginalCameraRotation) mainCamera.transform.rotation = originalCameraRotation;
+        }
         [System.Serializable]
         public class EventStartTimeRange
         {
@@ -250,11 +248,7 @@ namespace Vampire
         [Tooltip("플레이 시작 시 고급 필드 이벤트들의 등록 개수와 실제 시작 시간을 로그로 출력합니다.")]
         [SerializeField] private bool logPreparedEvents = true;
         [Header("Visual Sorting")]
-        [Tooltip("체크하면 산성 파도/커피 파도 시각 오브젝트의 Sorting Layer와 Order in Layer를 코드에서 강제로 적용합니다.")]
-        [SerializeField] private bool forceEventVisualSorting = true;
 
-        [Tooltip("산성 파도/커피 파도에 적용할 Sorting Layer 이름입니다. 먼저 Default로 테스트하고, 안 보이면 Monster Full로 바꿔보세요.")]
-        [SerializeField] private string eventVisualSortingLayerName = "Default";
 
         [Tooltip("산성 파도/커피 파도의 Order in Layer입니다. 값이 클수록 앞에 보입니다.")]
         [SerializeField] private int eventVisualSortingOrder = 5000;
@@ -274,10 +268,57 @@ namespace Vampire
         private Camera mainCamera;
         private Quaternion originalCameraRotation;
         private bool hasOriginalCameraRotation;
+        private bool miniStageCameraRestored;
         private Coroutine activeAcidRefluxRoutine;
         private Coroutine activeCoffeeWaveRoutine;
 
-        private void Start()
+        public void CollectWindowTemplates(List<StageEventTemplate> templates)
+        {
+            var acidRefluxWaveEventsSources = acidRefluxWaveEvents.ToArray();
+            acidRefluxWaveEvents.Clear();
+            foreach (var s in acidRefluxWaveEventsSources)
+            {
+                if (s == null || !s.enabled) continue;
+                var source = s;
+                templates.Add(new StageEventTemplate { kind = "Wave", duration = s.waveCount * (s.warningDuration + s.travelDuration + s.intervalBetweenWaves) + 2f, schedule = time =>
+                {
+                    var copy = StageEventTemplate.Copy(source);
+                    copy.useRandomStartTime = false;
+                    copy.startTime = time;
+                    acidRefluxWaveEvents.Add(copy);
+                } });
+            }
+            var peristalsisDriftEventsSources = peristalsisDriftEvents.ToArray();
+            peristalsisDriftEvents.Clear();
+            foreach (var s in peristalsisDriftEventsSources)
+            {
+                if (s == null || !s.enabled) continue;
+                var source = s;
+                templates.Add(new StageEventTemplate { kind = "Drift", duration = s.duration + 2f, schedule = time =>
+                {
+                    var copy = StageEventTemplate.Copy(source);
+                    copy.useRandomStartTime = false;
+                    copy.startTime = time;
+                    peristalsisDriftEvents.Add(copy);
+                } });
+            }
+            var coffeeTransfusionEventsSources = coffeeTransfusionEvents.ToArray();
+            coffeeTransfusionEvents.Clear();
+            foreach (var s in coffeeTransfusionEventsSources)
+            {
+                if (s == null || !s.enabled) continue;
+                var source = s;
+                templates.Add(new StageEventTemplate { kind = "Coffee", duration = s.duration + 5f, schedule = time =>
+                {
+                    var copy = StageEventTemplate.Copy(source);
+                    copy.useRandomStartTime = false;
+                    copy.startTime = time;
+                    coffeeTransfusionEvents.Add(copy);
+                } });
+            }
+        }
+
+        protected override System.Collections.IEnumerator OnStart()
         {
             if (levelManager == null)
             {
@@ -303,10 +344,26 @@ namespace Vampire
             }
 
             PrepareAllEvents();
+
+            yield break;
         }
 
-        private void Update()
+        protected override void OnTick()
         {
+            if (MiniStageRuntimeState.IsInsideMiniStage || (levelManager != null && (levelManager.IsRunFlowPaused || levelManager.IsLevelEnded)))
+            {
+                // 필드 기류가 MiniStage 카메라에 남지 않도록 기본 회전을 사용합니다.
+                if (!miniStageCameraRestored && mainCamera != null && hasOriginalCameraRotation)
+                {
+                    mainCamera.transform.rotation = originalCameraRotation;
+                }
+
+                miniStageCameraRestored = true;
+                return;
+            }
+
+            miniStageCameraRestored = false;
+
             if (levelManager == null)
             {
                 return;
@@ -332,8 +389,13 @@ namespace Vampire
             RestoreCameraTiltIfNoActiveDrift();
         }
 
-        private void FixedUpdate()
+        protected override void OnFixedTick()
         {
+            if (MiniStageRuntimeState.IsInsideMiniStage || (levelManager != null && (levelManager.IsRunFlowPaused || levelManager.IsLevelEnded)))
+            {
+                return;
+            }
+
             for (int i = 0; i < peristalsisDriftEvents.Count; i++)
             {
                 PeristalsisDriftEvent driftEvent = peristalsisDriftEvents[i];
@@ -539,8 +601,13 @@ namespace Vampire
 
                 if (i < safeWaveCount - 1)
                 {
-                    yield return new WaitForSeconds(Mathf.Max(0f, waveEvent.intervalBetweenWaves));
+                    yield return WaitForFieldSeconds(Mathf.Max(0f, waveEvent.intervalBetweenWaves));
                 }
+            }
+
+            while (MiniStageRuntimeState.IsInsideMiniStage)
+            {
+                yield return null;
             }
 
             waveEvent.finished = true;
@@ -626,7 +693,7 @@ namespace Vampire
 
             for (int i = 0; i < monsters.Length; i++)
             {
-                if (monsters[i] == null)
+                if (monsters[i] == null || monsters[i].IsMiniStageOwned || monsters[i].IsFieldRuntimeSuspended)
                 {
                     continue;
                 }
@@ -663,7 +730,7 @@ namespace Vampire
             float force,
             float maxAddedVelocity)
         {
-            if (targetRb == null)
+            if (targetRb == null || !targetRb.simulated)
             {
                 return;
             }
@@ -800,7 +867,7 @@ namespace Vampire
 
             coffeeEvent.monsterScanTimer += Time.deltaTime;
 
-            if (coffeeEvent.monsterScanTimer >= coffeeEvent.monsterScanInterval)
+            if (coffeeEvent.monsterScanTimer >= coffeeEvent.monsterScanInterval && currentTime - coffeeEvent.resolvedStartTime >= 0.9f)
             {
                 coffeeEvent.monsterScanTimer = 0f;
 
@@ -813,22 +880,9 @@ namespace Vampire
 
         private IEnumerator CoffeeWaveRoutine(CoffeeTransfusionEvent coffeeEvent)
         {
-            yield return SpawnMovingWave(
-                eventName: coffeeEvent.eventName,
-                moveLeftToRight: true,
-                warningDuration: coffeeEvent.warningDuration,
-                travelDuration: coffeeEvent.travelDuration,
-                waveHeight: coffeeEvent.waveHeight,
-                screenPadding: coffeeEvent.screenPadding,
-                damage: 0f,
-                damageCooldownPerTarget: 999f,
-                knockbackPower: 0f,
-                affectPlayer: false,
-                affectMonsters: false,
-                waveColor: coffeeEvent.coffeeWaveColor,
-                warningColor: coffeeEvent.warningColor,
-                visualOnly: true,
-                travelStartSfxId: GameAudioManager.GameSfxId.CoffeeTransfusionPour);
+            CoffeeScreenTransition.Play(transform);
+            GameAudioManager.PlaySfx(GameAudioManager.GameSfxId.CoffeeTransfusionPour);
+            yield return WaitForFieldSeconds(CoffeeScreenTransition.Duration);
 
             activeCoffeeWaveRoutine = null;
         }
@@ -843,7 +897,7 @@ namespace Vampire
             {
                 Monster monster = monsters[i];
 
-                if (monster == null)
+                if (monster == null || monster.IsMiniStageOwned || monster.IsFieldRuntimeSuspended)
                 {
                     continue;
                 }
@@ -896,6 +950,11 @@ namespace Vampire
             bool visualOnly,
             GameAudioManager.GameSfxId? travelStartSfxId = null)
         {
+            while (MiniStageRuntimeState.IsInsideMiniStage)
+            {
+                yield return null;
+            }
+
             // 실제 피해 파도일 때만 위험 경고음.
             // 커피수혈의 VisualOnly 파도에는 재생하지 않습니다.
             if (!visualOnly)
@@ -940,7 +999,12 @@ namespace Vampire
                     warningColor);
             }
 
-            yield return new WaitForSeconds(Mathf.Max(0f, warningDuration));
+            yield return WaitForFieldSeconds(Mathf.Max(0f, warningDuration));
+
+            while (MiniStageRuntimeState.IsInsideMiniStage)
+            {
+                yield return null;
+            }
 
             if (warningObject != null)
             {
@@ -981,6 +1045,9 @@ namespace Vampire
                         affectMonsters);
                 }
 
+                if (travelStartSfxId == GameAudioManager.GameSfxId.AcidRefluxWavePass)
+                    waveZone.EnableAcidAnimation(moveLeftToRight);
+
                 // 경고가 끝난 뒤 실제 파도 오브젝트가 생성되고
                 // 이동을 시작하는 순간에만 해당 전용 효과음을 1회 재생합니다.
                 if (travelStartSfxId.HasValue)
@@ -991,12 +1058,34 @@ namespace Vampire
                 }
             }
 
-            yield return new WaitForSeconds(Mathf.Max(0.05f, travelDuration));
+            yield return WaitForFieldSeconds(Mathf.Max(0.05f, travelDuration));
+
+            while (MiniStageRuntimeState.IsInsideMiniStage)
+            {
+                yield return null;
+            }
 
             if (waveObject != null)
             {
                 Destroy(waveObject);
             }
+        }
+
+        // 새 내부 대기 함수: 일반 버프 시간이 아닌 필드 이벤트의 대기 시간만 셉니다.
+        private IEnumerator WaitForFieldSeconds(float duration)
+        {
+            float remaining = Mathf.Max(0f, duration);
+
+            do
+            {
+                yield return null;
+
+                if (!MiniStageRuntimeState.IsInsideMiniStage)
+                {
+                    remaining -= Time.deltaTime;
+                }
+            }
+            while (remaining > 0f || MiniStageRuntimeState.IsInsideMiniStage);
         }
 
         private GameObject CreateWaveVisualObject(
@@ -1029,15 +1118,7 @@ namespace Vampire
 
             spriteRenderer.color = visibleColor;
 
-            if (forceEventVisualSorting)
-            {
-                spriteRenderer.sortingLayerName = eventVisualSortingLayerName;
-                spriteRenderer.sortingOrder = eventVisualSortingOrder;
-            }
-            else
-            {
-                spriteRenderer.sortingOrder = eventVisualSortingOrder;
-            }
+            GroundVisualSorting.Apply(spriteRenderer, eventVisualSortingOrder);
 
             // URP/2D 환경에서 기본 SpriteRenderer가 확실히 보이도록 명시적으로 Sprites/Default 재질을 넣는다.
             Shader spriteShader = Shader.Find("Sprites/Default");
