@@ -203,7 +203,11 @@ namespace Vampire
         public int CurrentLevel => currentLevel;
         public float CurrentHealth => currentHealth;
         public float MaxHealth => GetMaxHealth();
-        public float CurrentMoveSpeed => movementSpeed != null ? movementSpeed.Value : 0f;
+        public CharacterSkillRuntime Skills { get; private set; }
+        public bool IsAlive => alive;
+        public int SkillProjectileCount(int count) => Skills != null ? Skills.ProjectileCount(count) : Mathf.Max(1,count);
+        public bool IsSkillIdle => alive && !IsDashing && !IsTrapBound && moveDirection.sqrMagnitude < .0001f && visualState == CharacterVisualState.Idle;
+        public float CurrentMoveSpeed => (movementSpeed != null ? movementSpeed.Value : 0f) * (Skills != null ? Skills.MovementMultiplier : 1);
         public float CurrentArmor => armor != null ? armor.Value : 0f;
 
         public string DisplayName =>
@@ -228,15 +232,15 @@ namespace Vampire
                     finalSpeed += thermometerStacks * 0.03f;
                 }
 
-                return finalSpeed;
+                return finalSpeed * (Skills != null && Skills.AshiPassive ? 1.2f : 1);
             }
         }
 
         public int MouthwashCount => mouthwashCount;
-        public float ProjectileSpeedMultiplier => projectileSpeedMultiplier;
+        public float ProjectileSpeedMultiplier => projectileSpeedMultiplier * (Skills != null && Skills.AshiActive ? 2 : 1);
         public float BurnChance => burnChance;
         public float CritChance => critChance;
-        public int AdditionalProjectiles => additionalProjectiles;
+        public int AdditionalProjectiles => additionalProjectiles + (Skills != null && Skills.AshiPassive ? 2 : 0);
         public float InvincibilityTimeBonus => invincibilityTimeBonus;
         public float LifeSteal => lifeSteal;
         public float HealOnKill => healOnKill;
@@ -252,7 +256,9 @@ namespace Vampire
         public float ExperienceMultiplier => expMultiplier;
 
         public float DashDistance => dashDistance;
+        public float DashDuration => dashDuration;
         public float DashRechargeTime => dashRechargeTime;
+        public float EffectiveDashRechargeTime => Skills!=null&&Skills.IsAri&&Skills.Active ? Mathf.Max(.05f,Skills.Definition.ariDashCooldown) : dashRechargeTime;
 
         public bool HasShield => hasShield;
         public int ReviveCount => reviveCount;
@@ -356,6 +362,7 @@ namespace Vampire
             InitDash();
             UpdateThermometerDisplay();
             MobileGameplayControls.Ensure(this);
+            if (Skills == null) { Skills=gameObject.AddComponent<CharacterSkillRuntime>(); Skills.Initialize(this); }
         }
 
         protected virtual void Update()
@@ -558,6 +565,7 @@ namespace Vampire
             }
 
             ApplyDashSpriteVisual(dashDirection);
+            Skills?.DashStarted();
 
             Vector2 startPosition = rb != null ? rb.position : (Vector2)transform.position;
             Vector2 targetPosition = startPosition + dashDirection.normalized * dashDistance;
@@ -584,10 +592,13 @@ namespace Vampire
 
                 if (rb != null)
                 {
-                    rb.MovePosition(BloodClotObstacle.ClampDash(rb, nextPosition));
+                    var allowedPosition=BloodClotObstacle.ClampDash(rb,nextPosition);
+                    Skills?.DashStep(rb.position,allowedPosition);
+                    rb.MovePosition(allowedPosition);
                 }
                 else
                 {
+                    Skills?.DashStep(transform.position,nextPosition);
                     transform.position = nextPosition;
                 }
 
@@ -597,7 +608,9 @@ namespace Vampire
 
             if (rb != null)
             {
-                rb.MovePosition(BloodClotObstacle.ClampDash(rb, targetPosition));
+                var allowedPosition=BloodClotObstacle.ClampDash(rb,targetPosition);
+                Skills?.DashStep(rb.position,allowedPosition);
+                rb.MovePosition(allowedPosition);
 
                 if (stopVelocityAfterDash)
                 {
@@ -606,6 +619,7 @@ namespace Vampire
             }
             else
             {
+                Skills?.DashStep(transform.position,targetPosition);
                 transform.position = targetPosition;
             }
 
@@ -616,6 +630,7 @@ namespace Vampire
 
             isDashing = false;
             dashCoroutine = null;
+            if (alive && !IsTrapBound) Skills?.DashFinished();
 
             if (invincibleDuringDash && dashEndInvincibleGraceTime > 0f)
             {
@@ -672,7 +687,7 @@ namespace Vampire
 
             if (dashDirection.x != 0f)
             {
-                if (dashSpriteFacesRight)
+                if (hasDashAnimation ? characterBlueprint.dashArtMovesRight : dashSpriteFacesRight)
                 {
                     spriteRenderer.flipX = dashDirection.x < 0f;
                 }
@@ -687,7 +702,9 @@ namespace Vampire
                 PlayVisualState(
                     CharacterVisualState.Dash,
                     characterBlueprint.dashSpriteSequence,
-                    characterBlueprint.dashFrameTime);
+                    characterBlueprint.fitDashAnimationToDuration
+                        ? dashDuration / characterBlueprint.dashSpriteSequence.Length
+                        : characterBlueprint.dashFrameTime);
             }
             else
             {
@@ -811,7 +828,7 @@ namespace Vampire
         {
             while (currentDashCharges < maxDashCharges)
             {
-                yield return new WaitForSeconds(dashRechargeTime);
+                yield return new WaitForSeconds(EffectiveDashRechargeTime);
 
                 if (!alive)
                 {
@@ -828,6 +845,13 @@ namespace Vampire
             }
 
             dashRechargeCoroutine = null;
+        }
+
+        public void RefreshSkillDashRecharge(bool grantCharge)
+        {
+            StopDashRecharge();
+            if(grantCharge)currentDashCharges=Mathf.Min(maxDashCharges,currentDashCharges+1);
+            EnsureDashRecharge();
         }
 
         public void GainExp(float exp)
@@ -1185,7 +1209,10 @@ namespace Vampire
 
         public void UpdateMoveSpeed()
         {
-            rb.drag = characterBlueprint.acceleration / (movementSpeed.Value * movementSpeed.Value);
+            if (rb == null || movementSpeed == null || characterBlueprint == null) return;
+            float speed = Mathf.Max(.01f,movementSpeed.Value);
+            // Existing movement uses acceleration/drag; halve drag for twice the actual speed.
+            rb.drag = characterBlueprint.acceleration / (speed * speed * (Skills != null ? Skills.MovementMultiplier : 1));
         }
 
         public void AddHealOnIdle(float amount)
@@ -1249,7 +1276,9 @@ namespace Vampire
                 return;
 
             visualState = state;
-            spriteAnimator.Init(sequence, Mathf.Max(0.01f, frameTime), true);
+            // Start at frame zero; a short dash must not enter halfway through its sequence.
+            spriteAnimator.Init(sequence, Mathf.Max(0.01f, frameTime), false,
+                state != CharacterVisualState.Dash || !characterBlueprint.fitDashAnimationToDuration);
             spriteAnimator.StartAnimating();
         }
 
@@ -1736,6 +1765,12 @@ namespace Vampire
             snapshot.ThermometerStacks =
                 thermometerStacks;
 
+            snapshot.SkillSummonRemaining=Skills != null ? Skills.SummonRemaining : 0;
+            snapshot.SkillSleepSeconds=Skills != null ? Skills.SleepSeconds : 0;
+            snapshot.SkillConsumedSleepStacks=Skills != null ? Skills.ConsumedSleepStacks : 0;
+            snapshot.SkillPassiveRemaining=Skills != null ? Skills.PassiveRemaining : 0;
+            snapshot.SkillActiveRemaining=Skills != null ? Skills.ActiveRemaining : 0;
+            snapshot.SkillCooldownRemaining=Skills != null ? Skills.CooldownRemaining : 0;
             return snapshot;
         }
 
@@ -1946,6 +1981,8 @@ namespace Vampire
             alive =
                 currentHealth > 0f;
 
+            Skills?.Restore(snapshot.SkillPassiveRemaining,snapshot.SkillActiveRemaining,snapshot.SkillCooldownRemaining,snapshot.SkillSummonRemaining);
+            Skills?.RestoreSleep(snapshot.SkillSleepSeconds,snapshot.SkillConsumedSleepStacks);
             // Restored spent charges must recharge even when no dash can be started.
             StopDashRecharge();
             EnsureDashRecharge();

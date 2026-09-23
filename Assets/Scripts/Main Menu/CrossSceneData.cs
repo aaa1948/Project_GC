@@ -28,6 +28,9 @@ namespace Vampire
         // Level / EXP / HP
         // ------------------------------------------------------------
 
+        public float SkillPassiveRemaining, SkillActiveRemaining, SkillCooldownRemaining;
+        public float SkillSleepSeconds, SkillSummonRemaining;
+        public int SkillConsumedSleepStacks;
         public int CurrentLevel;
 
         public float CurrentExp;
