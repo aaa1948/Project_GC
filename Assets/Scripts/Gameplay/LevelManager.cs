@@ -44,6 +44,7 @@ namespace Vampire
 
         public void Init(LevelBlueprint levelBlueprint)
         {
+            if (!CrossSceneData.HasPendingRunSceneTransfer) SnailFieldProgress.Reset();
             this.levelBlueprint = levelBlueprint;
 
             levelTime = 0f;

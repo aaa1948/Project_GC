@@ -207,7 +207,8 @@ namespace Vampire
         public bool IsAlive => alive;
         public int SkillProjectileCount(int count) => Skills != null ? Skills.ProjectileCount(count) : Mathf.Max(1,count);
         public bool IsSkillIdle => alive && !IsDashing && !IsTrapBound && moveDirection.sqrMagnitude < .0001f && visualState == CharacterVisualState.Idle;
-        public float CurrentMoveSpeed => (movementSpeed != null ? movementSpeed.Value : 0f) * (Skills != null ? Skills.MovementMultiplier : 1);
+        public float CurrentMoveSpeed => (movementSpeed != null ? movementSpeed.Value : 0f) * (Skills != null ? Skills.MovementMultiplier : 1) * SnailSlowMultiplier;
+        private float SnailSlowMultiplier => GetComponent<SnailSlowStatus>()?.Multiplier ?? 1f;
         public float CurrentArmor => armor != null ? armor.Value : 0f;
 
         public string DisplayName =>
@@ -1212,7 +1213,7 @@ namespace Vampire
             if (rb == null || movementSpeed == null || characterBlueprint == null) return;
             float speed = Mathf.Max(.01f,movementSpeed.Value);
             // Existing movement uses acceleration/drag; halve drag for twice the actual speed.
-            rb.drag = characterBlueprint.acceleration / (speed * speed * (Skills != null ? Skills.MovementMultiplier : 1));
+            rb.drag = characterBlueprint.acceleration / (speed * speed * (Skills != null ? Skills.MovementMultiplier : 1) * Mathf.Max(.05f, SnailSlowMultiplier));
         }
 
         public void AddHealOnIdle(float amount)

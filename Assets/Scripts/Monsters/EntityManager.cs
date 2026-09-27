@@ -193,6 +193,8 @@ namespace Vampire
                 return monster != null ? monster.gameObject : null;
             }
             var boss = Instantiate(prefab, position, Quaternion.identity, transform);
+            var snail = boss.GetComponent<SnailBossRuntime>();
+            if (snail != null) snail.Initialize(playerCharacter);
             var controller = boss.GetComponentInChildren<BossController>(true);
             if (controller != null) controller.SetPlayerCharacter(playerCharacter);
             return boss;
