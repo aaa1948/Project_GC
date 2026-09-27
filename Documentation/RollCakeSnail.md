@@ -30,6 +30,7 @@ Tablet internal lane angle starts at ±12°, middle lane 0°; this is explicitly
 HP starts at 6000, projectile speed 3.2, contact damage 12, projectile damage 8, bomb damage 14. Balance is provisional, not a claim of final difficulty tuning.
 
 ## Field mini roll cakes
+The mini visuals now use eight single-ingredient cake cutfaces with matching toppings and attached snail bodies, including movement-driven crawling. Field spawns use the four vanilla kinds; summon/absorb actors use their phase's four kinds. See [MiniRollCakeSnails.md](MiniRollCakeSnails.md).
 Legacy pooled AcidLeechMonster remains as the component/file identity to preserve serialized scene and pool links. In-game identity and art are field mini roll cakes.
 - Preserve curved random path motion, remove feeding anchor and difficulty increase.
 - Three kills of the same topping remove that phase1 ingredient/pattern before boss summon.

@@ -19,8 +19,11 @@ namespace Vampire
         }
         public static void MakeArt(Transform root,bool chocolate,int ingredient)
         {
-            var shell=SnailBossArt.Make(root,chocolate?"Shell2":"Shell1",.72f,505);shell.transform.localPosition=new Vector3(0,.22f,0);
-            var top=SnailBossArt.Make(root,SnailBossArt.Projectile(chocolate,ingredient),.3f,506);top.transform.localPosition=new Vector3(0,.65f,0);
+            var visualRoot=new GameObject("Mini snail visual");
+            visualRoot.transform.SetParent(root,false);
+            var visual=visualRoot.AddComponent<SnailMiniVisual>();
+            var fieldActor=root.GetComponentInParent<AcidLeechMonster>();
+            visual.Configure(fieldActor!=null?fieldActor.transform:root,chocolate,ingredient);
         }
         void Update()
         {

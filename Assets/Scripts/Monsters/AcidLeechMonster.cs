@@ -165,7 +165,7 @@ namespace Vampire
             increaseDifficultyAfterFeeding = false;
             if (monsterSpriteAnimator != null) monsterSpriteAnimator.enabled = false;
             if (monsterSpriteRenderer != null) monsterSpriteRenderer.enabled = false;
-            if (rollCakeVisual != null) Destroy(rollCakeVisual);
+            if (rollCakeVisual != null) { rollCakeVisual.SetActive(false); Destroy(rollCakeVisual); }
             rollCakeVisual = new GameObject("Mini roll cake art");
             rollCakeVisual.transform.SetParent(transform, false);
             SnailBossMinion.MakeArt(rollCakeVisual.transform, false, rollCakeIngredient);

@@ -49,6 +49,18 @@ public static class SnailBossPlaySmoke
         var player=level.PlayerCharacter;
         typeof(Character).GetField("isInvincible",BindingFlags.Instance|BindingFlags.NonPublic)?.SetValue(player,true);
         Check(SnailBossDebugSpawn.SpawnFieldMinis(level)==3,"field wave creates three random topping minis");
+        var fieldMinis=UnityEngine.Object.FindObjectsOfType<AcidLeechMonster>();
+        Check(fieldMinis.Length>=3,"field mini snail actors exist");
+        var fieldRig=fieldMinis[0].GetComponentInChildren<SnailMiniVisual>();
+        Check(fieldRig!=null&&fieldRig.Body.sprite.name=="Body1","field uses attached vanilla snail body");
+        float fieldPhase=fieldRig.WalkPhase;
+        yield return new WaitForSeconds(.23f);
+        Check(!Mathf.Approximately(fieldPhase,fieldRig.WalkPhase),"field curved motion drives crawl cycle");
+        MiniStageRuntimeState.EnterMiniStage(null);yield return null;yield return null;
+        fieldPhase=fieldRig.WalkPhase;
+        yield return new WaitForSeconds(.15f);
+        Check(fieldRig.WalkPhase==fieldPhase,"field snail animation freezes in mini-stage");
+        MiniStageRuntimeState.ExitMiniStage(null);yield return null;
         for(int i=0;i<4;i++)for(int n=0;n<3;n++)SnailFieldProgress.Record(i);
         var allMissing=UnityEngine.Object.Instantiate(AssetDatabase.LoadAssetAtPath<GameObject>(SnailBossSetup.PrefabPath),player.transform.position+Vector3.right*4,Quaternion.identity).GetComponent<SnailBossRuntime>();
         allMissing.Initialize(player);allMissing.AutoPatterns=false;
@@ -66,6 +78,7 @@ public static class SnailBossPlaySmoke
         boss.transform.position=player.transform.position+Vector3.right*4;
         yield return null;
         Capture(boss,"idle-phase1");
+        yield return CheckMiniVisuals(boss);
         for(int frame=0;frame<8;frame++){yield return new WaitForSeconds(.15f);CaptureRig(boss,"idle1-"+frame);}
         foreach(var p in new[]{SnailPattern.Basic,SnailPattern.Bomb,SnailPattern.Fan,SnailPattern.Homing,SnailPattern.Summon,SnailPattern.Absorb,SnailPattern.Dash})
         {
@@ -85,6 +98,7 @@ public static class SnailBossPlaySmoke
         Check(boss.Chocolate,"30% threshold transitions to chocolate");
         boss.HealFraction(.5f);Check(boss.Chocolate,"healing never reverts phase");
         yield return new WaitForSeconds(.25f);Capture(boss,"idle-phase2");
+        yield return CheckMiniVisuals(boss);
         for(int frame=0;frame<8;frame++){yield return new WaitForSeconds(.15f);CaptureRig(boss,"idle2-"+frame);}
         foreach(var p in new[]{SnailPattern.Basic,SnailPattern.Bomb,SnailPattern.Fan,SnailPattern.Homing,SnailPattern.Summon,SnailPattern.Absorb,SnailPattern.Dash})
         {
@@ -108,6 +122,33 @@ public static class SnailBossPlaySmoke
         yield return new WaitForSeconds(1.7f);Check(level.IsLevelEnded,"boss death completes level");
         Debug.Log("SNAIL_PLAY_ALL_PASS");
         SessionState.SetBool(Key+"Done",true);
+    }
+    static IEnumerator CheckMiniVisuals(SnailBossRuntime boss)
+    {
+        int fieldMask=SnailFieldProgress.Mask;
+        for(int i=0;i<4;i++)
+        {
+            foreach(bool absorbing in new[]{false,true})
+            {
+                Vector2 position=(Vector2)(absorbing?boss.transform.position:boss.Player.transform.position)+new Vector2(2+i*.2f,2);
+                var mini=SnailBossMinion.Spawn(boss,position,i,absorbing);
+                var rig=mini.GetComponentInChildren<SnailMiniVisual>();
+                Check(rig!=null&&rig.Chocolate==boss.Chocolate&&rig.Ingredient==i,
+                    "mini role/phase/kind "+absorbing+" "+boss.Chocolate+" "+i);
+                var shell=rig.Shell.sprite;var scale=rig.Shell.transform.localScale;
+                float phase=rig.WalkPhase;Vector3 before=mini.transform.position;
+                yield return new WaitForSeconds(.19f);
+                Check(mini!=null&&mini.transform.position!=before&&rig.WalkPhase!=phase,
+                    "mini movement animates "+absorbing+" "+boss.Chocolate+" "+i);
+                Check(rig.Shell.sprite==shell&&rig.Shell.transform.localScale==scale,
+                    "mini rigid shell "+absorbing+" "+boss.Chocolate+" "+i);
+                Check(Mathf.Approximately(mini.Health,boss.settings.summonHealth*(boss.Chocolate?1.3f:1)),
+                    "mini unchanged health "+absorbing+" "+boss.Chocolate+" "+i);
+                mini.TakeDamage(99999);
+                yield return null;
+                Check(SnailFieldProgress.Mask==fieldMask,"mini kill does not alter field progress "+absorbing+" "+boss.Chocolate+" "+i);
+            }
+        }
     }
     static void CaptureRig(SnailBossRuntime boss,string label)
     {
