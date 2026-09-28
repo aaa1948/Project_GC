@@ -1,7 +1,7 @@
 param(
     [ValidateSet('UploadDraft','Publish','Inspect')][string]$Mode = 'Inspect',
     [string]$Commit,
-    [string]$Version = '0.1.20260929.1',
+    [string]$Version = '0.1.20260929.3',
     [string]$Installer,
     [string]$Notes
 )

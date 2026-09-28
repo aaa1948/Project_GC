@@ -27,8 +27,10 @@ if ($shortcut.WorkingDirectory -ne $Installed) { throw 'Wrong shortcut working d
 $registration = Get-ItemProperty 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\24tuDesktopTest'
 $registeredExe = Join-Path $registration.InstallLocation '24tu.exe'
 if (!(Test-Path -LiteralPath $registeredExe) -or (Get-FileHash -LiteralPath $registeredExe).Hash -ne (Get-FileHash -LiteralPath $shortcut.TargetPath).Hash) { throw 'Wrong uninstall registration' }
-if ($shortcut.IconLocation -and $shortcut.IconLocation -ne ',0') {
-    $iconPath = $shortcut.IconLocation -replace ',\d+$', ''
-    if (!(Test-Path -LiteralPath $iconPath)) { throw 'Shortcut icon path is missing' }
-}
+$iconPath = Join-Path $Installed 'HyukiActive.ico'
+if ($shortcut.IconLocation -ne "$iconPath,0") { throw 'Desktop shortcut must explicitly reference the installed icon' }
+if (!(Test-Path -LiteralPath $iconPath)) { throw 'Shortcut icon path is missing' }
+if ((Get-FileHash -LiteralPath $iconPath).Hash -ne (Get-FileHash -LiteralPath (Join-Path $PSScriptRoot 'HyukiActive.ico')).Hash) { throw 'Installed icon differs from the source icon' }
+$menuLink = $shell.CreateShortcut((Join-Path ([Environment]::GetFolderPath('Programs')) '24시간의사투 (테스트)/24시간의사투.lnk'))
+if ($menuLink.TargetPath -ne $shortcut.TargetPath -or $menuLink.IconLocation -ne $shortcut.IconLocation) { throw 'Start Menu shortcut differs from desktop shortcut' }
 Write-Output "PASS: $($files.Count) installed files match SHA-256; desktop shortcut and uninstall registration are correct."

@@ -2,7 +2,7 @@ param(
     [Parameter(Mandatory = $true)][string]$Compiler,
     [string]$Payload,
     [string]$Output,
-    [string]$Version = '0.1.20260929',
+    [string]$Version = '0.1.20260929.3',
     [switch]$FastCompression
 )
 $ErrorActionPreference = 'Stop'

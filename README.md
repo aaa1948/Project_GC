@@ -4,15 +4,15 @@
   <img src="https://raw.githubusercontent.com/junanime/Project_GC/Junhan2/Assets/Junhan/Art/PhoenixSkills/HyukiActive.png" width="112" alt="24시간의사투 — 혁이 액티브 스킬 대표 아이콘" />
 </p>
 
-캐릭터 고유 스킬과 대시를 활용해 적을 피하고, 무기와 능력을 성장시키며 보스에 도전하는 2D 생존 액션 게임입니다. 현재 **Windows PC 테스트 버전**을 배포하고 있습니다.
+캐릭터 고유 스킬과 대시를 활용해 적을 피하고, 무기와 능력을 성장시키며 보스에 도전하는 2D 생존 액션 게임입니다. 현재 **Windows PC 테스트 버전**을 준비하고 있습니다.
 
 ## 다운로드 · 설치
 
-### [Windows 설치 파일 받기 — v0.1.20260929.1](https://github.com/junanime/Project_GC/releases/download/v0.1.20260929.1/24tu-Setup-0.1.20260929.1.exe)
+### [Windows 설치 파일 · Releases](https://github.com/junanime/Project_GC/releases)
 
-[릴리스 안내 / 다른 버전 / 파일 검증값](https://github.com/junanime/Project_GC/releases)
+**공개 업로드 준비 중:** 설치본 제작과 로컬 설치 검증은 완료했지만, GitHub Releases 파일 업로드는 인증 문제로 아직 완료되지 않았습니다. Releases에 설치 파일이 표시된 뒤 다운로드할 수 있습니다.
 
-1. 위 링크에서 `24tu-Setup-0.1.20260929.1.exe`를 다운로드합니다.
+1. 공개 후 위 Releases의 해당 버전 **Assets**에서 `24tu-Setup-<버전>.exe`를 다운로드합니다.
 2. 실행 중인 게임이 있다면 종료한 뒤 설치 파일을 실행합니다.
 3. 바탕화면의 **24시간의사투 (테스트)** 아이콘으로 실행합니다. 대표 아이콘은 혁이의 액티브 스킬 이미지입니다.
 4. 게임 시작 → 캐릭터·유물·아이템 준비 → **출전하기** 순서로 시작합니다.

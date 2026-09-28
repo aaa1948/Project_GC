@@ -3,6 +3,25 @@ Unicode True
 !include "x64.nsh"
 !include "LogicLib.nsh"
 
+; Resolve Windows packaged-host filesystem redirection before writing shell paths.
+; Input/output: $0. The directory must already exist.
+!macro ResolvePhysicalDirectory
+  System::Call 'kernel32::CreateFileW(w r0, i 0, i 7, p 0, i 3, i 0x02000000, p 0) p .r1'
+  ${If} $1 = -1
+    MessageBox MB_ICONSTOP "설치 폴더의 실제 경로를 확인하지 못했습니다."
+    Abort
+  ${EndIf}
+  System::Call 'kernel32::GetFinalPathNameByHandleW(p r1, w .r2, i ${NSIS_MAX_STRLEN}, i 0) i .r3'
+  System::Call 'kernel32::CloseHandle(p r1)'
+  ${If} $3 = 0
+  ${OrIf} $3 >= ${NSIS_MAX_STRLEN}
+    MessageBox MB_ICONSTOP "설치 경로를 확인하지 못했거나 경로가 너무 깁니다."
+    Abort
+  ${EndIf}
+  ; Local per-user installation: remove the Win32 extended-path prefix.
+  StrCpy $0 $2 "" 4
+!macroend
+
 !ifndef PAYLOAD
   !error "Pass /DPAYLOAD=<Windows build directory>"
 !endif
@@ -75,16 +94,19 @@ Section "게임 설치"
   IfErrors 0 +3
     MessageBox MB_ICONSTOP "파일 복사에 실패했습니다. 실행 중인 게임을 종료하고 저장 공간을 확인한 뒤 다시 설치해 주세요."
     Abort
+  StrCpy $0 $INSTDIR
+  !insertmacro ResolvePhysicalDirectory
+  StrCpy $INSTDIR $0
+  SetOutPath "$INSTDIR"
+  File "${__FILEDIR__}\HyukiActive.ico"
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   CreateDirectory "$SMPROGRAMS\24시간의사투 (테스트)"
-  ; Inherit the embedded icon from the resolved executable target. An explicit
-  ; duplicate path can become stale when Windows redirects a packaged host's paths.
-  CreateShortcut "$DESKTOP\24시간의사투 (테스트).lnk" "$INSTDIR\24tu.exe"
-  CreateShortcut "$SMPROGRAMS\24시간의사투 (테스트)\24시간의사투.lnk" "$INSTDIR\24tu.exe"
+  CreateShortcut "$DESKTOP\24시간의사투 (테스트).lnk" "$INSTDIR\24tu.exe" "" "$INSTDIR\HyukiActive.ico" 0
+  CreateShortcut "$SMPROGRAMS\24시간의사투 (테스트)\24시간의사투.lnk" "$INSTDIR\24tu.exe" "" "$INSTDIR\HyukiActive.ico" 0
   CreateShortcut "$SMPROGRAMS\24시간의사투 (테스트)\제거.lnk" "$INSTDIR\Uninstall.exe"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\24tuDesktopTest" "DisplayName" "24시간의사투 (테스트)"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\24tuDesktopTest" "DisplayVersion" "${BUILD_VERSION}"
-  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\24tuDesktopTest" "DisplayIcon" "$INSTDIR\24tu.exe"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\24tuDesktopTest" "DisplayIcon" "$INSTDIR\HyukiActive.ico"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\24tuDesktopTest" "InstallLocation" "$INSTDIR"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\24tuDesktopTest" "UninstallString" '$\"$INSTDIR\Uninstall.exe$\"'
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\24tuDesktopTest" "QuietUninstallString" '$\"$INSTDIR\Uninstall.exe$\" /S'
@@ -95,7 +117,13 @@ SectionEnd
 Function un.onInit
   SetShellVarContext current
   ; Never recursively delete an installation directory, even if it was moved.
-  StrCmp $INSTDIR "$LOCALAPPDATA\Programs\24tu" +3
+  ReadRegStr $0 HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\24tuDesktopTest" "InstallLocation"
+  ${If} $0 = ""
+    MessageBox MB_ICONSTOP "설치 경로 등록 정보를 찾지 못해 제거를 중단합니다."
+    Abort
+  ${EndIf}
+  !insertmacro ResolvePhysicalDirectory
+  StrCmp $INSTDIR $0 +3
     MessageBox MB_ICONSTOP "설치 경로가 변경되어 자동 제거를 중단합니다."
     Abort
 FunctionEnd
@@ -105,6 +133,7 @@ Section "Uninstall"
   SetOutPath "$TEMP"
   ; Exact packaged files only; unknown/user files and all save data remain untouched.
   !include "${UNINSTALL_LIST}"
+  Delete "$INSTDIR\HyukiActive.ico"
   Delete "$INSTDIR\Uninstall.exe"
   RMDir "$INSTDIR"
   Delete "$DESKTOP\24시간의사투 (테스트).lnk"
