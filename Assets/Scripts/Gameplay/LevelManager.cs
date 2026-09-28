@@ -397,6 +397,15 @@ namespace Vampire
             }
         }
 
+        public void AbandonRun()
+        {
+            if (levelEnded) return;
+            levelEnded = true;
+            SaveCoinsGained();
+            GameAudioManager.EndRunAudio(false);
+            PlayerPrefs.Save();
+        }
+
         private void SaveCoinsGained()
         {
             if (statsManager == null)

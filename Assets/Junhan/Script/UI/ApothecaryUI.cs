@@ -142,9 +142,8 @@ namespace Vampire
         {
             if (starting || Page == "result" || (level != null && level.PlayerCharacter != null && level.PlayerCharacter.Skills != null && level.PlayerCharacter.Skills.IsCutin)) return;
             if(Page=="settings"){CancelSettings();return;}
-            if (Page == "run") { CloseRunBook(); return; }
-            if (Page == "hud") { OpenRunBook(); return; }
-            if (Page == "main") Show("exit"); else Show("main");
+            if (Page == "hud" || Page == "run" || Page == "main" || Page == "prepare") { OpenSettings(); return; }
+            Show("main");
         }
         void Render()
         {
@@ -157,6 +156,7 @@ namespace Vampire
             {
                 BuildSkillHud();
                 ActionButton(content,"상태 / TAB", .81f,.87f,.97f,.97f, OpenRunBook);
+                ActionButton(content,"설정 / ESC", .81f,.76f,.97f,.85f, OpenSettings);
                 return;
             }
             var blocker=content.gameObject.AddComponent<Image>();blocker.color=Color.clear;blocker.raycastTarget=true;
@@ -355,7 +355,7 @@ namespace Vampire
         }
         public void OpenRunBook()
         {
-            if(level==null || level.IsLevelEnded || Time.timeScale==0 || Page!="hud")return;
+            if(level==null || level.IsLevelEnded || Time.timeScale==0 || Page!="hud" || (level.PlayerCharacter != null && level.PlayerCharacter.Skills != null && level.PlayerCharacter.Skills.IsCutin))return;
             previousTime=Time.timeScale;ownsPause=true;Time.timeScale=0;Show("run");
         }
         public void CloseRunBook()
