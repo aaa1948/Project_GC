@@ -23,6 +23,8 @@ namespace Vampire
     /// </summary>
     public class AcidLeechMonster : Monster
     {
+        private int rollCakeIngredient;
+        private GameObject rollCakeVisual;
         private enum LeechState
         {
             Moving,
@@ -156,6 +158,19 @@ namespace Vampire
         {
             base.Setup(monsterIndex, position, incomingBlueprint, hpBuff);
 
+            // Keep the pooled field-path actor, replace the retired feeding/difficulty mechanic.
+            gameObject.name = "Field mini roll cake";
+            rollCakeIngredient = Random.Range(0, 4);
+            leaveBloodTrail = false;
+            increaseDifficultyAfterFeeding = false;
+            if (monsterSpriteAnimator != null) monsterSpriteAnimator.enabled = false;
+            if (monsterSpriteRenderer != null) monsterSpriteRenderer.enabled = false;
+            if (rollCakeVisual != null) { rollCakeVisual.SetActive(false); Destroy(rollCakeVisual); }
+            rollCakeVisual = new GameObject("Mini roll cake art");
+            rollCakeVisual.transform.SetParent(transform, false);
+            SnailBossMinion.MakeArt(rollCakeVisual.transform, false, rollCakeIngredient);
+            if (monsterHitbox != null) { monsterHitbox.size = new Vector2(.8f, .8f); monsterHitbox.offset = Vector2.up * .3f; }
+
             currentState = LeechState.Moving;
             silverRewardPaid = false;
             moveElapsed = 0f;
@@ -247,7 +262,7 @@ namespace Vampire
             nextBloodTrailTime = 0f;
 
             PrepareCurvePath();
-            PlayLoopAnimation(moveSprites);
+            // The field mini uses the same art as summons, with four distinct toppings.
 
             if (stateRoutine != null)
             {
@@ -275,7 +290,7 @@ namespace Vampire
             }
 
             stateRoutine = null;
-            StartFeedingPhase();
+            StartMovingPhase();
         }
 
         private void StartFeedingPhase()
@@ -621,6 +636,8 @@ namespace Vampire
             }
 
             currentState = LeechState.Dead;
+            if (killedByPlayer) SnailFieldProgress.Record(rollCakeIngredient);
+            if (rollCakeVisual != null) rollCakeVisual.SetActive(false);
             ClearBloodTrails();
             RestoreMovementPhysicsSettings();
             StopRuntimeCoroutines();
