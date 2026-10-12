@@ -12,7 +12,7 @@ namespace Vampire
         Material fireMaterial,blizzardMaterial; MeshRenderer blizzard; Mesh blizzardMesh;
         float elapsed=10,phase;
         public const float Duration=3f;
-        public bool Playing => elapsed<Duration;
+        public bool Playing => elapsed<(skill != null && skill.Definition != null && skill.Definition.kind==CharacterSkillDefinition.SkillKind.Ashi ? skill.Definition.cutinDuration : Duration);
         public bool Absorbed => !Playing;
         public int CrystalCount => crystals.Count;
         public float BlizzardStrength { get; private set; }
@@ -56,8 +56,8 @@ namespace Vampire
             if(first==null)return;
             if(!owner.IsAlive){Hide();return;}
             bool ashi=skill.Definition.kind==CharacterSkillDefinition.SkillKind.Ashi;
-            float delta=ashi&&skill.IsCutin?Time.unscaledDeltaTime:Time.deltaTime;phase+=delta;elapsed+=delta;
-            if(ashi)elapsed=skill.IsCutin?skill.CutinElapsed:Duration;
+            float delta=Time.deltaTime;phase+=delta;elapsed+=delta;
+            if(ashi)elapsed=skill.IsSummoning?skill.CutinElapsed:skill.Definition.cutinDuration;
             if(skill.IsShini)elapsed=skill.IsSummoning?Duration-skill.SummonRemaining:Mathf.Max(Duration,elapsed);
             else if(skill.IsHyuki&&skill.IsSummoning)elapsed=IceSkillRules.BlizzardFreezeDelay-skill.SummonRemaining;
             UpdateCrystals();

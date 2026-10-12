@@ -66,7 +66,7 @@ static IEnumerator Checks(LevelManager level){
  Debug.Log("SPRITE_ASSETS Ashi="+ashi.phoenixFrames.Length+" Hyuki="+hyuki.phoenixFrames.Length+" A="+string.Join(",",ashi.phoenixFrames.Select(s=>s!=null?s.name:"null"))+" H="+string.Join(",",hyuki.phoenixFrames.Select(s=>s!=null?s.name:"null")));
  Check(ashi.phoenixFrames.SequenceEqual(hyuki.phoenixFrames)&&ashi.phoenixFrames.Length==16,"Ashi uses exactly the original sixteen ice phoenix sprites");
  Check(ashi.passiveIcon!=null&&ashi.activeIcon!=null&&ashi.passiveWind.Length==8&&ashi.activeWind.Length==8&&ashi.projectileWind.Length==8,"Ashi icons and existing gameplay wind animations preserved");
- Check(skill.TryActivate()&&Time.timeScale==0&&skill.IsCutin,"Ashi retains existing pause during wind summon");
+ Check(skill.TryActivate()&&Time.timeScale==1&&skill.IsSummoning&&skill.Active&&!skill.IsCutin,"Ashi wind summon keeps combat running");
  Check(!skill.TryActivate(),"cannot reenter active while summoning");
  yield return new WaitForSecondsRealtime(.38f);CaptureView("01-wind-phoenix-appear");
  var first=player.GetComponentsInChildren<SpriteRenderer>().First(r=>r.name=="Phoenix current pose");
@@ -77,7 +77,7 @@ static IEnumerator Checks(LevelManager level){
  Check(ribbons.Length==10&&ribbons.All(r=>r.enabled),"five ribbons wrap in separate front and back halves");
  yield return new WaitForSecondsRealtime(.57f);CaptureView("03-wind-phoenix-fade");
  yield return new WaitForSecondsRealtime(.65f);
- Check(!skill.IsCutin&&skill.Active&&Time.timeScale==1,"wind summon completes and restores game time");
+ Check(!skill.IsCutin&&skill.Active&&Time.timeScale==1,"wind summon completes while game time continues");
  Near(skill.EffectiveActiveDuration,12,"Ashi base buff duration unchanged");Near(skill.EffectiveCooldown,45,"Ashi cooldown unchanged");
  Check(!first.enabled&&ribbons.All(r=>!r.enabled),"phoenix and tornado cleanly disappear");
  skill.Restore(0,0,0);
@@ -130,7 +130,7 @@ static IEnumerator Checks(LevelManager level){
  foreach(var type in new[]{P.WindNeedle,P.HungerNeedle,P.Homing,P.Pierce})Check(CombatStatusRules.NeedleTags(type)==CombatStatusTag.None,"non-debuff metadata "+type);
  Set(player,"characterBlueprint",oldBlueprint);Object.Destroy(bp);skill.RestoreLevels(1,1);skill.Restore(0,0,0);
  Check(skill.TryActivate(),"Ashi active can be used again after reset");yield return null;
- skill.enabled=false;Check(Time.timeScale==1&&!skill.IsCutin,"disabling actor during summon restores time");skill.enabled=true;yield return null;
+ skill.enabled=false;Check(Time.timeScale==1&&!skill.IsCutin,"disabling actor during summon preserves time");skill.enabled=true;yield return null;
  Check(ribbons.All(r=>!r.enabled),"cancelled summon clears ribbons");
  Debug.Log("SKILL_REFRESH_CHECKS "+checks);SessionState.SetBool(Key+"Done",true);
 }

@@ -54,7 +54,7 @@ namespace Vampire
             foreach(var noble in owned.OfType<SyringeLegendaryAugmentAbility>())
                 rows.Add(new Entry{id="noble/"+noble.Type,title=noble.Name,body=noble.Description,badge="고귀",icon=noble.Image,color=new Color(.94f,.64f,.13f)});
             if(parents.Length==0 && owned.OfType<SyringeDartAbility>().Any())
-                rows.Insert(0,new Entry{id="basic",title="기본 침",body="사거리 안의 가까운 적을 조준해 직선으로 발사합니다. 발사된 침은 적을 다시 추적하지 않습니다. 필드를 클릭·터치하면 다음 한 발만 지정 방향으로 발사합니다. 기본 사거리는 아시 약 5개 길이이며 사거리 강화로 늘어납니다.",badge="기본 무기",icon=config.basicNeedle});
+                rows.Insert(0,new Entry{id="basic",title="기본 침",body="사거리 안의 가까운 적을 조준해 직선으로 발사합니다. 발사된 침은 적을 다시 추적하지 않습니다. 필드를 클릭·터치하면 다음 한 발만 지정 방향으로 발사합니다. 기본 사거리는 아시 약 3⅓개 길이이며 사거리 강화로 늘어납니다.",badge="기본 무기",icon=config.basicNeedle});
             return rows;
         }
         public static string[] Stats(Character player,SyringeDartAbility needle)

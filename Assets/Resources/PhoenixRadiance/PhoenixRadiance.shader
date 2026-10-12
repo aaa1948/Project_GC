@@ -2,6 +2,7 @@ Shader "Vampire/PhoenixRadiance"
 {
     Properties
     {
+        _AugmentOpacity ("Augment opacity", Range(0,1)) = 1
         _MainTex ("Atlas", 2D) = "white" {}
         _Color ("Tint", Color) = (1,1,1,1)
         _Frames ("Frames A B blend phase", Vector) = (0,0,0,0)
@@ -21,6 +22,7 @@ Shader "Vampire/PhoenixRadiance"
             #include "UnityCG.cginc"
             sampler2D _MainTex;
             float4 _Color, _Frames, _Motion, _Anchors;
+            float _AugmentOpacity;
             struct appdata { float4 vertex:POSITION; float2 uv:TEXCOORD0; };
             struct v2f { float4 vertex:SV_POSITION; float2 uv:TEXCOORD0; };
             v2f vert(appdata v)
@@ -51,7 +53,7 @@ Shader "Vampire/PhoenixRadiance"
                 float angle=atan2(uv.y-.5,uv.x-.5);
                 float shimmer=1+.08*sin(angle*max(24,_Motion.z)+_Frames.w*3)*step(.1,_Motion.z);
                 c.rgb*=_Color.rgb*shimmer;
-                return c*(_Color.a*reveal);
+                return c*(_Color.a*reveal*_AugmentOpacity);
             }
             ENDCG
         }

@@ -94,7 +94,8 @@ namespace Vampire
                         int index=Array.IndexOf(sizes,new Vector2Int(settingsDraft.width,settingsDraft.height));var size=sizes[(index+1)%sizes.Length];settingsDraft.width=size.x;settingsDraft.height=size.y;
                     });
                 }
-                Label(content,Application.platform==RuntimePlatform.WebGLPlayer?"화면 크기는 브라우저에 맞춰 조절됩니다. 전체화면은 페이지 아래 버튼을 사용하세요.":Application.isMobilePlatform?"화면 크기는 기기에 맞춰 자동으로 조절됩니다.":"수직 동기화가 켜지면 모니터 주사율을 따릅니다.",.20f,.218f,.80f,.265f,16);
+                AugmentOpacitySlider();
+                Label(content,"플레이어 증강 효과만 조절합니다. 필드 이벤트 장판은 그대로 유지됩니다.",.20f,.207f,.82f,.239f,14);
             }
             else if(Tab==1)
             {
@@ -126,7 +127,7 @@ namespace Vampire
             }
             Label(content,message,.26f,.155f,.74f,.20f,17);
             ActionButton(content,"뒤로",.15f,.065f,.34f,.15f,CancelSettings);
-            ActionButton(content,"기본값",.40f,.065f,.60f,.15f,()=>{settingsDraft=GamePreferences.Defaults();GamePreferences.PreviewAudio(settingsDraft);message="적용을 누르면 기본 설정을 저장합니다.";Render();});
+            ActionButton(content,"기본값",.40f,.065f,.60f,.15f,()=>{settingsDraft=GamePreferences.Defaults();GamePreferences.PreviewAudio(settingsDraft);GamePreferences.PreviewAugmentVfx(settingsDraft.augmentVfxOpacity);message="적용을 누르면 기본 설정을 저장합니다.";Render();});
             ActionButton(content,"적용",.66f,.065f,.85f,.15f,ApplySettings,true);
             if(confirmingDisplay)
             {
@@ -180,6 +181,25 @@ namespace Vampire
             float y=.63f-row*.077f;
             Label(content,title,.20f,y,.53f,y+.065f,23);
             ActionButton(content,value,.56f,y,.79f,y+.065f,()=>{change();message="변경 사항을 적용해 주세요.";Render();});
+        }
+        void AugmentOpacitySlider()
+        {
+            const float y=.245f;
+            Label(content,"증강 효과 불투명도",.20f,y,.47f,y+.065f,20);
+            var number=Label(content,$"{settingsDraft.augmentVfxOpacity*100:0}%",.76f,y,.83f,y+.065f,20);
+            var sr=Rect("Augment VFX opacity slider",content,.49f,y,.73f,y+.065f);
+            var hit=sr.gameObject.AddComponent<Image>();hit.color=Color.clear;hit.raycastTarget=true;
+            var slider=sr.gameObject.AddComponent<Slider>();
+            var track=ImageAt(sr,null,0,.34f,1,.66f,false);track.color=new Color(.22f,.12f,.10f);
+            var trough=ImageAt(sr,null,.01f,.40f,.99f,.60f,false);trough.color=new Color(.69f,.51f,.35f);
+            var fillArea=Rect("Fill area",sr,.04f,.40f,.96f,.60f);
+            var fill=ImageAt(fillArea,null,0,0,1,1,false);fill.color=new Color(1f,.38f,.34f);
+            var area=Rect("Handle area",sr,.04f,0,.96f,1);
+            var handle=ImageAt(area,null,0,.12f,0,.88f,false);handle.color=new Color(.22f,.12f,.10f);handle.rectTransform.sizeDelta=new Vector2(24,0);
+            var cap=ImageAt(handle.transform,null,.12f,.07f,.88f,.93f,false);cap.color=new Color(1f,.79f,.40f);
+            var shine=ImageAt(handle.transform,null,.24f,.17f,.40f,.83f,false);shine.color=new Color(1f,.95f,.72f);
+            slider.fillRect=fill.rectTransform;slider.handleRect=handle.rectTransform;slider.targetGraphic=cap;slider.SetValueWithoutNotify(settingsDraft.augmentVfxOpacity);
+            slider.onValueChanged.AddListener(v=>{settingsDraft.augmentVfxOpacity=v;number.text=$"{v*100:0}%";GamePreferences.PreviewAugmentVfx(v);message="변경 사항을 적용해 주세요.";});
         }
         void AudioSlider(string title,float value,int row,Action<float> change)
         {

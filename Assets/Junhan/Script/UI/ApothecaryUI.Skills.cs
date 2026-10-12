@@ -144,7 +144,7 @@ namespace Vampire
             passiveDuration.fillAmount=0;
             passiveSeconds.text=d!=null&&skill.IsShini&&skill.Breath!=null?$"{skill.Breath.Fuel}/{skill.Breath.Capacity}":d!=null&&skill.IsHyuki?Mathf.RoundToInt(skill.StatusDamageBonus*100)+"%":d!=null&&skill.PassiveActive?Mathf.CeilToInt(skill.PassiveRemaining).ToString():"";
             activeDurationBar.fillAmount=d!=null&&skill.IsShini&&skill.Breath!=null?(float)skill.Breath.Fuel/skill.Breath.Capacity:d!=null?skill.ActiveRemaining/skill.EffectiveActiveDuration:0;
-            cutinPanel.SetActive(false); // The wind phoenix now plays in the scene during the existing pause.
+            cutinPanel.SetActive(false); // Wind phoenix plays in the live scene while combat continues.
             if(skill!=null&&skill.IsCutin&&d.cutin!=null&&d.cutin.Length>0)
             {
                 float progress=Mathf.Clamp01(skill.CutinElapsed/d.cutinDuration);

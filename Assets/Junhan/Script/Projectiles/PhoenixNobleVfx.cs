@@ -62,6 +62,7 @@ namespace Vampire
             source.forceRenderingOff = true;
             effect.enabled = true;
             effect.Sync();
+            AugmentVfxTag.Mark(source.gameObject);
             return effect;
         }
 
@@ -196,7 +197,7 @@ namespace Vampire
         void Stroke(Vector2 a, Vector2 b, float width, Color color)
         { Vector2 d = b - a, n = new Vector2(-d.y, d.x).normalized * width / 2; Tri(a - n, a + n, b + n, color); Tri(a - n, b + n, b - n, color); }
         void Tri(Vector2 a, Vector2 b, Vector2 c, Color color)
-        { int k = vertices.Count; vertices.Add(a); vertices.Add(b); vertices.Add(c); colors.Add(color); colors.Add(color); colors.Add(color); triangles.Add(k); triangles.Add(k + 1); triangles.Add(k + 2); }
+        { color.a = 1f; int k = vertices.Count; vertices.Add(a); vertices.Add(b); vertices.Add(c); colors.Add(color); colors.Add(color); colors.Add(color); triangles.Add(k); triangles.Add(k + 1); triangles.Add(k + 2); }
 
         void LateUpdate() { age += Time.deltaTime; Sync(); }
         void Sync()

@@ -7,6 +7,7 @@ namespace Vampire
     public sealed class GamePreferenceValues
     {
         public float master = 1, music = .55f, effects = .8f, ui = .8f;
+        public float augmentVfxOpacity = 1f;
         public bool muted, reducedMotion, showFps, pauseOnFocusLoss = true, muteOnFocusLoss = true;
         public int quality = 2, frameLimit = 60;
         public bool vSync = true;
@@ -37,7 +38,7 @@ namespace Vampire
             GamePreferenceValues value=null;
             if(PlayerPrefs.HasKey(SaveKey))
             {
-                try { value=JsonUtility.FromJson<GamePreferenceValues>(PlayerPrefs.GetString(SaveKey)); }
+                try { value=Defaults(); JsonUtility.FromJsonOverwrite(PlayerPrefs.GetString(SaveKey),value); }
                 catch(ArgumentException) { /* A damaged settings entry must not block startup. */ }
             }
             if(value==null)
@@ -51,6 +52,7 @@ namespace Vampire
         public static void Sanitize(GamePreferenceValues value)
         {
             value.master=Volume(value.master);value.music=Volume(value.music);value.effects=Volume(value.effects);value.ui=Volume(value.ui);
+            value.augmentVfxOpacity=Volume(value.augmentVfxOpacity);
             value.quality=Mathf.Clamp(value.quality,0,2);value.displayMode=Mathf.Clamp(value.displayMode,0,1);
             if(value.frameLimit!=30&&value.frameLimit!=60&&value.frameLimit!=120&&value.frameLimit!=-1)value.frameLimit=60;
             if(value.width<640||value.height<360||value.width>7680||value.height>4320)value.width=value.height=0;
@@ -60,6 +62,10 @@ namespace Vampire
             current=Current.Copy();current.master=Volume(value.master);current.music=Volume(value.music);
             current.effects=Volume(value.effects);current.ui=Volume(value.ui);current.muted=value.muted;
             AudioListener.volume=current.muted?0:current.master;Changed?.Invoke();
+        }
+        public static void PreviewAugmentVfx(float opacity)
+        {
+            current=Current.Copy(); current.augmentVfxOpacity=Volume(opacity); Changed?.Invoke();
         }
         public static void Apply(GamePreferenceValues value,bool save,bool changeDisplay=true)
         {

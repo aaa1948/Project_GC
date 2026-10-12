@@ -104,11 +104,11 @@ namespace Vampire.Tests.Editor
             Set(needle, "homingEnabled", false); Set(needle, "lifeBurnEnabled", false); Set(needle, "bipolarNeedleEnabled", false);
             Set(player, "rangeMultiplier", 1f);
             float width = player.Blueprint.idleSpriteSequence[0].bounds.size.x * player.GetComponentInChildren<SpriteAnimator>().transform.lossyScale.x;
-            Check(Mathf.Abs(needle.GetEffectiveSyringeMaxDistance() / width - 5f) < .3f, "base range approximately five live Ashi widths: " + width);
-            Check(Mathf.Abs(needle.GetCurrentSpecialRuntime().homingRange / width - 6f) < .3f, "detection approximately six Ashi widths");
+            Check(Mathf.Abs(needle.GetEffectiveSyringeMaxDistance() / width - (10f/3f)) < .3f, "base range approximately three-and-one-third live Ashi widths: " + width);
+            Check(Mathf.Abs(needle.GetCurrentSpecialRuntime().homingRange / width - 4f) < .3f, "detection approximately four Ashi widths");
             Set(player, "rangeMultiplier", 1.5f);
-            Check(Mathf.Abs(needle.GetEffectiveSyringeMaxDistance() - 6.15f) < .01f, "range upgrade extends flight");
-            Check(Mathf.Abs(needle.GetCurrentSpecialRuntime().homingRange - 4.92f) < .01f, "flight upgrade does not multiply detection");
+            Check(Mathf.Abs(needle.GetEffectiveSyringeMaxDistance() - 4.1f) < .01f, "range upgrade extends flight");
+            Check(Mathf.Abs(needle.GetCurrentSpecialRuntime().homingRange - 3.28f) < .01f, "flight upgrade does not multiply detection");
             Set(player, "rangeMultiplier", 1f);
             Vector2 origin = needle.GetReturnCatchPosition(Vector2.right);
             int idx = Array.FindIndex(level.CurrentLevelBlueprint.monsters, c => c.monstersPrefab.GetComponent<AcidToadMonster>() != null);
@@ -142,7 +142,7 @@ namespace Vampire.Tests.Editor
             var secondVolley = Flying().Except(beforeVolley).Single();
             Check(Vector2.Dot(secondVolley.VisualFlightDirection, Vector2.up) > .95f, "remaining volley resumes auto aim with spread");
             var homingAbility = manager.GetComponentsInChildren<SyringeSpecialAugmentAbility>(true).First(a => a.Type == SyringeSpecialAugmentAbility.SpecialAugmentType.Homing);
-            Check(homingAbility.Description.Contains("발사 직후") && homingAbility.Description.Contains("6개"), "live selection/panel description reflects immediate homing and six-width detection");
+            Check(homingAbility.Description.Contains("발사 직후") && homingAbility.Description.Contains("4개"), "live selection/panel description reflects immediate homing and four-width detection");
             ClearShots(); Place(origin + Vector2.right * 2);
             // Real Input System press edges, including a field tap while another finger holds UI.
             var mode = InputSystem.settings.updateMode;
@@ -207,14 +207,14 @@ namespace Vampire.Tests.Editor
             Vector2 start = needle.GetReturnCatchPosition(Vector2.down);
             float deadline = Time.time + 5;
             while (expiring.IsFlying && Time.time < deadline) yield return null;
-            Check(!expiring.IsFlying && Mathf.Abs(Vector2.Distance(start, expiring.transform.position) - 4.1f) < .03f, "needle expires at exact normal range");
+            Check(!expiring.IsFlying && Mathf.Abs(Vector2.Distance(start, expiring.transform.position) - 2.733333f) < .03f, "needle expires at exact normal range");
             var particles = (ParticleSystem)Get(expiring, "destructionParticleSystem");
             Check(particles != null && particles.isPlaying, "original range-end disappearance VFX plays");
             Set(needle, "homingEnabled", true);
             var noTarget = Fire(needle, Vector2.down);
             deadline = Time.time + 5;
             while (noTarget.IsFlying && Time.time < deadline) yield return null;
-            Check(!noTarget.IsFlying && Vector2.Distance(start, noTarget.transform.position) < 4.14f, "homing does not gain unintended extra flight range without a target");
+            Check(!noTarget.IsFlying && Vector2.Distance(start, noTarget.transform.position) < 2.77f, "homing does not gain unintended extra flight range without a target");
             File.WriteAllText(Output + "/result.txt", "PASS: live Ashi scale, targeting, mouse/touch UI exclusion, one-shot override, straight flight, curved homing, range expiration and VFX.");
             SessionState.SetBool(Key + "Done", true);
         }

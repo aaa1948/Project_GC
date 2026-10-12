@@ -35,7 +35,7 @@ namespace Vampire
 
         void LateUpdate()
         {
-            bool show = owner != null && owner.IsAlive && skill != null && skill.IsCutin;
+            bool show = owner != null && owner.IsAlive && skill != null && skill.IsSummoning;
             float t = show ? Mathf.Clamp01(skill.CutinElapsed / Mathf.Max(.01f, skill.Definition.cutinDuration)) : 1;
             float envelope = Mathf.SmoothStep(0, 1, (t - .12f) / .22f) * (1 - Mathf.SmoothStep(0, 1, (t - .76f) / .24f));
             for (int band = 0; band < Bands; band++)

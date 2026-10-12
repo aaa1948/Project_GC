@@ -102,7 +102,7 @@ namespace Vampire
                         1f,
                         1f,
                         1f,
-                        0.75f
+                        1f
                     );
             }
 
@@ -118,6 +118,7 @@ namespace Vampire
             cloneRb.gravityScale = 0f;
             cloneRb.drag = 0f;
             cloneRb.angularDrag = 0f;
+            AugmentVfxTag.Mark(cloneObject);
 
             cloneRb.constraints =
                 RigidbodyConstraints2D.FreezeRotation;
@@ -402,7 +403,7 @@ namespace Vampire
                             1f,
                             1f,
                             1f,
-                            0.45f
+                            0.6f
                         );
                 }
                 else
@@ -412,7 +413,7 @@ namespace Vampire
                             1f,
                             1f,
                             1f,
-                            0.75f
+                            1f
                         );
                 }
             }

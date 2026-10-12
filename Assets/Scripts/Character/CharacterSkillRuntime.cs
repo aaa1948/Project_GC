@@ -72,7 +72,6 @@ namespace Vampire
         public bool PassiveActive => PassiveRemaining > 0;
         public bool Active => IsShini ? Breath!=null&&Breath.Busy : ActiveRemaining > 0;
         public bool CanActivate => (!IsShini || Breath!=null&&Breath.CanStart) && Definition != null && owner.IsAlive && !owner.IsPortalTravelling && !owner.IsTrapBound && !owner.IsDashing && !IsCutin && !IsSummoning && CooldownRemaining <= 0 && Time.timeScale > 0 && (ApothecaryUI.Instance == null || ApothecaryUI.Instance.Page == "hud");
-        float previousTimeScale = 1;
         SkillWindVisual aura;
         public void Initialize(Character character) { owner=character; aura=gameObject.AddComponent<SkillWindVisual>(); aura.Bind(this); if(IsShini){Breath=gameObject.AddComponent<ShiniEmberRuntime>();Breath.Bind(character,this);} gameObject.AddComponent<PhoenixSkillVisual>().Bind(character,this); if(IsAri)gameObject.AddComponent<AriSkillRuntime>().Bind(character,this); }
         public void DashFinished() { if (Definition != null && !IsHyuki && !IsShini && !IsAri && owner.IsAlive) PassiveRemaining=EffectivePassiveDuration; }
@@ -103,7 +102,11 @@ namespace Vampire
                 GetComponent<PhoenixSkillVisual>()?.Play();
                 return true;
             }
-            IsCutin=true; CutinElapsed=0; previousTimeScale=Time.timeScale; Time.timeScale=0;
+            // Ashi's phoenix is an in-world summon: activate the buff immediately
+            // without blocking movement, attacks, input or the global game clock.
+            CutinElapsed=0; SummonRemaining=Definition.cutinDuration;
+            ActiveRemaining=EffectiveActiveDuration; CooldownRemaining=EffectiveCooldown;
+            owner.UpdateMoveSpeed();
             GetComponent<PhoenixSkillVisual>()?.Play();
             return true;
         }
@@ -111,17 +114,6 @@ namespace Vampire
         {
             if (Definition==null) return;
             if (!owner.IsAlive) { Clear(); return; }
-            if (IsCutin)
-            {
-                if (!Application.isFocused && GamePreferences.Current.pauseOnFocusLoss) return;
-                CutinElapsed+=Time.unscaledDeltaTime;
-                if (CutinElapsed>=Definition.cutinDuration)
-                {
-                    IsCutin=false; Time.timeScale=previousTimeScale;
-                    ActiveRemaining=EffectiveActiveDuration; CooldownRemaining=EffectiveCooldown; owner.UpdateMoveSpeed();
-                }
-                return;
-            }
             Tick(Time.deltaTime);
             if(!IsShini && GameInput.GetKeyDown(KeyCode.R)) TryActivate();
         }
@@ -135,6 +127,8 @@ namespace Vampire
             if(IsSummoning)
             {
                 SummonRemaining=Mathf.Max(0,SummonRemaining-delta);
+                if(Definition.kind==CharacterSkillDefinition.SkillKind.Ashi)
+                    CutinElapsed=Definition.cutinDuration-SummonRemaining;
                 if(IsHyuki && SummonRemaining<=0 && owner.IsAlive)
                 {
                     var needle=FindObjectOfType<SyringeDartAbility>();
@@ -152,8 +146,9 @@ namespace Vampire
             PassiveRemaining=IsHyuki?0:Mathf.Clamp(passive,0,EffectivePassiveDuration);
             ActiveRemaining=Mathf.Clamp(active,0,EffectiveActiveDuration);
             CooldownRemaining=Mathf.Clamp(cooldown,0,EffectiveCooldown);
-            float summonDuration=IsShini?ShiniSkillRuntime.SummonDuration:IsHyuki?IceSkillRules.BlizzardFreezeDelay:0;
+            float summonDuration=IsShini?ShiniSkillRuntime.SummonDuration:IsHyuki?IceSkillRules.BlizzardFreezeDelay:IsAri?0:Definition.cutinDuration;
             SummonRemaining=Mathf.Clamp(summon,0,summonDuration);
+            CutinElapsed=summonDuration-SummonRemaining;
             if(IsSummoning)
             {
                 GetComponent<PhoenixSkillVisual>()?.Play(summonDuration-SummonRemaining);
@@ -171,7 +166,7 @@ namespace Vampire
         void Clear()
         {
             Breath?.Cancel();
-            if(IsCutin){ IsCutin=false; Time.timeScale=previousTimeScale; }
+            IsCutin=false; CutinElapsed=0;
             bool changed=Active || PassiveActive; PassiveRemaining=ActiveRemaining=CooldownRemaining=SleepSeconds=SummonRemaining=0; ConsumedSleepStacks=0; IceProcFailures=0;
             if(changed && owner!=null)owner.UpdateMoveSpeed();
         }
