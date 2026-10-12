@@ -322,7 +322,7 @@ namespace Vampire
 
                         Vector2 previousPosition = transform.position;
 
-                        float normalStep = speed * Time.deltaTime;
+                        float normalStep = Mathf.Min(speed * Time.deltaTime, effectiveMaxDistance - distanceTravelled);
                         transform.position += normalStep * (Vector3)direction;
                         distanceTravelled += normalStep;
 
@@ -389,7 +389,11 @@ namespace Vampire
 
         private void UpdateHomingDirection()
         {
-            Transform target = FindClosestTarget();
+            Transform target = ver4HomingTarget;
+            Monster monster = target != null ? target.GetComponentInParent<Monster>() : null;
+            if (!NeedleTargeting.IsValid(monster, targetLayer) || hitTargetIds.Contains(monster.gameObject.GetInstanceID()) ||
+                (NeedleTargeting.Position(monster) - (Vector2)transform.position).sqrMagnitude > specials.homingRange * specials.homingRange)
+                target = FindClosestTarget();
             ver4HomingTarget = target;
 
             if (target == null)
@@ -401,11 +405,11 @@ namespace Vampire
             Vector2 desiredDirection =
                 ((Vector2)target.position - (Vector2)transform.position).normalized;
 
-            direction = Vector2.Lerp(
+            direction = NeedleTargeting.Curve(
                 direction,
                 desiredDirection,
-                specials.homingLerpSpeed * Time.deltaTime
-            ).normalized;
+                specials.homingLerpSpeed, Time.deltaTime
+            );
             if (Time.deltaTime > 0f && Vector2.Angle(previousDirection, desiredDirection) > 1f && Time.time >= nextHomingVfxTime)
             {
                 SyringeAugmentVfx.PlayDirected("Homing", transform.position, direction, projectileSpriteRenderer);
@@ -851,14 +855,14 @@ namespace Vampire
 
         private Transform FindClosestTarget()
         {
-            Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, specials.homingRange);
-            float closestDistance = float.MaxValue;
+            Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, specials.homingRange, targetLayer);
+            float closestDistance = specials.homingRange;
             Transform closestTarget = null;
 
             foreach (Collider2D hit in hits)
             {
                 Monster monster;
-                if (!TryGetValidMonsterTarget(hit, out monster)) continue;
+                if (!TryGetValidMonsterTarget(hit, out monster) || !NeedleTargeting.IsValid(monster, targetLayer)) continue;
 
                 IDamageable damageable = monster as IDamageable;
                 if (damageable == null) continue;

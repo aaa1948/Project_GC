@@ -6,7 +6,7 @@
     {"id":"item/magnet","kind":"item","title":"자석","what":"필드에 남은 코인과 경험치 보석을 한꺼번에 끌어옵니다.","tip":"주워 보관한 뒤 자석 칸을 눌러 사용하세요. 수집물이 많이 쌓였을 때 유용합니다.","effect":"item_magnet"},
     {"id":"weapon/Poison","kind":"weapon","title":"독침","what":"침에 맞은 적에게 독이 남아 지속 피해를 줍니다.","tip":"체력이 높은 적에게 여러 번 맞혀 독을 유지하세요.","effect":"poison"},
     {"id":"weapon/Explosion","kind":"weapon","title":"다이너마이트침","what":"침이 적에게 닿으면 주변까지 폭발 피해를 줍니다.","tip":"적이 모인 곳을 겨냥하면 한 번에 여럿을 공격합니다.","effect":"explosion"},
-    {"id":"weapon/Homing","kind":"weapon","title":"유도침","what":"발사된 침이 가까운 적을 향해 방향을 틉니다.","tip":"움직이며 쏴도 추적하므로 회피에 집중하세요.","effect":"homing"},
+    {"id":"weapon/Homing","kind":"weapon","title":"유도침","what":"기본침은 발사할 때만 적을 조준하지만, 유도침은 발사 직후부터 움직이는 적을 따라 부드럽게 휘어집니다.","tip":"탐지 범위는 아시 약 6개 길이입니다. 추적 중에도 비행 거리는 제한되며 사거리 강화로 늘릴 수 있습니다.","effect":"homing"},
     {"id":"weapon/Pierce","kind":"weapon","title":"관통침","what":"침이 첫 적을 뚫고 뒤쪽 적까지 날아갑니다.","tip":"몬스터가 한 줄로 모였을 때 효율적입니다.","effect":"pierce"},
     {"id":"weapon/Honey","kind":"weapon","title":"꿀침","what":"맞은 적에게 끈적한 꿀이 묻어 이동을 늦춥니다.","tip":"빠른 적에게 먼저 맞혀 접근 속도를 줄이세요.","effect":"honey"},
     {"id":"weapon/Mosquito","kind":"weapon","title":"모기침","what":"침 공격으로 적의 생명력을 흡수해 혁이를 회복합니다.","tip":"피해를 입었다면 공격을 이어가며 회복하세요.","effect":"mosquito"},
