@@ -14,7 +14,7 @@ namespace Vampire
         [SerializeField, Tooltip("Keep playing until the poison status releases this effect.")]
         private bool loop;
         [SerializeField, Tooltip("Opacity of the effect; keeps the target readable.")]
-        private float opacity = 0.75f;
+        private float opacity = 1f;
         [SerializeField, Tooltip("Place this loop in world space instead of fitting a target.")]
         private bool worldSpace;
         [SerializeField, Tooltip("Render below all actors and above backgrounds.")]
@@ -89,6 +89,9 @@ namespace Vampire
             instance.visual = instance.GetComponent<SpriteRenderer>();
             instance.animator = instance.GetComponent<SpriteAnimator>();
             instance.visual.enabled = true;
+            // Authored legacy opacity is replaced by the shared user setting.
+            // SetStrength still controls lifecycle fade/animation independently.
+            instance.opacity = 1f;
             instance.visual.color = new Color(1f, 1f, 1f, instance.opacity);
             instance.ApplyVisualSorting();
             instance.transform.position = position;
@@ -98,6 +101,7 @@ namespace Vampire
             instance.animator.StartAnimation(true);
             instance.FollowTarget();
             PhoenixNobleVfx.Attach(instance.visual, effect, instance.loop, instance.frames.Length * instance.frameTime);
+            AugmentVfxTag.Mark(instance.gameObject);
             return instance;
         }
 

@@ -73,8 +73,8 @@ namespace Vampire
             {
                 center=target!=null?target.bounds.center:center;
                 float growth=Mathf.Lerp(.4f,1,Mathf.SmoothStep(0,1,age/.65f));
-                layers[0].Draw(center+Vector3.up*h*.8f,new Vector2(4.2f,3.35f)*h*growth,0,frame,.94f*fade*enter,sort,-3,motion,.008f);
-                SparkleFeathers(1,center,h*1.5f,sort,motion,fade*.58f);
+                layers[0].Draw(center+Vector3.up*h*.8f,new Vector2(4.2f,3.35f)*h*growth,0,frame,fade*enter,sort,-3,motion,.008f);
+                SparkleFeathers(1,center,h*1.5f,sort,motion,fade);
             }
             else if(key=="HungrySpirit")
             {
@@ -91,14 +91,14 @@ namespace Vampire
                     Vector3 root=center+Vector3.down*h*.25f;
                     float tilt=angle+Mathf.Sin(motion*1.7f+i)*1.4f;
                     var direction=Quaternion.Euler(0,0,tilt)*Vector3.up;
-                    layers[i].Draw(root+direction*length*.38f*born, new Vector2(length*.73f,length)*born,tilt,8+i%3,.93f*enter,sort,-4+Mathf.Min(tier,1),motion,.012f);
+                    layers[i].Draw(root+direction*length*.38f*born, new Vector2(length*.73f,length)*born,tilt,8+i%3,enter,sort,-4+Mathf.Min(tier,1),motion,.012f);
                 }
             }
             else if(key.StartsWith("Clone"))
             {
                 center=target!=null?target.bounds.center:center;
-                layers[0].Draw(center+Vector3.up*h*.05f,Vector2.one*Mathf.Max(w,h)*2.1f,0,PhoenixRadianceLayer.LoopFrame(motion,25),.95f*fade*enter,sort,-1,motion);
-                SparkleFeathers(1,center,h*1.3f,sort,motion,fade*.55f);
+                layers[0].Draw(center+Vector3.up*h*.05f,Vector2.one*Mathf.Max(w,h)*2.1f,0,PhoenixRadianceLayer.LoopFrame(motion,25),fade*enter,sort,-1,motion);
+                SparkleFeathers(1,center,h*1.3f,sort,motion,fade);
             }
             else if(key=="OrbitFeather")
             {
@@ -120,11 +120,11 @@ namespace Vampire
                 float tailLength=length*2.3f;
                 // One continuous atlas ribbon revealed in seven connected colour bands.
                 // Endpoint remains attached to the flying needle for all stage counts.
-                layers[0].Draw(center-right*tailLength*.3f,new Vector2(tailLength, length*.9f),orientation,frame,.85f,sort,0,motion,.012f,stages/7f);
+                layers[0].Draw(center-right*tailLength*.3f,new Vector2(tailLength, length*.9f),orientation,frame,1,sort,0,motion,.012f,stages/7f);
                 layers[1].Draw(center,Vector2.one*length,orientation,frame,1,sort,1,motion,.007f);
                 for(int i=0;i<7;i++)
                 {
-                    float alpha=Mathf.Clamp01(stages-i)*.65f;
+                    float alpha=Mathf.Clamp01(stages-i);
                     float t=Mathf.Repeat(motion*.7f+i*.137f,1);
                     Vector3 side=Quaternion.Euler(0,0,orientation)*Vector3.up;
                     var pos=center-right*(i/7f*tailLength*.72f+t*.15f)+side*Mathf.Sin(motion*2+i)*length*.2f;
@@ -135,29 +135,29 @@ namespace Vampire
             {
                 if(target!=null)center=new Vector3(target.bounds.center.x,target.bounds.max.y+h*.12f,target.bounds.center.z);
                 float size=Mathf.Clamp(h*.58f,.28f,.7f);
-                layers[0].Draw(center,Vector2.one*size,-25,9,.95f*enter,sort,5,motion,.014f);
+                layers[0].Draw(center,Vector2.one*size,-25,9,enter,sort,5,motion,.014f);
             }
             else if(key=="GastricPeristalsisWave")
             {
                 // Rotate a complete painted ring continuously: blending dissimilar
                 // fine ring ornaments creates distracting crosshatching at small sizes.
-                layers[0].Draw(center,carrierSize,motion*12,0,.9f,carrier,0,motion,0,1,Mathf.Max(32,carrierSize.x*34));
+                layers[0].Draw(center,carrierSize,motion*12,0,1,carrier,0,motion,0,1,Mathf.Max(32,carrierSize.x*34));
             }
             else if(key=="MucosalFortress" || key=="MucosalFortressCreate")
             {
                 float wrap=Mathf.SmoothStep(0,1,age/.65f);
                 float angle=stackIndex*120;
                 // Hold a curved C-shell, not a closed opaque disk; overlapping wings form
-                // the sphere while the player remains visible through cyan translucency.
+                // the sphere while the open center keeps the player visible at 100% opacity.
                 float pose=wrap*7;
-                float opacity=key=="MucosalFortressCreate"?.35f*fade:.56f;
+                float opacity=key=="MucosalFortressCreate"?fade:1f;
                 layers[0].Draw(center,carrierSize,angle,pose,opacity,sort,2+stackIndex,motion,.005f,1,0,new Color(.68f,.87f,1));
             }
             else if(key=="CursorControl") { /* Old player-back ornament intentionally absent. */ }
             else
             {
                 float radius=Mathf.Clamp(Mathf.Max(carrierSize.x,carrierSize.y)*.5f,.35f,2.4f);
-                SparkleFeathers(0,center,radius,sort,motion,fade*.8f,true);
+                SparkleFeathers(0,center,radius,sort,motion,fade,true);
             }
         }
         void SparkleFeathers(int first, Vector3 center, float radius, SpriteRenderer sort, float phase, float alpha, bool burst=false)

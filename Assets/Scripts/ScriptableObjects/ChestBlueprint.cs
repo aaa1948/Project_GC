@@ -21,6 +21,7 @@ namespace Vampire
             var sprite = Sprite.Create(source.texture, rect, source.pivot / rect.size,
                 rect.width / worldSpriteWidth, 0, SpriteMeshType.FullRect);
             sprite.name = source.name + " world chest";
+            PromptSpriteGeometry.RegisterScaledCopy(source, sprite);
             worldSprites[source] = sprite;
             return sprite;
         }

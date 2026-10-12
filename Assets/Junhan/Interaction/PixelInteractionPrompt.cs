@@ -16,6 +16,8 @@ namespace Vampire
         private Material borderMaterial;
         private float shownAt;
         private const float WorldWidth = 0.48f;
+        // Half an Ashi body width from the visible object top to keycap center.
+        public const float ObjectGap = 0.41f;
 
         public static void Show(Component owner, bool visible, GameObject oldGuide = null, Component interactionOwner = null)
         {
@@ -63,19 +65,23 @@ namespace Vampire
             keyRenderer.color = focused ? Color.white : new Color(.65f, .65f, .65f, .7f);
             if (activeBorder == null) CreateBorder();
             activeBorder.enabled = focused;
-            float top = transform.position.y;
+            float top = float.NegativeInfinity;
+            float centerX = transform.position.x;
             foreach (var body in bodyRenderers)
             {
-                if (body == null || !body.enabled || !body.gameObject.activeInHierarchy ||
+                if (body == null || body.sprite == null || !body.enabled || !body.gameObject.activeInHierarchy ||
                     (legacyRoot != null && body.transform.IsChildOf(legacyRoot)) ||
                     body == keyRenderer ||
                     body.GetComponent<SyringeAugmentVfx>() != null ||
+                    body.GetComponentInParent<PixelInteractionPrompt>() != this ||
                     body.name.ToLowerInvariant().Contains("shadow")) continue;
-                top = Mathf.Max(top, body.bounds.max.y);
+                var visibleBounds = PromptSpriteGeometry.WorldBounds(body);
+                if (visibleBounds.max.y > top) { top = visibleBounds.max.y; centerX = visibleBounds.center.x; }
             }
+            if (float.IsNegativeInfinity(top)) top = transform.position.y;
             float press = focused ? EvaluatePress(Time.unscaledTime - shownAt) : 0f;
-            keyRenderer.transform.position = new Vector3(transform.position.x,
-                top + 0.12f + WorldWidth * 0.5f - press * 0.035f, transform.position.z);
+            keyRenderer.transform.position = new Vector3(centerX,
+                top + ObjectGap - press * 0.035f, transform.position.z);
             keyRenderer.transform.rotation = Quaternion.identity;
             Vector3 parentScale = transform.lossyScale;
             float scale = WorldWidth / Mathf.Max(0.001f, keyRenderer.sprite.bounds.size.x);
