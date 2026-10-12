@@ -16,7 +16,8 @@ namespace Vampire
 
         [Header("Syringe Range")]
         [Tooltip("기본 침 최대 사거리입니다. Shuriken.prefab의 Max Distance 대신 이 값을 기준으로 사용합니다.")]
-        [SerializeField] private float baseSyringeMaxDistance = 6f;
+        // Ashi idle frame: 443px / 675 PPU * 1.25 visual scale ~= .82 world units; five widths, reduced to two thirds.
+        [SerializeField] private float baseSyringeMaxDistance = 2.733333f;
 
         [Header("Spread Settings")]
         [Tooltip("여러 발 발사 시 각 침 사이의 기본 각도입니다.")]
@@ -117,7 +118,7 @@ namespace Vampire
         [SerializeField, Range(0f, 1f)] private float specialExplosionChance = 1f;
 
         [Header("Homing Settings")]
-        [SerializeField] private float homingRange = 6f;
+        [SerializeField] private float homingRange = 3.28f;
         [SerializeField] private float homingLerpSpeed = 8f;
         [Header("Fiber Needle / 섬유침 Settings")]
         [Tooltip("섬유침이 남긴 선이 유지되는 시간입니다.")]
@@ -769,6 +770,8 @@ namespace Vampire
 
         protected override void Update()
         {
+            ReadNeedleAimInput();
+            if (Time.timeScale <= 0f) return;
             if (AttacksBlocked)
             {
                 isHeavyCharging = false;
@@ -815,6 +818,7 @@ namespace Vampire
 
         private void OnDisable()
         {
+            hasPendingNeedleDirection = false;
             SyringeAugmentVfx.ReleaseOwned(ref lifeBurnVisual);
             DestroyHeavySnipeChargePreview();
             DestroyNeedleShotgunAmmoText();
@@ -838,8 +842,7 @@ namespace Vampire
             int totalProjectileCount =
                 GetEffectiveProjectileCount();
 
-            Vector2 baseDirection =
-                playerCharacter.LookDirection;
+            Vector2 baseDirection = GetAutomaticNeedleDirection();
 
             if (baseDirection == Vector2.zero)
             {
@@ -863,6 +866,7 @@ namespace Vampire
                  i < totalProjectileCount;
                  i++)
             {
+                baseDirection = GetAutomaticNeedleDirection();
                 Vector2 spreadDirection =
                     GetSpreadDirection(
                         baseDirection,
@@ -871,7 +875,7 @@ namespace Vampire
                     );
 
                 bool launched =
-                    LaunchSyringeProjectile(
+                    LaunchAimedSyringe(
                         spreadDirection
                     );
 
@@ -951,17 +955,17 @@ namespace Vampire
                 if (i < frontCount)
                 {
                     Vector2 frontSpreadDirection = GetSpreadDirection(baseDirection, i, frontCount);
-                    LaunchSyringeProjectile(frontSpreadDirection, false, OriginalCombatRules.BipolarDamage(cross, alternate, false, empowerFront), 1);
+                    LaunchAimedSyringe(frontSpreadDirection, false, OriginalCombatRules.BipolarDamage(cross, alternate, false, empowerFront), 1);
                     if (cross > 0)
-                        LaunchSyringeProjectile(GetSpreadDirection(leftDirection, i, frontCount), false, OriginalCombatRules.BipolarDamage(cross, alternate, true, empowerFront), 1);
+                        LaunchAimedSyringe(GetSpreadDirection(leftDirection, i, frontCount), false, OriginalCombatRules.BipolarDamage(cross, alternate, true, empowerFront), 1);
                 }
 
                 if (i < backCount)
                 {
                     Vector2 backSpreadDirection = GetSpreadDirection(backDirection, i, backCount);
-                    LaunchSyringeProjectile(backSpreadDirection, true, OriginalCombatRules.BipolarDamage(cross, alternate, false, !empowerFront), -1);
+                    LaunchAimedSyringe(backSpreadDirection, true, OriginalCombatRules.BipolarDamage(cross, alternate, false, !empowerFront), -1);
                     if (cross > 0)
-                        LaunchSyringeProjectile(GetSpreadDirection(rightDirection, i, backCount), false, OriginalCombatRules.BipolarDamage(cross, alternate, true, !empowerFront), -1);
+                        LaunchAimedSyringe(GetSpreadDirection(rightDirection, i, backCount), false, OriginalCombatRules.BipolarDamage(cross, alternate, true, !empowerFront), -1);
                 }
 
                 yield return new WaitForSeconds(syringeDelay);
@@ -2348,7 +2352,7 @@ namespace Vampire
             return speed.Value * multiplier;
         }
 
-        public float GetEffectiveCooldown()
+        public override float GetEffectiveCooldown()
         {
             float attackSpeedMultiplier = 1f;
 

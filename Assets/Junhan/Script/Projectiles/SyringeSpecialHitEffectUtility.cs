@@ -465,6 +465,7 @@ namespace Vampire
                 status = monster.gameObject.AddComponent<GutBacteriaStatus>();
             }
 
+            status.HarvestRank = runtime.ver4 != null ? runtime.ver4.Count(SyringeSpecialAugmentAbility.SpecialAugmentType.GutBacteriaNeedle, 2) : 0;
             status.Apply(
                 runtime.gutBacteriaStackDuration,
                 runtime.gutBacteriaRequiredStacks,
@@ -608,7 +609,7 @@ namespace Vampire
                     continue;
                 }
 
-                float finalDamage = runtime.explosionDamage * Ver4HitEffects.ExplosionCenterMultiplier(splashComponent,hitPosition,runtime);
+                float finalDamage = CombatStatusRules.DamageMultiplier(sourceCharacter,splashComponent) * runtime.explosionDamage * Ver4HitEffects.ExplosionCenterMultiplier(splashComponent,hitPosition,runtime);
 
                 splashDamageable.TakeDamage(
                     finalDamage,

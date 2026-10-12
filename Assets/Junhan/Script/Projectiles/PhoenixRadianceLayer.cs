@@ -34,6 +34,7 @@ namespace Vampire
             Renderer = go.GetComponent<MeshRenderer>(); Renderer.sharedMaterial = material;
             Renderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             Renderer.receiveShadows = false;
+            AugmentVfxTag.Mark(go);
             properties.SetTexture(MainTex, texture);
         }
         public void Hide() { Renderer.enabled = false; }

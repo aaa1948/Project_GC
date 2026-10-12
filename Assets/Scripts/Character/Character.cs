@@ -162,6 +162,7 @@ namespace Vampire
         private bool movementControlsReversed;
         public bool IsTrapBound => TryGetComponent<PlayerTrapBindRuntime>(out var bind) && bind.IsBound;
         public bool IsPortalTravelling => TryGetComponent<BloodClotTravel>(out var travel) && travel.Busy;
+        public bool IsPortalDamageProtected => TryGetComponent<BloodClotTravel>(out var travel) && travel.IsDamageProtected;
         public bool IsPortalPoseHeld => TryGetComponent<BloodClotTravel>(out var travel) && travel.HoldingPose;
         public Vector2 EffectiveMoveDirection => IsTrapBound ? Vector2.zero :
             (movementControlsReversed ? -moveDirection : moveDirection);
@@ -187,6 +188,8 @@ namespace Vampire
         private MonsterBlueprint lastDamageMonsterBlueprint;
 
         public MonsterBlueprint LastDamageMonsterBlueprint => lastDamageMonsterBlueprint;
+
+        public bool IsChoosingAugment => abilitySelectionDialog != null && abilitySelectionDialog.MenuOpen;
 
         public Vector2 LookDirection
         {
@@ -969,7 +972,7 @@ namespace Vampire
 
         public override void Knockback(Vector2 knockback)
         {
-            if (IsDashInvincibilityActive())
+            if (IsPortalDamageProtected || IsDashInvincibilityActive())
             {
                 return;
             }
@@ -1001,7 +1004,7 @@ namespace Vampire
 
         public override void TakeDamage(float damage, Vector2 knockback = default(Vector2), bool isCritical = false)
         {
-            if (IsPortalTravelling) return;
+            if (IsPortalDamageProtected) return;
             if (!alive)
             {
                 return;
@@ -1827,6 +1830,7 @@ namespace Vampire
             snapshot.SkillSleepSeconds=Skills != null ? Skills.SleepSeconds : 0;
             snapshot.SkillConsumedSleepStacks=Skills != null ? Skills.ConsumedSleepStacks : 0;
             snapshot.SkillIceProcFailures=Skills != null ? Skills.IceProcFailures : 0;
+            snapshot.ShiniFuel=Skills?.Breath!=null?Skills.Breath.Fuel:0;
             snapshot.SkillPassiveLevel=Skills != null ? Skills.PassiveLevel : 1;
             snapshot.SkillActiveLevel=Skills != null ? Skills.ActiveLevel : 1;
             snapshot.Prescription=GetComponent<PrescriptionRuntime>()?.Capture();
@@ -2050,6 +2054,7 @@ namespace Vampire
             Skills?.Restore(snapshot.SkillPassiveRemaining,snapshot.SkillActiveRemaining,snapshot.SkillCooldownRemaining,snapshot.SkillSummonRemaining);
             Skills?.RestoreSleep(snapshot.SkillSleepSeconds,snapshot.SkillConsumedSleepStacks);
             Skills?.RestoreIceProcFailures(snapshot.SkillIceProcFailures);
+            Skills?.Breath?.RestoreFuel(snapshot.ShiniFuel);
             // Restored spent charges must recharge even when no dash can be started.
             StopDashRecharge();
             EnsureDashRecharge();

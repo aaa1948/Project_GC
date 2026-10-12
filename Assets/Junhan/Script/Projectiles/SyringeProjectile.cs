@@ -322,7 +322,7 @@ namespace Vampire
 
                         Vector2 previousPosition = transform.position;
 
-                        float normalStep = speed * Time.deltaTime;
+                        float normalStep = Mathf.Min(speed * Time.deltaTime, effectiveMaxDistance - distanceTravelled);
                         transform.position += normalStep * (Vector3)direction;
                         distanceTravelled += normalStep;
 
@@ -389,7 +389,11 @@ namespace Vampire
 
         private void UpdateHomingDirection()
         {
-            Transform target = FindClosestTarget();
+            Transform target = ver4HomingTarget;
+            Monster monster = target != null ? target.GetComponentInParent<Monster>() : null;
+            if (!NeedleTargeting.IsValid(monster, targetLayer) || hitTargetIds.Contains(monster.gameObject.GetInstanceID()) ||
+                (NeedleTargeting.Position(monster) - (Vector2)transform.position).sqrMagnitude > specials.homingRange * specials.homingRange)
+                target = FindClosestTarget();
             ver4HomingTarget = target;
 
             if (target == null)
@@ -401,11 +405,11 @@ namespace Vampire
             Vector2 desiredDirection =
                 ((Vector2)target.position - (Vector2)transform.position).normalized;
 
-            direction = Vector2.Lerp(
+            direction = NeedleTargeting.Curve(
                 direction,
                 desiredDirection,
-                specials.homingLerpSpeed * Time.deltaTime
-            ).normalized;
+                specials.homingLerpSpeed, Time.deltaTime
+            );
             if (Time.deltaTime > 0f && Vector2.Angle(previousDirection, desiredDirection) > 1f && Time.time >= nextHomingVfxTime)
             {
                 SyringeAugmentVfx.PlayDirected("Homing", transform.position, direction, projectileSpriteRenderer);
@@ -458,7 +462,7 @@ namespace Vampire
                 burnStatus = monster.gameObject.AddComponent<BurnStatus>();
             }
 
-            burnStatus.Apply(3f, 0.5f, 3f);
+            burnStatus.Apply(3f, 0.5f, 3f, playerCharacter);
         }
 
         private void ApplyPoison(Component damageableComponent)
@@ -554,8 +558,8 @@ namespace Vampire
             }
 
             float travelledDistance = Vector2.Distance(pressureLaunchPosition, transform.position);
-            float bonus = travelledDistance * Mathf.Max(0f, specials.pressureDamageBonusPerDistance);
-            bonus = Mathf.Min(bonus, Mathf.Max(0f, specials.pressureMaxDamageBonus));
+            int rank = specials.ver4 != null ? specials.ver4.Count(SyringeSpecialAugmentAbility.SpecialAugmentType.PressureNeedle, 2) : 0;
+            float bonus = OriginalCombatRules.PressureBonus(rank, travelledDistance, specials.pressureDamageBonusPerDistance, specials.pressureMaxDamageBonus);
 
             return rawDamage * (1f + bonus);
         }
@@ -715,6 +719,7 @@ namespace Vampire
                 status = monster.gameObject.AddComponent<GutBacteriaStatus>();
             }
 
+            status.HarvestRank = specials.ver4 != null ? specials.ver4.Count(SyringeSpecialAugmentAbility.SpecialAugmentType.GutBacteriaNeedle, 2) : 0;
             status.Apply(
                 specials.gutBacteriaStackDuration,
                 specials.gutBacteriaRequiredStacks,
@@ -850,14 +855,14 @@ namespace Vampire
 
         private Transform FindClosestTarget()
         {
-            Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, specials.homingRange);
-            float closestDistance = float.MaxValue;
+            Collider2D[] hits = Physics2D.OverlapCircleAll(transform.position, specials.homingRange, targetLayer);
+            float closestDistance = specials.homingRange;
             Transform closestTarget = null;
 
             foreach (Collider2D hit in hits)
             {
                 Monster monster;
-                if (!TryGetValidMonsterTarget(hit, out monster)) continue;
+                if (!TryGetValidMonsterTarget(hit, out monster) || !NeedleTargeting.IsValid(monster, targetLayer)) continue;
 
                 IDamageable damageable = monster as IDamageable;
                 if (damageable == null) continue;
@@ -1398,12 +1403,13 @@ namespace Vampire
 
             bool isCritical = false;
 
+            float debuffMultiplier = CombatStatusRules.DamageMultiplier(playerCharacter,damageableComponent);
             rawDamage *= itemScale;
             rawDamage *= Ver4HitEffects.BeforeHit(damageableComponent,specials);
             if (specials.ver4 != null)
             {
                 if (specials.pierceEnabled && !IsReturnMode)
-                    rawDamage *= 1f + .06f * specials.ver4.Count(SyringeSpecialAugmentAbility.SpecialAugmentType.Pierce,2) * ver4PiercedTargets++;
+                    rawDamage *= OriginalCombatRules.PierceDamage(specials.ver4.Count(SyringeSpecialAugmentAbility.SpecialAugmentType.Pierce,2), ver4PiercedTargets++);
                 if (specials.homingEnabled && ver4HomingTarget != null &&
                     (ver4HomingTarget == damageableComponent.transform || ver4HomingTarget.IsChildOf(damageableComponent.transform)))
                     rawDamage *= specials.ver4.Factor(SyringeSpecialAugmentAbility.SpecialAugmentType.Homing,2,.08f);
@@ -1459,9 +1465,6 @@ namespace Vampire
 
             float finalKnockback =
                 knockback;
-            if (specials.ver4 != null && specials.pressureEnabled &&
-                Vector2.Distance(pressureLaunchPosition,transform.position)*specials.pressureDamageBonusPerDistance >= specials.pressureMaxDamageBonus)
-                finalKnockback *= specials.ver4.Factor(SyringeSpecialAugmentAbility.SpecialAugmentType.PressureNeedle,2,.15f);
 
             if (statRuntime != null)
             {
@@ -1488,6 +1491,7 @@ namespace Vampire
 
             var items=playerCharacter!=null?playerCharacter.GetComponent<OctoberItemRuntime>():null;
             if(items!=null)finalDamage=items.BeforeHit(damageableComponent,finalDamage,itemSecondary,ref isCritical,ref finalKnockback);
+            finalDamage *= debuffMultiplier;
             float hpBefore=Ver4HitEffects.Health(damageableComponent);
             float actualReportedDamage =
                 finalDamage;
@@ -1647,7 +1651,8 @@ namespace Vampire
                 );
             }
             var hitRuntime=specials;
-            hitRuntime.ver4HitDamage=finalDamage;
+            // Secondary effects evaluate their own target at damage time, without inheriting this bonus twice.
+            hitRuntime.ver4HitDamage=finalDamage/debuffMultiplier;
             hitRuntime.ver4Knockback=finalKnockback;
             Ver4HitEffects.AfterHit(damageableComponent,hitRuntime,playerCharacter,targetLayer,consumedNeedleMark);
         }
@@ -1758,6 +1763,7 @@ namespace Vampire
                     splashDamage = statRuntime.CalculateOffensiveDamage(playerCharacter, splashComponent, splashDamage, out isCritical);
                 }
 
+                splashDamage *= CombatStatusRules.DamageMultiplier(playerCharacter,splashComponent);
                 splashDamageable.TakeDamage(splashDamage, Vector2.zero);
 
                 // 폭발침 스플래시는 OnHitDamageable을 거치지 않는 독립 피해이므로
