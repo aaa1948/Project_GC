@@ -148,6 +148,7 @@ namespace Vampire
         }
         public void Back()
         {
+            if(Page=="supplyRelic"){CloseSupplyRelics(false);return;}
             if(Page=="merchant"){merchant?.CloseShop();return;}
             if (starting || Page == "skillReward" || Page == "result" || (level != null && level.PlayerCharacter != null && level.PlayerCharacter.Skills != null && level.PlayerCharacter.Skills.IsCutin)) return;
             if(Page=="settings"){CancelSettings();return;}
@@ -160,7 +161,7 @@ namespace Vampire
             ClearSkillUI();
             portrait = null; previewCharacter = null; silverLabel = null;
             content = Rect("Page " + Page, root,0,0,1,1);
-            fullScreenBackdrop.gameObject.SetActive(Page!="hud"&&Page!="merchant");
+            fullScreenBackdrop.gameObject.SetActive(Page!="hud"&&Page!="merchant"&&Page!="supplyRelic");
             fullScreenBackdrop.color=Page=="run"?new Color(0,0,0,.68f):new Color(.19f,.08f,.07f);
             if (Page == "hud")
             {
@@ -171,6 +172,7 @@ namespace Vampire
             }
             var blocker=content.gameObject.AddComponent<Image>();blocker.color=Color.clear;blocker.raycastTarget=true;
             if(Page=="merchant"){OctoberMerchant();return;}
+            if(Page=="supplyRelic"){OctoberSupplyRelics();return;}
             if(Page=="run" && Tab<4){ExplorationRecord();return;}
             ImageAt(content,Page == "main" ? Config.mainBackground : Page=="settings"||Page=="exit"?Config.panelBackground:Config.bookBackground,0,0,1,1,false);
             if (Page == "main") { OctoberMain(); return; }

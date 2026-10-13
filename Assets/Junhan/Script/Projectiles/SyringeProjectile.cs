@@ -133,7 +133,7 @@ namespace Vampire
         private static bool hasWarnedHealMethodMissing = false;
         private float baseTrailTime;
 
-        private bool IsReturnMode =>
+        public bool IsReturnMode =>
             flightState == NeedleFlightState.ReturnForwardPass ||
             flightState == NeedleFlightState.ReturnCurveToPlayer ||
             flightState == NeedleFlightState.ReturnToPlayer;

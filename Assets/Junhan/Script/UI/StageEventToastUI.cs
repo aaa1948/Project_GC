@@ -44,6 +44,15 @@ namespace Vampire
             if (debugLog) Debug.Log("[StageEventToastUI] " + message, this);
         }
 
+        public void ShowSupply(string message)
+        {
+            EnsureBanner();
+            // Supply timing must not wait behind a long field-event queue.
+            var queued=pending.ToArray();pending.Clear();pending.Enqueue(message);
+            foreach(var entry in queued)pending.Enqueue(entry);
+            Next();
+        }
+
         private void Next()
         {
             if (pending.Count == 0) { showing = false; bannerGroup.alpha = 0; return; }
@@ -54,6 +63,12 @@ namespace Vampire
             icon.sprite = art != null && art.Frames(kind) != null && art.Frames(kind).Length > 0 ? art.Frames(kind)[0] : null;
             icon.enabled = icon.sprite != null;
             underline.color = StageEventCornerArt.Accent(kind);
+            if(text.Contains("보급 캡슐"))
+            {
+                instruction.text=text.StartsWith("잠시")?"10초 후 착지합니다":"지도에서 보급 캡슐을 찾아 상호작용하세요";
+                icon.sprite=SupplyCapsuleArt.Closed;icon.enabled=icon.sprite!=null;
+                underline.color=new Color(.45f,.84f,.72f);
+            }
             age = 0; showing = true;
         }
 

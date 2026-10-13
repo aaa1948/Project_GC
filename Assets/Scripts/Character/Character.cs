@@ -940,6 +940,9 @@ namespace Vampire
 
         private IEnumerator LevelUpCoroutine()
         {
+            // A queued XP gain can resume on a later frame while the supply picker is paused.
+            // Keep reward modals serialized so one cannot resume combat behind the other.
+            while(ApothecaryUI.Instance!=null&&ApothecaryUI.Instance.Page=="supplyRelic")yield return null;
             if (!alive)
             {
                 yield break;
@@ -1251,6 +1254,7 @@ namespace Vampire
             var items=GetComponent<OctoberItemRuntime>();
             if(items!=null)health=items.Healing(health);
             float actualHeal=Mathf.Clamp(health,0,Mathf.Max(0,maxHealth-currentHealth));
+            statsManager?.RecordHealing(actualHeal);
             items?.Healed(actualHeal,Mathf.Max(0,health-actualHeal));
 
             healthBar.AddPoints(health);

@@ -381,7 +381,7 @@ namespace Vampire
         {
             if (killedByPlayer)
             {
-                statsManager.IncrementMonstersKilled();
+                statsManager.RecordMonsterKill(monster);
             }
             grid.RemoveClient(monster);
             monsterPools[monsterPoolIndex].Release(monster);

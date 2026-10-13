@@ -105,6 +105,7 @@ namespace Vampire
             if (tutorial == null) tutorial = gameObject.AddComponent<TutorialGuide>();
             tutorial.Initialize(this);
             StageProgression.Ensure(this);
+            SupplyCapsuleDirector.Ensure(this);
         }
 
         // Preserve the actual player, abilities, inventory, relic runtimes, stats and loot pools.

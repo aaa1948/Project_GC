@@ -83,9 +83,9 @@ namespace Vampire
             }
             RecordText("Map heading","탐험 지도",.515f,.145f,.26f,.047f,25).fontStyle=FontStyles.Bold;
             RecordMap(player);
-            var relic=player.Relics?.Equipped;
             var relics=new List<RunBookData.Entry>();
-            if(relic!=null)relics.Add(new RunBookData.Entry{id=relic.relicId,title=relic.relicName,body=RelicDescription(relic),badge="장착 중",icon=relic.icon,color=new Color(.70f,.35f,.86f)});
+            if(player.Relics!=null)foreach(var relic in player.Relics.Owned)
+                relics.Add(new RunBookData.Entry{id=relic.relicId,title=relic.relicName,body=RelicDescription(relic),badge=relic==player.Relics.Equipped?"장착 중":"보급 유물",icon=relic.icon,color=new Color(.70f,.35f,.86f)});
             var items=OctoberOwnedItems().Select(item=>new RunBookData.Entry{id=item.octoberId.ToString(),title=item.itemName,body=item.description,badge="보유",icon=item.itemIcon}).ToList();
             RecordInventory(0,"유물",relics,.045f,.291f,6);
             RecordInventory(1,"아이템",items,.365f,.266f,10);
@@ -94,7 +94,7 @@ namespace Vampire
         void RecordInventory(int section,string title,List<RunBookData.Entry> entries,float x,float width,int pageSize)
         {
             RecordText("Record section "+section,title,x+.027f,.638f,width-.20f,.041f,25).fontStyle=FontStyles.Bold;
-            RecordText("Record count "+section,section==0?$"{entries.Count}/1":$"{entries.Count}종",x+width-.08f,.638f,.071f,.041f,17,TextAlignmentOptions.Right);
+            RecordText("Record count "+section,$"{entries.Count}종",x+width-.08f,.638f,.071f,.041f,17,TextAlignmentOptions.Right);
             int pages=Mathf.Max(1,Mathf.CeilToInt(entries.Count/(float)pageSize));recordPages[section]=Mathf.Clamp(recordPages[section],0,pages-1);
             if(!entries.Any(e=>e.id==recordSelected[section]))recordSelected[section]=entries.FirstOrDefault()?.id;
             int columns=section==0?6:5;float cellW=(width-.014f)/columns;
