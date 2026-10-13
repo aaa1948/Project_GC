@@ -276,6 +276,7 @@ namespace Vampire
             ForceRevealCurrentPosition();
 
             RefreshAllUI();
+            SetMiniMapVisible(false);
         }
 
 
@@ -1856,7 +1857,7 @@ namespace Vampire
             if (miniMapRoot != null)
             {
                 miniMapRoot.SetActive(
-                    visible
+                    false // The live HUD map is retired; keep exploration data for the TAB map.
                 );
             }
         }

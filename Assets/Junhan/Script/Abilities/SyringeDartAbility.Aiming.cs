@@ -15,7 +15,7 @@ namespace Vampire
 
         private void ReadNeedleAimInput()
         {
-            if (Time.timeScale <= 0f || AttacksBlocked || cursorControlEnabled || needleShotgunEnabled ||
+            if (BombTargeting.BlocksPointerAim || Time.timeScale <= 0f || AttacksBlocked || cursorControlEnabled || needleShotgunEnabled ||
                 (heavySnipeEnabled && (isHeavyCharging || IsHeavySnipeCommandHeld())))
             {
                 hasPendingNeedleDirection = false;
