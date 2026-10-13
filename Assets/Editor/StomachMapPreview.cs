@@ -31,6 +31,7 @@ namespace Vampire.Editor
             if(File.Exists(Output+"/result.txt"))File.Delete(Output+"/result.txt");
             ImportTexture("Assets/Art/StomachMap/StomachLayout.png",TextureWrapMode.Clamp);
             ImportTexture("Assets/Art/StomachMap/FineFloor.png",TextureWrapMode.Mirror);
+            ImportTexture("Assets/Art/StomachMap/FoldedWall.png",TextureWrapMode.Clamp);
             var shader=AssetDatabase.LoadAssetAtPath<Shader>("Assets/Resources/StomachMap/Terrain.shader");
             if(shader==null || UnityEditor.ShaderUtil.ShaderHasError(shader))throw new Exception("Terrain shader did not compile");
             const string materialPath="Assets/Resources/StomachMap/Terrain.mat";
@@ -39,6 +40,7 @@ namespace Vampire.Editor
             mat.shader=shader;
             mat.mainTexture=AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/StomachMap/StomachLayout.png");
             mat.SetTexture("_DetailTex",AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/StomachMap/FineFloor.png"));
+            mat.SetTexture("_WallTex",AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/Art/StomachMap/FoldedWall.png"));
             mat.SetFloat("_DetailStrength",1f); mat.SetFloat("_LayoutLod",1.25f);
             mat.SetFloat("_PixelSize",StomachMapDefinition.ReferencePixelSize);
             EditorUtility.SetDirty(mat);
@@ -188,7 +190,11 @@ namespace Vampire.Editor
             CameraScreenshot(overview,"02-full-map-real-ashi",2304,1536);
             for(int i=0;i<isolated.Length;i++)isolated[i].layer=oldLayers[i];
             Object.Destroy(camGO);
-            Vector2 wall=map.ClampToField(map.UVToWorld(new Vector2(.245f,1)),map.ClimbLimit+.3f);
+            Vector2 edge=map.UVToWorld(new Vector2(.245f,1));
+            Vector2 foot=map.ClampToField(edge,map.WallWidth+.65f);
+            player.Move(Vector2.zero);player.transform.position=new Vector3(foot.x,foot.y,original.z);body.position=foot;
+            yield return new WaitForSeconds(1.5f);yield return Screenshot("06-wall-ground-view");
+            Vector2 wall=map.ClampToField(edge,map.ClimbLimit+.3f);
             map.DistanceToRim(wall,out var wallInward);player.Move(-wallInward);
             player.transform.position=new Vector3(wall.x,wall.y,original.z);body.position=wall;
             yield return new WaitForSeconds(1.5f);yield return Screenshot("03-wall-slope-ashi");

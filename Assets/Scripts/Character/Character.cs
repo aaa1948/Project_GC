@@ -503,7 +503,6 @@ namespace Vampire
 
         public bool TryDash()
         {
-            if (FiniteStomachMap.BlocksDash(transform.position)) return false;
             if (IsPortalTravelling || IsPortalPoseHeld) return false;
             if (Time.timeScale <= 0f || (abilitySelectionDialog != null && abilitySelectionDialog.MenuOpen)) return false;
             if (IsTrapBound) return false;
@@ -632,14 +631,15 @@ namespace Vampire
 
                 if (rb != null)
                 {
-                    var allowedPosition=FiniteStomachMap.ClampDash(rb.position,MiniStageArenaGeometry.ClampMovement(rb, BloodClotObstacle.ClampDash(rb,nextPosition)));
+                    var allowedPosition=FiniteStomachMap.ClampDash(rb.position,MiniStageArenaGeometry.ClampMovement(rb, BloodClotObstacle.ClampDash(rb,nextPosition)), GetComponent<StomachSlopeBody>()?.Radius ?? .25f);
                     Skills?.DashStep(rb.position,allowedPosition);
                     rb.MovePosition(allowedPosition);
                 }
                 else
                 {
-                    Skills?.DashStep(transform.position,nextPosition);
-                    transform.position = nextPosition;
+                    var allowedPosition=FiniteStomachMap.ClampDash(transform.position,nextPosition);
+                    Skills?.DashStep(transform.position,allowedPosition);
+                    transform.position = allowedPosition;
                 }
 
                 elapsed += Time.fixedDeltaTime;
@@ -648,7 +648,7 @@ namespace Vampire
 
             if (rb != null)
             {
-                var allowedPosition=FiniteStomachMap.ClampDash(rb.position,MiniStageArenaGeometry.ClampMovement(rb,BloodClotObstacle.ClampDash(rb,targetPosition)));
+                var allowedPosition=FiniteStomachMap.ClampDash(rb.position,MiniStageArenaGeometry.ClampMovement(rb,BloodClotObstacle.ClampDash(rb,targetPosition)), GetComponent<StomachSlopeBody>()?.Radius ?? .25f);
                 Skills?.DashStep(rb.position,allowedPosition);
                 rb.MovePosition(allowedPosition);
 
@@ -659,8 +659,9 @@ namespace Vampire
             }
             else
             {
-                Skills?.DashStep(transform.position,targetPosition);
-                transform.position = targetPosition;
+                var allowedPosition=FiniteStomachMap.ClampDash(transform.position,targetPosition);
+                Skills?.DashStep(transform.position,allowedPosition);
+                transform.position = allowedPosition;
             }
 
             yield return new WaitForFixedUpdate();

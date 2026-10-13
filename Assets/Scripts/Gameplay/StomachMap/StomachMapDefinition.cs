@@ -17,7 +17,7 @@ namespace Vampire
         [Min(.001f)] public float pixelWorldSize = ReferencePixelSize;
         public Vector2 startUV = new Vector2(.543f, .455f);
         [Min(1)] public float wallWidth = 8f;
-        [Min(.5f)] public float climbableWidth = 5.2f;
+        [Min(.5f)] public float climbableWidth = 6f;
         public Vector2 Size => new Vector2(worldWidth, worldWidth / aspect);
     }
 }

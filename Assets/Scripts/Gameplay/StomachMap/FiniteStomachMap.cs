@@ -21,6 +21,9 @@ namespace Vampire
         public float ClimbLimit => Mathf.Max(.5f, WallWidth-Definition.climbableWidth);
         public Material TerrainMaterial => material;
         Texture2D distanceTexture;
+        Texture2D wallCoordinateTexture;
+        float[] boundaryLengths;
+        float boundaryLength;
         const int FieldResolution = 512;
         Color[] distanceSamples;
         readonly List<GameObject> chunks = new List<GameObject>();
@@ -70,6 +73,12 @@ namespace Vampire
                 chunks.Add(go); meshes.Add(mesh);
             }
             boundary=CreateBoundary();
+            boundaryLengths=new float[boundary.Length];
+            for(int i=0;i<boundary.Length;i++)
+            {
+                boundaryLengths[i]=boundaryLength;
+                boundaryLength+=Vector2.Distance(boundary[i],boundary[(i+1)%boundary.Length]);
+            }
             BuildDistanceField();
             StomachSlopeBody.Ensure(level.PlayerCharacter.gameObject);
             if(legacy!=null)
@@ -132,14 +141,20 @@ namespace Vampire
         }
 
         public float ExactDistance(Vector2 p,out Vector2 inward)
+            => ExactDistance(p,out inward,out _);
+
+        float ExactDistance(Vector2 p,out Vector2 inward,out float along)
         {
+            along=0;
             bool inside=Contains(p); float nearest=float.MaxValue; Vector2 result=p; inward=Vector2.zero;
             for(int i=0;i<boundary.Length;i++)
             {
                 var a=boundary[i]; var edge=boundary[(i+1)%boundary.Length]-a;
-                var q=a+edge*Mathf.Clamp01(Vector2.Dot(p-a,edge)/edge.sqrMagnitude);
+                float t=Mathf.Clamp01(Vector2.Dot(p-a,edge)/edge.sqrMagnitude);
+                var q=a+edge*t;
                 float dist=(q-p).sqrMagnitude;
-                if(dist<nearest){nearest=dist;result=q;inward=new Vector2(edge.y,-edge.x).normalized;}
+                if(dist<nearest){nearest=dist;result=q;inward=new Vector2(edge.y,-edge.x).normalized;
+                    along=boundaryLengths[i]+edge.magnitude*t;}
             }
             float distance=Mathf.Sqrt(nearest);
             if(distance>.0001f)inward=(inside?p-result:result-p)/distance;
@@ -149,10 +164,14 @@ namespace Vampire
         void BuildDistanceField()
         {
             distanceSamples=new Color[FieldResolution*FieldResolution];
+            var wallCoordinates=new Color[distanceSamples.Length];
             for(int y=0;y<FieldResolution;y++)for(int x=0;x<FieldResolution;x++)
             {
-                float d=ExactDistance(UVToWorld(new Vector2(x/(float)(FieldResolution-1),y/(float)(FieldResolution-1))),out var n);
+                float d=ExactDistance(UVToWorld(new Vector2(x/(float)(FieldResolution-1),y/(float)(FieldResolution-1))),out var n,out float along);
                 distanceSamples[y*FieldResolution+x]=new Color(d,n.x,n.y,1);
+                // Periodic coordinates interpolate across the closed-loop seam without a UV jump.
+                float phase=along/boundaryLength*Mathf.PI*2*32;
+                wallCoordinates[y*FieldResolution+x]=new Color(Mathf.Cos(phase),Mathf.Sin(phase),0,1);
             }
             // This is numerical geometry data, not a resized background image.
             distanceTexture=new Texture2D(FieldResolution,FieldResolution,TextureFormat.RGBAFloat,false,true);
@@ -160,6 +179,11 @@ namespace Vampire
             distanceTexture.wrapMode=TextureWrapMode.Clamp;distanceTexture.filterMode=FilterMode.Bilinear;
             distanceTexture.SetPixels(distanceSamples);distanceTexture.Apply(false,false);
             material.SetTexture("_DistanceTex",distanceTexture);
+            wallCoordinateTexture=new Texture2D(FieldResolution,FieldResolution,TextureFormat.RGFloat,false,true);
+            wallCoordinateTexture.name="Stomach wall periodic boundary coordinates";
+            wallCoordinateTexture.wrapMode=TextureWrapMode.Clamp;wallCoordinateTexture.filterMode=FilterMode.Bilinear;
+            wallCoordinateTexture.SetPixels(wallCoordinates);wallCoordinateTexture.Apply(false,true);
+            material.SetTexture("_WallCoordinateTex",wallCoordinateTexture);
             material.SetFloat("_WallWidth",WallWidth);
         }
 
@@ -177,11 +201,22 @@ namespace Vampire
         public float SlopeProgress(Vector2 p) => Mathf.Clamp01((WallWidth-DistanceToRim(p,out _))/Definition.climbableWidth);
         public static float UphillMultiplier(float progress) => progress<=.5f ? Mathf.Lerp(1,.5f,Mathf.SmoothStep(0,1,progress*2)) : Mathf.Lerp(.5f,.1f,Mathf.SmoothStep(0,1,(progress-.5f)*2));
         public bool AppliesAt(Vector2 p) => StageOne && !MiniStageRuntimeState.IsInsideMiniStage && Vector2.Distance(p,WorldRect.center)<WorldRect.width;
-        public static bool BlocksDash(Vector2 p) => Instance!=null && Instance.AppliesAt(p) && Instance.SlopeProgress(p)>.005f;
-        public static Vector2 ClampDash(Vector2 from,Vector2 to)
+        public static Vector2 ClampDash(Vector2 from,Vector2 to,float radius=.25f)
         {
             var map=Instance;if(map==null || !map.AppliesAt(from))return to;
-            return map.ClampToField(to,map.WallWidth+.12f);
+            // Sweep the whole segment: long dashes must not cut across the concave outer edge.
+            float limit=map.ClimbLimit+Mathf.Max(.12f,radius);
+            int steps=Mathf.Max(1,Mathf.CeilToInt(Vector2.Distance(from,to)/.2f));
+            Vector2 previous=map.ClampToField(from,limit);
+            for(int i=1;i<=steps;i++)
+            {
+                Vector2 p=Vector2.Lerp(from,to,i/(float)steps);
+                if(map.ExactDistance(p,out _)>=limit){previous=p;continue;}
+                Vector2 lo=previous,hi=p;
+                for(int j=0;j<10;j++){var mid=(lo+hi)*.5f;if(map.ExactDistance(mid,out _)>=limit)lo=mid;else hi=mid;}
+                return lo;
+            }
+            return to;
         }
         public static Vector2 SafeSpawn(Vector2 position,float radius=.5f,bool miniStageOwned=false)
         {
@@ -260,6 +295,7 @@ namespace Vampire
         {
             if(Instance==this)Instance=null;
             if(distanceTexture!=null)Destroy(distanceTexture);
+            if(wallCoordinateTexture!=null)Destroy(wallCoordinateTexture);
             if(overviewTexture!=null)Destroy(overviewTexture);
             foreach(var c in chunks)if(c!=null)Destroy(c);
             foreach(var mesh in meshes)if(mesh!=null)Destroy(mesh);

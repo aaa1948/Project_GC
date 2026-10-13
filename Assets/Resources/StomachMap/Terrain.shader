@@ -4,6 +4,7 @@ Shader "Vampire/Finite Stomach Terrain"
     {
         _MainTex ("Stomach layout", 2D) = "white" {}
         _DetailTex ("Fine pixel material", 2D) = "gray" {}
+        _WallTex ("Approved fine-dot folded wall", 2D) = "white" {}
         _PixelSize ("World pixel size", Float) = .050844
         _DetailStrength ("Detail contrast", Range(0,1)) = 1
         _LayoutLod ("Macro smoothing", Range(0,3)) = 1
@@ -19,7 +20,7 @@ Shader "Vampire/Finite Stomach Terrain"
             #pragma fragment frag
             #pragma target 3.0
             #include "UnityCG.cginc"
-            sampler2D _MainTex, _DetailTex, _DistanceTex;
+            sampler2D _MainTex, _DetailTex, _DistanceTex, _WallTex, _WallCoordinateTex;
             float _WallWidth;
             float _PixelSize, _DetailStrength, _LayoutLod;
             float4 _MapRect;
@@ -37,13 +38,27 @@ Shader "Vampire/Finite Stomach Terrain"
                 float2 grid=floor(cells)+.5;
                 float2 world=grid*_PixelSize;
                 float2 uv=(world-_MapRect.xy)/_MapRect.zw;
+                // Geometry coordinates are finer than the flat-floor motifs. The same world
+                // mapping is used on all chunks and by the full TAB map camera.
+                float2 wallWorld=(floor(i.world/(_PixelSize*.25))+.5)*(_PixelSize*.25);
+                float2 wallUV=(wallWorld-_MapRect.xy)/_MapRect.zw;
+                float2 dataUV=wallUV*(511.0/512.0)+.5/512.0;
+                float3 field=tex2D(_DistanceTex,dataUV).rgb;
+                float distance=field.r;
+                float2 inward=normalize(field.gb+float2(.000001,0));
+                float rise=saturate(1-distance/_WallWidth);
                 // Large-scale shape/color is filtered; it is NOT enlarged nearest-neighbor art.
                 float3 baseColor=tex2Dlod(_MainTex,float4(uv,0,_LayoutLod)).rgb;
                 // Both layers use absolute world coordinates so neighboring mesh chunks join exactly.
-                float2 tile=grid/104.5;
+                // Surface arc-length grows as the floor bends upward: compress the motifs
+                // along the wall normal, without shrinking them along the wall tangent.
+                float bend=max(0,_WallWidth+1-distance);
+                float2 surface=world-inward*(.30*bend*bend);
+                float2 tile=(surface/_PixelSize)/104.5;
                 float3 a=tex2Dlod(_DetailTex,float4(mirrorUV(tile),0,0)).rgb;
                 // Detail fades before it becomes sub-pixel, keeping the overview free of shimmer.
-                float footprint=max(length(ddx(cells)),length(ddy(cells)));
+                float2 surfaceCells=surface/_PixelSize;
+                float footprint=max(length(ddx(surfaceCells)),length(ddy(surfaceCells)));
                 float visible=1-smoothstep(.7,2.0,footprint);
                 float terrain=smoothstep(.20,.42,dot(baseColor,float3(.299,.587,.114)));
                 // Preserve the approved peach/rose motif colors and density, without a second
@@ -55,25 +70,35 @@ Shader "Vampire/Finite Stomach Terrain"
                 #endif
                 float3 detailed=a*baseColor/referenceFloor;
                 float3 floorColor=saturate(lerp(baseColor,detailed,_DetailStrength*visible*terrain));
-                float2 dataUV=uv*(511.0/512.0)+.5/512.0;
-                float distance=tex2D(_DistanceTex,dataUV).r;
-                float slope=1-smoothstep(0,_WallWidth,distance);
-                // Quiet, clean rounded surface. No stretched floor motifs or fleshy mottling.
-                float3 wallLow=float3(.94,.43,.51),wallHigh=float3(1,.64,.65);
-                float3 outside=float3(.27,.055,.095),rimLight=float3(1,.79,.69);
+                // Fold artwork follows the actual closed boundary, rather than a flat
+                // oversized screenshot. Cross-fade the texture edges without mirror pinches.
+                float2 phase=tex2D(_WallCoordinateTex,dataUV).rg;
+                float along=atan2(phase.y,phase.x)/(2*UNITY_PI)+.5;
+                float wallLod=max(0,log2(max(.001,length(ddx(wallWorld))+length(ddy(wallWorld))))+6);
+                float v=lerp(.035,.965,rise);
+                float3 wall=tex2Dlod(_WallTex,float4(along,v,0,wallLod)).rgb;
+                float3 seam=tex2Dlod(_WallTex,float4(frac(along+.5),v,0,wallLod)).rgb;
+                wall=lerp(wall,seam,smoothstep(.38,.49,abs(along-.5)));
+                float3 outside=float3(.27,.055,.095),rimLight=float3(1,.78,.66);
+                float3 rimMid=float3(.98,.46,.53),rimShadow=float3(.72,.22,.36);
                 #ifndef UNITY_COLORSPACE_GAMMA
-                    wallLow=GammaToLinearSpace(wallLow);wallHigh=GammaToLinearSpace(wallHigh);
                     outside=GammaToLinearSpace(outside);rimLight=GammaToLinearSpace(rimLight);
+                    rimMid=GammaToLinearSpace(rimMid);rimShadow=GammaToLinearSpace(rimShadow);
                 #endif
-                float3 wall=lerp(wallLow,wallHigh,smoothstep(.35,1,slope));
-                float grain=frac(sin(dot(grid,float2(12.9898,78.233)))*43758.5453)-.5;
-                wall+=grain*.008*visible;
-                float blend=1-smoothstep(_WallWidth*.58,_WallWidth,distance);
+                // Floor detail continues onto the lower ramp, densely foreshortened, then
+                // gradually gives way to the clean colored folds (no pasted-on edge).
+                float blend=smoothstep(0,.27,rise);
+                float3 compressedMotifs=lerp(float3(1,1,1),a/referenceFloor,
+                    (1-smoothstep(.12,.48,rise))*visible*_DetailStrength);
+                wall*=compressedMotifs;
                 float3 color=lerp(floorColor,wall,blend);
-                // One rounded lip, not concentric ridges. Both art and collision share the signed distance.
-                float lip=exp(-pow((distance-.18)/.44,2));
-                color=lerp(color,rimLight,lip*.85);
-                color=lerp(outside,color,smoothstep(-.7,-.08,distance));
+                // Rounded raised lip: a narrow underside shadow and broad peach-lit crown.
+                color=lerp(color,rimShadow,.30*exp(-pow((distance-.65)/.25,2)));
+                color=lerp(rimShadow,color,smoothstep(-.25,.03,distance));
+                float lip=1-smoothstep(.42,.68,abs(distance-.02));
+                float crown=floor(saturate(1-abs(distance+.10)/.64)*7)/7;
+                color=lerp(color,lerp(rimMid,rimLight,crown),lip);
+                color=lerp(outside,color,smoothstep(-.72,-.44,distance));
                 // Retain the approved esophagus/outlet landmarks and tube silhouette.
                 float inlet=length((uv-float2(.844,.885))/float2(.060,.105));
                 float outlet=length((uv-float2(.195,.300))/float2(.067,.095));

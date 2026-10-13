@@ -85,8 +85,23 @@ namespace Vampire.Editor
                     melee=level.EntityManager.SpawnMonster(i,original,blueprint);
             }
             body.position=upper;player.transform.position=upper;body.velocity=Vector2.zero;
+            player.Move(-inward);
             int charges=player.CurrentDashCharges;
-            Check(!player.TryDash() && player.CurrentDashCharges==charges,"dash blocked on slope without consuming a charge");
+            Check(Mathf.Abs(map.Definition.climbableWidth/map.WallWidth-.75f)<.001f,"movement boundary at three quarters of wall height");
+            Check(player.TryDash() && player.CurrentDashCharges==charges-1,"dash can activate on slope and consumes one charge");
+            float dashUntil=Time.realtimeSinceStartup+3;
+            while(player.IsDashing && Time.realtimeSinceStartup<dashUntil)
+            {
+                yield return new WaitForFixedUpdate();
+                CheckOnce(map.ExactDistance(body.position,out _)>=map.ClimbLimit+radius-.015f,"dash cannot cross wall limit");
+            }
+            Check(!player.IsDashing,"slope dash completes normally inside the three-quarter limit");
+            Vector2 downhill=FiniteStomachMap.ClampDash(upper,upper+inward*2,radius);
+            Check(Vector2.Distance(downhill,upper+inward*2)<.001f,"downhill dash is not blocked by slope");
+            Vector2 tangent=new Vector2(inward.y,-inward.x);
+            Vector2 sideways=FiniteStomachMap.ClampDash(middle,middle+tangent,radius);
+            Check(Vector2.Distance(sideways,middle)>.9f,"sideways dash moves along the slope");
+            player.Move(Vector2.zero);body.position=upper;player.transform.position=upper;body.velocity=Vector2.zero;
             float before=map.DistanceToRim(body.position,out _);
             yield return new WaitForSeconds(.7f);
             Check(map.DistanceToRim(body.position,out _)>before+.1f,"released player slides down the curved wall");

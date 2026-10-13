@@ -19,4 +19,4 @@ MonoBehaviour:
   pixelWorldSize: 0.05084381
   startUV: {x: 0.543, y: 0.455}
   wallWidth: 8
-  climbableWidth: 5.2
+  climbableWidth: 6
