@@ -16,7 +16,8 @@ namespace Vampire
 
         [Header("Syringe Range")]
         [Tooltip("기본 침 최대 사거리입니다. Shuriken.prefab의 Max Distance 대신 이 값을 기준으로 사용합니다.")]
-        [SerializeField] private float baseSyringeMaxDistance = 6f;
+        // Ashi idle frame: 443px / 675 PPU * 1.25 visual scale ~= .82 world units; five widths, reduced to two thirds.
+        [SerializeField] private float baseSyringeMaxDistance = 2.733333f;
 
         [Header("Spread Settings")]
         [Tooltip("여러 발 발사 시 각 침 사이의 기본 각도입니다.")]
@@ -117,7 +118,7 @@ namespace Vampire
         [SerializeField, Range(0f, 1f)] private float specialExplosionChance = 1f;
 
         [Header("Homing Settings")]
-        [SerializeField] private float homingRange = 6f;
+        [SerializeField] private float homingRange = 3.28f;
         [SerializeField] private float homingLerpSpeed = 8f;
         [Header("Fiber Needle / 섬유침 Settings")]
         [Tooltip("섬유침이 남긴 선이 유지되는 시간입니다.")]
@@ -769,6 +770,8 @@ namespace Vampire
 
         protected override void Update()
         {
+            ReadNeedleAimInput();
+            if (Time.timeScale <= 0f) return;
             if (AttacksBlocked)
             {
                 isHeavyCharging = false;
@@ -815,13 +818,21 @@ namespace Vampire
 
         private void OnDisable()
         {
+            hasPendingNeedleDirection = false;
             SyringeAugmentVfx.ReleaseOwned(ref lifeBurnVisual);
             DestroyHeavySnipeChargePreview();
             DestroyNeedleShotgunAmmoText();
         }
 
+        float itemEchoScale=1; bool itemEcho;
+        public void FireItemEcho(Vector2 direction,float strength)
+        {
+            itemEcho=true;itemEchoScale=strength;
+            try{LaunchSyringeProjectile(direction);}finally{itemEcho=false;itemEchoScale=1;}
+        }
         protected override void Attack()
         {
+            playerCharacter?.GetComponent<OctoberItemRuntime>()?.Attack(this);
            
             StartCoroutine(LaunchSyringes());
         }
@@ -831,8 +842,7 @@ namespace Vampire
             int totalProjectileCount =
                 GetEffectiveProjectileCount();
 
-            Vector2 baseDirection =
-                playerCharacter.LookDirection;
+            Vector2 baseDirection = GetAutomaticNeedleDirection();
 
             if (baseDirection == Vector2.zero)
             {
@@ -856,6 +866,7 @@ namespace Vampire
                  i < totalProjectileCount;
                  i++)
             {
+                baseDirection = GetAutomaticNeedleDirection();
                 Vector2 spreadDirection =
                     GetSpreadDirection(
                         baseDirection,
@@ -864,7 +875,7 @@ namespace Vampire
                     );
 
                 bool launched =
-                    LaunchSyringeProjectile(
+                    LaunchAimedSyringe(
                         spreadDirection
                     );
 
@@ -882,6 +893,7 @@ namespace Vampire
                 );
             }
         }
+        private bool bipolarEmpowerFront;
         private IEnumerator LaunchBipolarSyringes(Vector2 baseDirection, int totalProjectileCount)
         {
             if (baseDirection == Vector2.zero)
@@ -915,7 +927,12 @@ namespace Vampire
             }
 
             Vector2 backDirection = RotateVector(baseDirection, bipolarNeedleBackAngleOffset);
-            backCount += OriginalCount(SyringeSpecialAugmentAbility.SpecialAugmentType.BipolarNeedle,0);
+            int cross = OriginalCount(SyringeSpecialAugmentAbility.SpecialAugmentType.BipolarNeedle,0);
+            int alternate = OriginalCount(SyringeSpecialAugmentAbility.SpecialAugmentType.BipolarNeedle,1);
+            bool empowerFront = bipolarEmpowerFront;
+            bipolarEmpowerFront = !bipolarEmpowerFront;
+            Vector2 leftDirection = RotateVector(baseDirection, 90f);
+            Vector2 rightDirection = -leftDirection;
 
             int pairCount = Mathf.Max(frontCount, backCount);
 
@@ -938,19 +955,23 @@ namespace Vampire
                 if (i < frontCount)
                 {
                     Vector2 frontSpreadDirection = GetSpreadDirection(baseDirection, i, frontCount);
-                    LaunchSyringeProjectile(frontSpreadDirection);
+                    LaunchAimedSyringe(frontSpreadDirection, false, OriginalCombatRules.BipolarDamage(cross, alternate, false, empowerFront), 1);
+                    if (cross > 0)
+                        LaunchAimedSyringe(GetSpreadDirection(leftDirection, i, frontCount), false, OriginalCombatRules.BipolarDamage(cross, alternate, true, empowerFront), 1);
                 }
 
                 if (i < backCount)
                 {
                     Vector2 backSpreadDirection = GetSpreadDirection(backDirection, i, backCount);
-                    LaunchSyringeProjectile(backSpreadDirection, true);
+                    LaunchAimedSyringe(backSpreadDirection, true, OriginalCombatRules.BipolarDamage(cross, alternate, false, !empowerFront), -1);
+                    if (cross > 0)
+                        LaunchAimedSyringe(GetSpreadDirection(rightDirection, i, backCount), false, OriginalCombatRules.BipolarDamage(cross, alternate, true, !empowerFront), -1);
                 }
 
                 yield return new WaitForSeconds(syringeDelay);
             }
         }
-        private bool LaunchSyringeProjectile(Vector2 direction, bool rear = false)
+        private bool LaunchSyringeProjectile(Vector2 direction, bool rear = false, float damageScale = 1f, int polarity = 0)
         {
             if (AttacksBlocked) return false;
             Vector2 spawnPosition = GetProjectileSpawnPosition(direction);
@@ -958,7 +979,7 @@ namespace Vampire
             Projectile projectile = SpawnPlayerProjectile(
                 projectileIndex,
                 spawnPosition,
-                GetEffectiveDamage(),
+                GetEffectiveDamage() * damageScale,
                 GetEffectiveKnockback(),
                 GetEffectiveSpeed(),
                 monsterLayer
@@ -979,15 +1000,15 @@ namespace Vampire
 
                 projectile.maxDistance =
                     GetEffectiveSyringeMaxDistance();
-                if (rear) projectile.maxDistance *= 1f + .12f * OriginalCount(SyringeSpecialAugmentAbility.SpecialAugmentType.BipolarNeedle,2);
             }
 
             if (projectile is SyringeProjectile syringeProjectile)
             {
-                syringeProjectile.ConfigureSpecials(
-                    BuildSpecialRuntime()
-                );
+                var shotRuntime = BuildSpecialRuntime();
+                shotRuntime.bipolarPolarity = polarity;
+                syringeProjectile.ConfigureSpecials(shotRuntime);
                 syringeProjectile.ConfigureFlightVfx(bipolarNeedleEnabled, false);
+                syringeProjectile.ConfigureItemAttack(itemEchoScale,itemEcho);
             }
             else
             {
@@ -1262,6 +1283,7 @@ namespace Vampire
 
         private void FireNeedleShotgunVolley(Vector2 baseDirection)
         {
+            playerCharacter?.GetComponent<OctoberItemRuntime>()?.Attack(this);
             if (baseDirection == Vector2.zero)
             {
                 baseDirection = playerCharacter != null && playerCharacter.LookDirection != Vector2.zero
@@ -1364,6 +1386,7 @@ namespace Vampire
             {
                 syringeProjectile.ConfigureSpecials(BuildNeedleShotgunRuntime());
                 syringeProjectile.ConfigureFlightVfx(bipolarNeedleEnabled, false);
+                syringeProjectile.ConfigureItemAttack(itemEchoScale,itemEcho);
             }
             else
             {
@@ -1574,12 +1597,16 @@ namespace Vampire
                 return;
             }
 
+            playerCharacter.GetComponent<OctoberItemRuntime>()?.Attack(this);
             HeavySnipeChargeStats stats = CalculateHeavySnipeChargeStats(chargeRatio);
             Vector2 aimDirection = GetAimDirectionFromMouseOrLookDirection();
 
             SyringeSpecialRuntime runtime = BuildHeavySnipeRuntime(stats);
 
             Vector2 spawnPosition = GetHeavySnipeChargePreviewPosition(chargeRatio, aimDirection);
+
+            var shed = SyringeAugmentVfx.PlayDirected("HeavySnipeImpact", spawnPosition, aimDirection, SyringeAugmentVfx.FindTarget(playerCharacter));
+            if (shed != null) shed.SetWorldSize(Vector2.one * Mathf.Lerp(.8f,2.4f,chargeRatio),Vector2.one);
 
             // Charged needles normally fire once; character skills add/multiply this final count.
             int shots = GetHeavySnipeSkillProjectileCount();
@@ -1611,6 +1638,7 @@ namespace Vampire
             if (projectile is SyringeProjectile syringeProjectile)
             {
                 syringeProjectile.ConfigureSpecials(runtime);
+                syringeProjectile.ConfigureItemAttack(1,false);
                 syringeProjectile.ConfigureFlightVfx(bipolarNeedleEnabled, true);
             }
 
@@ -1789,7 +1817,7 @@ namespace Vampire
             {
                 heavyChargeVisual.transform.position = previewPosition;
                 heavyChargeVisual.transform.rotation = Quaternion.Euler(0, 0, Mathf.Atan2(aimDirection.y, aimDirection.x) * Mathf.Rad2Deg);
-                heavyChargeVisual.SetStrength(Mathf.Lerp(0.4f, 1f, chargeRatio));
+                heavyChargeVisual.SetPhoenixCharge(chargeRatio);
             }
             heavyChargePreviewObject.transform.position = previewPosition;
 
@@ -1807,6 +1835,7 @@ namespace Vampire
             Color color = heavyChargePreviewRenderer.color;
             color.a = heavyChargePreviewAlpha;
             heavyChargePreviewRenderer.color = color;
+            heavyChargePreviewRenderer.forceRenderingOff = true;
 
             if (!heavyChargePreviewObject.activeSelf)
             {
@@ -2129,8 +2158,8 @@ namespace Vampire
         private SyringeSpecialRuntime BuildSpecialRuntime()
         {
             float additionalPierceFromCharacter = GetPublicFloatProperty(playerCharacter, "AdditionalPierce", 0f);
-            int bonusPierce = pierceEnabled ? Mathf.RoundToInt(additionalPierceFromCharacter) : 0;
-            int totalPierceCount = pierceEnabled ? Mathf.Max(0, pierceCount + bonusPierce) : 0;
+            int bonusPierce = Mathf.RoundToInt(additionalPierceFromCharacter);
+            int totalPierceCount = Mathf.Max(0, (pierceEnabled ? pierceCount : 0) + bonusPierce);
 
             float antibioticBombChance = 0f;
 
@@ -2173,7 +2202,7 @@ namespace Vampire
                 poisonTickDamage = poisonTickDamage * statusDamageMultiplier,
 
                 explosionEnabled = finalExplosionChance > 0f,
-                explosionRadius = explosionRadius,
+                explosionRadius = explosionRadius * (1 + playerCharacter.RelicBonus(RelicBlueprint.RelicEffectType.Area)),
                 explosionDamage = explosionDamage,
                 explosionChance = finalExplosionChance,
 
@@ -2181,9 +2210,8 @@ namespace Vampire
                 homingRange = homingRange,
                 homingLerpSpeed = homingLerpSpeed,
 
-                // 관통침 증강을 먹었을 때만 기본 침이 관통한다.
-                // 기본 pierceCount가 2여도 pierceEnabled가 false면 관통하지 않는다.
-                pierceEnabled = pierceEnabled && totalPierceCount > 0,
+                // 관통 증강이 없으면 기본 관통 수는 제외하되 유물/아이템의 추가 관통은 적용한다.
+                pierceEnabled = totalPierceCount > 0,
                 pierceCount = totalPierceCount,
 
                 honeyEnabled = honeyEnabled,
@@ -2224,7 +2252,7 @@ namespace Vampire
                 markBonusDamageMultiplier = markBonusDamageMultiplier,
                 digestiveAcidSacEnabled = digestiveAcidSacNeedleEnabled,
                 digestiveAcidPuddleLifetime = digestiveAcidPuddleLifetime * statusDurationMultiplier,
-                digestiveAcidPuddleRadius = digestiveAcidPuddleRadius,
+                digestiveAcidPuddleRadius = digestiveAcidPuddleRadius * (1 + playerCharacter.RelicBonus(RelicBlueprint.RelicEffectType.Area)),
                 digestiveAcidPuddleDamagePerSecond = digestiveAcidPuddleDamagePerSecond * statusDamageMultiplier,
                 digestiveAcidPuddleTickInterval = digestiveAcidPuddleTickInterval,
                 digestiveAcidPuddleColor = digestiveAcidPuddleColor,
@@ -2297,8 +2325,6 @@ namespace Vampire
             float multiplier = lifeBurnEnabled ? lifeBurnDamageMultiplier : 1f;
             if (HasVer4Special(SyringeSpecialAugmentAbility.SpecialAugmentType.WindNeedle))
                 multiplier *= 1.08f + .10f * OriginalCount(SyringeSpecialAugmentAbility.SpecialAugmentType.WindNeedle,1);
-            if (bipolarNeedleEnabled)
-                multiplier *= 1f + .08f * OriginalCount(SyringeSpecialAugmentAbility.SpecialAugmentType.BipolarNeedle,1);
 
             if (playerCharacter != null)
             {
@@ -2326,7 +2352,7 @@ namespace Vampire
             return speed.Value * multiplier;
         }
 
-        public float GetEffectiveCooldown()
+        public override float GetEffectiveCooldown()
         {
             float attackSpeedMultiplier = 1f;
 
@@ -2340,7 +2366,6 @@ namespace Vampire
                 attackSpeedMultiplier *= HungerNeedleRuntime.GetAttackSpeedMultiplier(playerCharacter);
             }
 
-            attackSpeedMultiplier *= 1f + .05f * OriginalCount(SyringeSpecialAugmentAbility.SpecialAugmentType.Pierce,1);
             if (HasVer4Special(SyringeSpecialAugmentAbility.SpecialAugmentType.WindNeedle))
                 attackSpeedMultiplier *= 1.10f + .08f * OriginalCount(SyringeSpecialAugmentAbility.SpecialAugmentType.WindNeedle,0);
             return Mathf.Max(.04f, cooldown.Value / Mathf.Max(0.01f, attackSpeedMultiplier));
@@ -2422,7 +2447,7 @@ namespace Vampire
                 multiplier *= playerCharacter.DamageMultiplier;
             }
 
-            return damage.Value * multiplier * (1f + .12f * OriginalCount(SyringeSpecialAugmentAbility.SpecialAugmentType.AcupunctureFormation,1));
+            return damage.Value * multiplier * OriginalCombatRules.FormationDamage(OriginalCount(SyringeSpecialAugmentAbility.SpecialAugmentType.AcupunctureFormation,0));
         }
 
         public float GetAcupunctureFormationKnockback()
@@ -2466,8 +2491,7 @@ namespace Vampire
 
         public float GetAcupunctureFormationMaxDistance()
         {
-            return Mathf.Max(0.1f, baseSyringeMaxDistance) * GetPlayerRangeMultiplier() *
-                (1f + .12f * OriginalCount(SyringeSpecialAugmentAbility.SpecialAugmentType.AcupunctureFormation,2));
+            return Mathf.Max(0.1f, baseSyringeMaxDistance) * GetPlayerRangeMultiplier();
         }
 
         public float GetCloneKnockback()
@@ -2794,7 +2818,7 @@ namespace Vampire
         public Projectile SpawnFormationProjectile(int index, Vector2 position, float damageValue,
             float knockbackValue, float speedValue, LayerMask targets)
         {
-            if (!acupunctureFormationEnabled || playerCharacter == null || !playerCharacter.IsDashing ||
+            if (!acupunctureFormationEnabled || playerCharacter == null || !playerCharacter.IsAlive ||
                 playerCharacter.IsTrapBound || entityManager == null) return null;
             var projectile=entityManager.SpawnProjectile(index, position, damageValue, knockbackValue, speedValue, targets);
             SkillProjectileWind.Attach(projectile,playerCharacter != null ? playerCharacter.Skills : null);

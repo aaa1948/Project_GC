@@ -40,7 +40,7 @@ namespace Vampire
         [SerializeField] private Vector2 fallEndLocalOffset = Vector2.zero;
 
         [Tooltip("음식물이 위에서 아래로 떨어지는 데 걸리는 시간입니다.")]
-        [SerializeField] private float fallMotionDuration = 0.35f;
+        [SerializeField] private float fallMotionDuration = 0.28f;
 
         [Tooltip("낙하 이동 보간 곡선입니다. 뒤쪽이 가파르면 점점 빨라지는 낙하 느낌이 납니다.")]
         [SerializeField] private AnimationCurve fallMotionCurve = AnimationCurve.EaseInOut(0f, 0f, 1f, 1f);
@@ -83,8 +83,10 @@ namespace Vampire
         private Vector2 knockback;
         private Action<MiniStageFallingFoodStrike> onFinished;
 
+        public bool Explodes { get; set; }
         private bool initialized;
         private bool finished;
+        private LineRenderer landingRing;
 
         public void Setup(
             Character player,
@@ -121,16 +123,31 @@ namespace Vampire
 
         private void ApplyInitialVisualState()
         {
+            // A food silhouette and a true hit-radius outline replace the traffic-light artwork.
+            var ringObject=new GameObject("Food landing boundary");ringObject.transform.SetParent(transform,false);
+            landingRing=ringObject.AddComponent<LineRenderer>();
+            var material=new Material(Shader.Find("Sprites/Default"));landingRing.sharedMaterial=material;
+            ringObject.AddComponent<RemakeMaterialCleanup>().Material=material;
+            landingRing.useWorldSpace=false;landingRing.loop=true;landingRing.positionCount=48;
+            landingRing.widthMultiplier=.055f;landingRing.sortingLayerName="GroundEffects";landingRing.sortingOrder=5;
+            for(int i=0;i<48;i++){float a=i*Mathf.PI*2/48;landingRing.SetPosition(i,new Vector3(Mathf.Cos(a),Mathf.Sin(a))*damageRadius);}
+            landingRing.startColor=landingRing.endColor=new Color(1,.72f,.22f,.95f);
             if (warningCircleRenderer != null)
             {
                 GroundVisualSorting.Apply(warningCircleRenderer);
                 warningCircleRenderer.enabled = true;
-                warningCircleRenderer.color = warningColor;
+                warningCircleRenderer.color = new Color(.25f,.12f,.06f,.4f);
+                warningCircleRenderer.sprite=selectedFoodSprite;
 
                 if (autoScaleWarningCircle)
                 {
                     float diameter = damageRadius * 2f;
-                    warningCircleRenderer.transform.localScale = new Vector3(diameter, diameter, 1f);
+                    var sprite=warningCircleRenderer.sprite;
+                    float natural=sprite!=null?Mathf.Max(sprite.bounds.size.x,sprite.bounds.size.y):1;
+                    float scale=diameter*.72f/Mathf.Max(.01f,natural);
+                    warningCircleRenderer.transform.localScale = Vector3.one*scale;
+                    warningCircleRenderer.transform.localRotation=Quaternion.Euler(0,0,selectedFoodRotationZ);
+                    if(sprite!=null)warningCircleRenderer.transform.localPosition=-(warningCircleRenderer.transform.localRotation*(sprite.bounds.center*scale));
                 }
             }
 
@@ -187,6 +204,8 @@ namespace Vampire
             yield return StartCoroutine(FallMotionRoutine());
 
             ResolveImpact();
+            if(landingRing!=null)landingRing.enabled=false;
+            if(Explodes)yield return ExplosionRoutine();
 
             if (warningCircleRenderer != null)
             {
@@ -205,6 +224,30 @@ namespace Vampire
             FinishStrike();
         }
 
+        private IEnumerator ExplosionRoutine()
+        {
+            var balance=RemakeBalance.Current;
+            float radius=damageRadius*balance.foodExplosionRadiusMultiplier;
+            var ringObject=new GameObject("격화 폭발 예고");ringObject.transform.SetParent(transform,false);
+            var ring=ringObject.AddComponent<LineRenderer>();
+            var material=new Material(Shader.Find("Sprites/Default"));ring.sharedMaterial=material;
+            var cleanup=ringObject.AddComponent<RemakeMaterialCleanup>();cleanup.Material=material;
+            ring.useWorldSpace=false;ring.loop=true;ring.positionCount=48;ring.widthMultiplier=.08f;ring.sortingOrder=40;
+            for(int i=0;i<48;i++){float a=i*Mathf.PI*2/48;ring.SetPosition(i,new Vector3(Mathf.Cos(a),Mathf.Sin(a))*radius);}
+            float timer=0;
+            while(timer<balance.foodExplosionDelay)
+            {
+                timer+=Time.deltaTime;
+                ring.startColor=ring.endColor=Color.Lerp(Color.yellow,Color.red,timer/balance.foodExplosionDelay);
+                yield return null;
+            }
+            if(targetPlayer!=null && targetPlayer.IsAlive && Vector2.Distance(targetPlayer.transform.position,transform.position)<=radius)
+                targetPlayer.TakeDamage(damage*balance.foodExplosionDamageMultiplier,Vector2.zero,false);
+            if(fallingFoodRenderer!=null)fallingFoodRenderer.enabled=false;
+            ring.widthMultiplier=.35f;ring.startColor=ring.endColor=new Color(1,.6f,.2f);
+            yield return new WaitForSeconds(.18f);
+            Destroy(ringObject);
+        }
         private void UpdateWarningVisual(float timer)
         {
             if (warningCircleRenderer == null)
@@ -212,8 +255,13 @@ namespace Vampire
                 return;
             }
 
-            float blink = Mathf.PingPong(timer * warningBlinkSpeed, 1f);
-            warningCircleRenderer.color = Color.Lerp(warningColor, warningBlinkColor, blink);
+            float progress=Mathf.Clamp01(timer/Mathf.Max(.01f,warningDuration));
+            warningCircleRenderer.color=new Color(.25f,.12f,.06f,Mathf.Lerp(.3f,.65f,progress));
+            if(landingRing!=null)
+            {
+                landingRing.startColor=landingRing.endColor=Color.Lerp(new Color(1,.72f,.22f),new Color(1,.22f,.12f),progress);
+                landingRing.widthMultiplier=.055f+(progress>.75f?.02f*Mathf.Abs(Mathf.Sin(timer*20)):0);
+            }
         }
 
         private IEnumerator FallMotionRoutine()
@@ -246,9 +294,7 @@ namespace Vampire
             while (timer < fallMotionDuration)
             {
                 float normalizedTime = Mathf.Clamp01(timer / fallMotionDuration);
-                float curveValue = fallMotionCurve != null
-                    ? fallMotionCurve.Evaluate(normalizedTime)
-                    : normalizedTime;
+                float curveValue=normalizedTime*normalizedTime;
 
                 fallingFoodRenderer.transform.localPosition = Vector3.Lerp(
                     startPosition,

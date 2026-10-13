@@ -177,7 +177,7 @@ namespace Vampire
             public float puddleLifeTime = 6f;
 
             [Tooltip("위산 바닥이 틱마다 주는 데미지입니다.")]
-            public float puddleDamagePerTick = 3f;
+            public float puddleDamagePerTick = 4.5f;
 
             [Tooltip("위산 바닥 데미지 틱 간격입니다.")]
             public float puddleTickInterval = 0.5f;
@@ -253,6 +253,20 @@ namespace Vampire
         [SerializeField] private bool logAcidEvent = false;
 
         private int activeAcidRainEventCount;
+
+        public void CollectPresentations(List<StageEventPresentation> result)
+        {
+            if (!isActiveAndEnabled) return;
+            foreach (var e in monsterSurgeEvents)
+                if (e != null && e.enabled && e.started && !e.finished)
+                    result.Add(new StageEventPresentation(e, StageEventVisualKind.Infection, e.eventName));
+            foreach (var e in goldRushEvents)
+                if (e != null && e.enabled && e.started && !e.finished)
+                    result.Add(new StageEventPresentation(e, StageEventVisualKind.Gold, e.eventName));
+            foreach (var e in acidSecretionEvents)
+                if (e != null && e.enabled && e.started && !e.finished)
+                    result.Add(new StageEventPresentation(e, StageEventVisualKind.AcidRain, e.eventName));
+        }
 
         public void CollectWindowTemplates(List<StageEventTemplate> templates)
         {
@@ -493,6 +507,7 @@ namespace Vampire
                 surgeEvent.spawnAccumulator = 0f;
 
                 ShowEventStartedUI(surgeEvent.eventName);
+                TutorialGuide.QueueStageEvent("monster-surge");
 
                 
 
@@ -566,6 +581,7 @@ namespace Vampire
                 goldRushEvent.started = true;
 
                 ShowEventStartedUI(goldRushEvent.eventName);
+                TutorialGuide.QueueStageEvent("gold-rush");
 
                 
                 if (logEventState)
@@ -619,6 +635,7 @@ namespace Vampire
                 PlayAcidRainVFX();
 
                 ShowEventStartedUI(acidEvent.eventName);
+                TutorialGuide.QueueStageEvent("acid-secretion");
 
                
 

@@ -210,7 +210,7 @@ namespace Vampire
                 Debug.Log("[MiniStageCollectionRoom] 제한 시간 종료. 귀환 상호작용을 활성화합니다.");
             }
 
-            CompleteRoomWithoutReward();
+            CompleteRoom();
             timeAttackRoutine = null;
         }
 
@@ -575,6 +575,8 @@ namespace Vampire
 
         private Collectable SpawnPickupAt(Vector3 position, Transform parent)
         {
+            var arena=GetComponent<MiniStageArenaGeometry>();
+            if(arena!=null && Vector2.Distance(position,arena.Clamp(position,.5f))>.01f)return null;
             Collectable pickup;
             bool pooled = true;
             if (entityManager == null || playerCharacter == null)

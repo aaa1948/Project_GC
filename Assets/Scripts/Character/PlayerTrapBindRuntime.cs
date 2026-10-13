@@ -55,6 +55,7 @@ namespace Vampire
 
         public bool TryBind(TrapMonster trap, Vector3 worldPosition)
         {
+            if(ownerCharacter!=null && ownerCharacter.IsPortalTravelling)return false;
             if (trap == null)
             {
                 return false;
@@ -126,6 +127,11 @@ namespace Vampire
             ForceLockNow();
             ApplyCapturedVisual();
             visualElapsed += Time.deltaTime;
+        }
+
+        private void FixedUpdate()
+        {
+            if (isBound) ForceLockNow();
         }
 
         private void ApplyCapturedVisual()

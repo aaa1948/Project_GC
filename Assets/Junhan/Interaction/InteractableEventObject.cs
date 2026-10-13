@@ -16,6 +16,7 @@ namespace Vampire
         private static readonly List<InteractableEventObject> candidates = new List<InteractableEventObject>();
         private static InteractableEventObject focusedObject;
         private static Character focusedPlayer;
+        private static int lastInteractionFrame = -1;
 
         [Header("Interaction")]
         [SerializeField] private KeyCode interactionKey = KeyCode.E;
@@ -50,6 +51,13 @@ namespace Vampire
 
         protected Character CurrentPlayer => currentPlayer;
         protected virtual bool KeepVisibleAfterInteraction => false;
+        protected virtual bool AllowMiniStageInteraction => false;
+        protected virtual bool InteractionAvailable => true;
+        protected virtual Component PromptOwner => this;
+        protected void ConfigureReusableInteraction()
+        {
+            interactOnce=false;disableObjectAfterInteract=false;disableColliderAfterInteract=false;
+        }
 
         protected void ResetInteractionAvailability()
         {
@@ -69,6 +77,7 @@ namespace Vampire
 
         protected virtual void Awake()
         {
+            InteractionFocus.Register(this, () => CanBeFocusedBy(currentPlayer));
             interactionCollider = GetComponent<Collider2D>();
 
             if (interactionCollider != null)
@@ -122,7 +131,7 @@ namespace Vampire
                 return;
             }
 
-            if (Vampire.GameInput.GetKeyDown(interactionKey) || MobileGameplayInput.ConsumeInteraction())
+            if (Vampire.GameInput.TryConsumeInteraction(interactionKey, this))
             {
                 TryInteract();
             }
@@ -132,7 +141,7 @@ namespace Vampire
         {
             Character character = other.GetComponentInParent<Character>();
 
-            if (character == null)
+            if (character == null || other == character.CollectableCollider)
             {
                 return;
             }
@@ -169,7 +178,8 @@ namespace Vampire
         public void TryInteract()
         {
             if (Time.timeScale <= 0f) return;
-            if (MiniStageRuntimeState.IsInsideMiniStage)
+            if (!InteractionFocus.IsFocused(this)) return;
+            if (MiniStageRuntimeState.IsInsideMiniStage && !AllowMiniStageInteraction)
             {
                 return;
             }
@@ -184,6 +194,8 @@ namespace Vampire
                 return;
             }
 
+            if(lastInteractionFrame==Time.frameCount)return;
+
             if (levelManager == null)
             {
                 levelManager = FindObjectOfType<LevelManager>();
@@ -195,6 +207,7 @@ namespace Vampire
             {
                 return;
             }
+            lastInteractionFrame=Time.frameCount;
 
             CompleteInteraction();
         }
@@ -232,7 +245,7 @@ namespace Vampire
 
         private bool CanBeFocusedBy(Character player)
         {
-            if (MiniStageRuntimeState.IsInsideMiniStage)
+            if (!InteractionAvailable || (MiniStageRuntimeState.IsInsideMiniStage && !AllowMiniStageInteraction))
             {
                 return false;
             }
@@ -299,7 +312,6 @@ namespace Vampire
             focusedPlayer = player;
 
             InteractableEventObject nearest = null;
-            float nearestSqrDistance = float.MaxValue;
 
             for (int i = candidates.Count - 1; i >= 0; i--)
             {
@@ -318,12 +330,8 @@ namespace Vampire
                     continue;
                 }
 
-                float sqrDistance =
-                    (candidate.transform.position - player.transform.position).sqrMagnitude;
-
-                if (sqrDistance < nearestSqrDistance)
+                if (InteractionFocus.IsFocused(candidate))
                 {
-                    nearestSqrDistance = sqrDistance;
                     nearest = candidate;
                 }
             }
@@ -363,7 +371,7 @@ namespace Vampire
 
         protected void SetPromptVisible(bool visible)
         {
-            PixelInteractionPrompt.Show(this, visible && isActiveAndEnabled, promptRoot);
+            PixelInteractionPrompt.Show(PromptOwner, visible && isActiveAndEnabled, promptRoot, this);
         }
     }
 }

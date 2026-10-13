@@ -41,16 +41,6 @@ namespace Vampire
         [Tooltip("방 종료 후 생성했던 Room Prefab 인스턴스를 삭제할지 여부입니다.")]
         [SerializeField] private bool destroyRoomAfterReturn = true;
 
-        [Header("Transition")]
-        [Tooltip("포탈에서 E를 누른 뒤 미니 스테이지로 이동하기 전 대기 시간입니다.")]
-        [SerializeField] private float enterDelay = 0.25f;
-
-        [Tooltip("귀환 오브젝트에서 E를 누른 뒤 원래 위치로 복귀하기 전 대기 시간입니다.")]
-        [SerializeField] private float returnDelay = 0.5f;
-
-        [Tooltip("복귀할 때 원래 위치 그대로 돌아가면 몬스터와 겹칠 수 있으므로 살짝 밀어낼 오프셋입니다.")]
-        [SerializeField] private Vector2 returnOffset = new Vector2(0f, 1.5f);
-
         [Header("Debug")]
         [Tooltip("미니 스테이지 진입/방 생성/복귀 로그를 출력합니다.")]
         [SerializeField] private bool debugLog = true;
@@ -61,13 +51,17 @@ namespace Vampire
         private Vector3 savedReturnPosition;
 
         private BloodClotMiniStagePortal activeEntrancePortal;
+        private BloodClotMiniStagePortal returnPortal;
+        private BloodClotTravel travel;
         private MiniStageRoomBase currentRoom;
 
+        public bool CurrentEnhanced { get; private set; }
         public bool IsInsideMiniStage => isInsideMiniStage;
-        public bool CanEnterFromPortal => !isInsideMiniStage && !isTransitioning;
+        public bool IsTransitioning => isTransitioning;
+        public bool CanEnterFromPortal => !isInsideMiniStage && !isTransitioning && BloodClotTravel.CanTravel(playerCharacter);
         public bool CanReturnFromInteractable(MiniStageReturnInteractable interactable)
         {
-            return isInsideMiniStage && !isTransitioning && currentRoom != null &&
+            return isInsideMiniStage && !isTransitioning && BloodClotTravel.CanTravel(playerCharacter) && currentRoom != null &&
                 currentRoom.CanReturnFrom(interactable);
         }
         public MiniStageRoomBase CurrentRoom => currentRoom;
@@ -138,6 +132,7 @@ namespace Vampire
             // 중요:
             // BloodClotMiniStagePortal에는 Init()이 없고 Setup()이 있다.
             activeEntrancePortal.Setup(this);
+            playerCharacter?.GetComponent<PrescriptionRuntime>()?.Record(PrescriptionRuntime.Goal.Portal);
 
             // 포탈 생성 및 Setup까지 실제로 완료된 순간 1회 재생합니다.
             GameAudioManager.PlaySfx(
@@ -170,60 +165,30 @@ namespace Vampire
 
         public void EnterMiniStageFromPortal(BloodClotMiniStagePortal portal)
         {
-            if (!CanEnterFromPortal)
+            ResolveReferences();
+            if (!CanEnterFromPortal || portal == null || portal.Reserved || portal.ChallengeInProgress || Time.timeScale <= 0)
             {
                 return;
             }
 
-            if (portal != null)
-            {
-                portal.Consume();
-
-                if (activeEntrancePortal == portal)
-                {
-                    activeEntrancePortal = null;
-                }
-            }
-
-            StartCoroutine(EnterMiniStageRoutine());
+            var roomPrefab=SelectRoomPrefab();
+            if(levelManager==null || entityManager==null || roomPrefab==null || roomPrefab.GetComponentInChildren<MiniStageReturnInteractable>(true)==null)
+            { Debug.LogWarning("[MiniStageDirector] 입장 방/복귀 혈전 참조가 없어 입장을 취소합니다."); return; }
+            CurrentEnhanced = portal.GetComponent<BloodClotOvercharge>()?.Enhanced ?? false;
+            returnPortal=portal;
+            returnPortal.Reserve(true);
+            StartCoroutine(EnterMiniStageRoutine(roomPrefab));
         }
 
-        private IEnumerator EnterMiniStageRoutine()
+        private IEnumerator EnterMiniStageRoutine(MiniStageRoomBase roomPrefab)
         {
             isTransitioning = true;
-
-            ResolveReferences();
-
-            if (levelManager == null || entityManager == null || playerCharacter == null)
-            {
-                Debug.LogWarning("[MiniStageDirector] 필수 참조가 비어 있습니다. LevelManager, EntityManager, PlayerCharacter를 확인하세요.");
-                isTransitioning = false;
-                yield break;
-            }
-
-            MiniStageRoomBase roomPrefab = SelectRoomPrefab();
-
-            if (roomPrefab == null)
-            {
-                Debug.LogWarning("[MiniStageDirector] 사용할 Room Prefab이 없습니다. Room Prefabs 배열을 확인하세요.");
-                isTransitioning = false;
-                yield break;
-            }
-
-            savedReturnPosition = playerCharacter.transform.position;
-
-            if (debugLog)
-            {
-                Debug.Log($"[MiniStageDirector] 미니 스테이지 입장 시작. returnPosition={savedReturnPosition}");
-            }
-
-            MiniStageRuntimeState.EnterMiniStage(this);
-
-            // 기존 필드에 있던 몬스터만 정지.
-            // 이후 Room에서 allowDuringMiniStage=true로 생성되는 몬스터는
-            // MiniStageOwned 처리되어 정상적으로 움직인다.
-            entityManager.SetFieldMonsterRuntimeSuspended(true);
-
+            savedReturnPosition = BloodClotTravel.LeftLanding(returnPortal.transform,playerCharacter);
+            travel=BloodClotTravel.Ensure(playerCharacter);
+            yield return travel.Dive(returnPortal.transform);
+            if(playerCharacter==null || !playerCharacter.IsAlive || returnPortal==null || !travel.Busy){EmergencyReleaseMiniStageRuntime();yield break;}
+            // Existing enemies keep updating through both animations. Only field spawning/run time
+            // pauses during transfer; the regular off-screen field suspension starts after landing.
             levelManager.SetRunFlowPaused(true);
             GameAudioManager.EnterMiniStageAudio();
 
@@ -239,12 +204,17 @@ namespace Vampire
 
             currentRoom.name = $"{roomPrefab.name}_Runtime";
             currentRoom.InitRoom(this, entityManager, playerCharacter);
-
-            yield return new WaitForSeconds(enterDelay);
-
-            MovePlayer(currentRoom.PlayerStartPoint.position);
-
+            var destination=currentRoom.ReturnInteractable;
+            destination.SetTravelVisual(true,CurrentEnhanced);
+            var landing=BloodClotTravel.LeftLanding(destination.transform,playerCharacter);
+            if(currentRoom.PlayerStartPoint!=currentRoom.transform)currentRoom.PlayerStartPoint.position=landing;
+            MovePlayer(destination.transform.position);
             isInsideMiniStage = true;
+            yield return travel.Eject(destination.transform,landing);
+            if(playerCharacter==null || !playerCharacter.IsAlive){EmergencyReleaseMiniStageRuntime();yield break;}
+            destination.SetTravelVisual(false,CurrentEnhanced);
+            MiniStageRuntimeState.EnterMiniStage(this);
+            entityManager.SetFieldMonsterRuntimeSuspended(true);
             isTransitioning = false;
 
             currentRoom.BeginRoom();
@@ -255,6 +225,7 @@ namespace Vampire
             }
         }
 
+        public static bool RoomEnabled(MiniStageRoomBase room) => room != null && !(room is MiniStageAcidBalanceRoom) && !(room is MiniStageDigestiveWaveReflectRoom) && !(room is MiniStageAcidLureRoom);
         private MiniStageRoomBase SelectRoomPrefab()
         {
             if (roomPrefabs == null || roomPrefabs.Length == 0)
@@ -265,16 +236,16 @@ namespace Vampire
             if (useForcedRoomIndex)
             {
                 int safeIndex = Mathf.Clamp(forcedRoomIndex, 0, roomPrefabs.Length - 1);
-                return roomPrefabs[safeIndex];
+                return RoomEnabled(roomPrefabs[safeIndex]) ? roomPrefabs[safeIndex] : null;
             }
 
-            int randomIndex = Random.Range(0, roomPrefabs.Length);
-            return roomPrefabs[randomIndex];
+            var enabledRooms = System.Array.FindAll(roomPrefabs, RoomEnabled);
+            return enabledRooms.Length == 0 ? null : enabledRooms[Random.Range(0, enabledRooms.Length)];
         }
 
         public void ReturnToFieldFromInteractable(MiniStageReturnInteractable interactable)
         {
-            if (!isInsideMiniStage || isTransitioning)
+            if (!isInsideMiniStage || isTransitioning || !BloodClotTravel.CanTravel(playerCharacter) || Time.timeScale<=0)
             {
                 return;
             }
@@ -295,10 +266,10 @@ namespace Vampire
                 return;
             }
 
-            StartCoroutine(ReturnToFieldRoutine());
+            StartCoroutine(ReturnToFieldRoutine(interactable));
         }
 
-        private IEnumerator ReturnToFieldRoutine()
+        private IEnumerator ReturnToFieldRoutine(MiniStageReturnInteractable source)
         {
             isTransitioning = true;
 
@@ -307,10 +278,10 @@ namespace Vampire
                 Debug.Log("[MiniStageDirector] 원래 필드 복귀 시작.");
             }
 
-            yield return new WaitForSeconds(returnDelay);
-
-            Vector3 returnPosition = savedReturnPosition + (Vector3)returnOffset;
-            MovePlayer(returnPosition);
+            travel=BloodClotTravel.Ensure(playerCharacter);
+            yield return travel.Dive(source.transform);
+            if(playerCharacter==null || !playerCharacter.IsAlive){EmergencyReleaseMiniStageRuntime();yield break;}
+            MovePlayer(returnPortal!=null ? returnPortal.transform.position : savedReturnPosition);
 
             CleanupCurrentRoom();
 
@@ -334,6 +305,14 @@ namespace Vampire
             GameAudioManager.ExitMiniStageAudio();
 
             isInsideMiniStage = false;
+            var landing=returnPortal!=null ? BloodClotTravel.LeftLanding(returnPortal.transform,playerCharacter) : savedReturnPosition;
+            yield return travel.Eject(returnPortal!=null?returnPortal.transform:null,landing);
+            if(returnPortal!=null)
+            {
+                if(activeEntrancePortal==returnPortal)activeEntrancePortal=null;
+                returnPortal.Consume();
+                returnPortal=null;
+            }
             isTransitioning = false;
             if (debugLog)
             {
@@ -387,6 +366,12 @@ namespace Vampire
             {
                 return;
             }
+            StopAllCoroutines();
+            if(travel!=null)travel.Cancel();
+            if(playerCharacter!=null)MovePlayer(savedReturnPosition);
+            if(returnPortal!=null)returnPortal.Reserve(false);
+            returnPortal=null;
+            GameAudioManager.ExitMiniStageAudio();
 
             if (entityManager != null)
             {

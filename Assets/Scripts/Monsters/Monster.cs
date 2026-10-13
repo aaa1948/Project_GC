@@ -52,6 +52,7 @@ namespace Vampire
 
 
         private Vector3 originalLocalScale = Vector3.one;
+        private MonsterGroundShadow groundShadow;
 
         public bool IsMiniStageOwned => miniStageOwned;
         public bool IsFieldRuntimeSuspended => fieldRuntimeSuspended;
@@ -62,6 +63,30 @@ namespace Vampire
 
         public float IceMoveMultiplier => GetComponent<IceChillStatus>()?.SpeedMultiplier ?? 1f;
         public float HP => currentHealth;
+        public SpriteRenderer BodyRenderer => monsterSpriteRenderer;
+        public BoxCollider2D BodyHitbox => monsterHitbox;
+
+        public void FitVisibleBody()
+        {
+            if (monsterSpriteRenderer == null || monsterHitbox == null) SetupHitboxReference();
+            var mini=GetComponentInChildren<SnailMiniVisual>();
+            var food=GetComponent<FoodSnailMonster>();
+            var fit=GetComponent<MonsterBodyFit>() ?? gameObject.AddComponent<MonsterBodyFit>();
+            if(food!=null && food.Shell!=null)fit.Configure(monsterHitbox,monsterSpriteRenderer,food.Shell);
+            else if(mini!=null)fit.Configure(monsterHitbox,mini.Body,mini.Shell);
+            else fit.Configure(monsterHitbox, monsterSpriteRenderer);
+        }
+        public void DespawnForStageTransfer()
+        {
+            StopAllCoroutines();
+            alive = false;
+            OnKilled.RemoveAllListeners();
+            if (entityManager != null)
+            {
+                entityManager.LivingMonsters.Remove(this);
+                entityManager.DespawnMonster(monsterIndex, this, false);
+            }
+        }
         public float SpawnMaxHealth { get; private set; }
         public bool WasKilledByPlayer { get; private set; }
 
@@ -181,6 +206,7 @@ namespace Vampire
         /// </summary>
         public void PrepareForSpawnRuntime(bool isMiniStageOwned)
         {
+            if (groundShadow != null) groundShadow.Restore();
             miniStageOwned = isMiniStageOwned;
             nextHitFlashTime = 0f;
             deathStarted = false;
@@ -382,8 +408,7 @@ namespace Vampire
             if (monsterHitbox != null && monsterSpriteRenderer != null)
             {
                 monsterHitbox.enabled = true;
-                monsterHitbox.size = monsterSpriteRenderer.bounds.size;
-                monsterHitbox.offset = Vector2.up * monsterHitbox.size.y / 2f;
+                VisibleBodyGeometry.Fit(monsterHitbox, monsterSpriteRenderer);
             }
 
             if (monsterLegsCollider != null && monsterHitbox != null)
@@ -400,7 +425,7 @@ namespace Vampire
             if (monsterHitbox != null)
             {
                 centerTransform.position =
-                    transform.position + (Vector3)monsterHitbox.offset;
+                    monsterHitbox.transform.TransformPoint(monsterHitbox.offset);
             }
             else
             {
@@ -424,6 +449,7 @@ namespace Vampire
 
             // 중요: 새로 만든 프로퍼티에 대입하여 기본 속도를 세팅합니다.
             // 프로퍼티 내부의 set 구문이 작동하면서 rb.drag(마찰력)도 자동으로 계산되어 들어갑니다!
+            if(playerCharacter!=null && playerCharacter.GetComponent<OctoberItemRuntime>()?.Has(25)==true && !(this is BossMonster) && !(this is MiniBossMonster) && eliteBlueprint==null)spd*=1.15f;
             this.moveSpeed = spd;
 
             if (rb != null)
@@ -446,6 +472,23 @@ namespace Vampire
                     $"scale={scaleMultiplier} | hp={currentHealth:0.##}"
                 );
             }
+        }
+
+        // Called after every subtype's Setup, including sniper/trap implementations
+        // which do not call the base Setup. Shared pools restore before their next use.
+        public void ConfigureGroundShadow(MonsterBlueprint blueprint)
+        {
+            var visual = blueprint;
+            if (blueprint is EliteMonsterBlueprint elite && elite.useSourceVisual && elite.sourceNormalBlueprint != null)
+                visual = elite.sourceNormalBlueprint;
+            if (visual == null || !visual.useGroundShadowFootprint || shadow == null || monsterSpriteRenderer == null) return;
+            var renderer = shadow.GetComponent<SpriteRenderer>();
+            if (renderer == null || renderer.sprite == null) return;
+            var frames = visual.walkSpriteSequence;
+            var reference = frames != null && frames.Length > 0 && frames[0] != null ? frames[0] : monsterSpriteRenderer.sprite;
+            if (reference == null) return;
+            if (groundShadow == null) groundShadow = gameObject.AddComponent<MonsterGroundShadow>();
+            groundShadow.Configure(monsterSpriteRenderer, renderer, reference, visual);
         }
 
         protected virtual void Update()
@@ -482,6 +525,8 @@ namespace Vampire
         private float nextHitFlashTime;
         private bool deathStarted;
 
+        bool itemPureDamage;
+        public void TakeItemPureDamage(float amount){itemPureDamage=true;try{TakeDamage(amount);}finally{itemPureDamage=false;}}
         public override void TakeDamage(
     float damage,
     Vector2 knockback = default(Vector2),
@@ -494,7 +539,7 @@ namespace Vampire
             }
             MonsterCombatBuffRuntime combatBuffRuntime = GetComponent<MonsterCombatBuffRuntime>();
 
-            if (combatBuffRuntime != null)
+            if (combatBuffRuntime != null && !itemPureDamage)
             {
                 damage = combatBuffRuntime.ModifyIncomingDamage(damage);
             }
@@ -503,6 +548,8 @@ namespace Vampire
                 entityManager.SpawnDamageText(monsterHitbox.transform.position, damage, isCritical);
             }
 
+            var itemStatus=GetComponent<OctoberItemTargetStatus>();
+            if(itemStatus!=null&&itemStatus.VulnerableUntil>Time.time&&!itemPureDamage&&!SuppressHitFlash)damage*=1.08f;
             currentHealth -= damage;
 
             if (damage > 0f)

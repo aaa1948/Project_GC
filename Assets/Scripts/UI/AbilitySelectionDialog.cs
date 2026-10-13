@@ -5,7 +5,7 @@ using UnityEngine.UI;
 
 namespace Vampire
 {
-    public class AbilitySelectionDialog : DialogBox
+    public partial class AbilitySelectionDialog : DialogBox
     {
         private const int SelectionPanelCount = 3;
 
@@ -104,6 +104,15 @@ namespace Vampire
             get => menuOpen;
         }
 
+        CanvasGroup runBookCover;
+        public void SetCoveredByRunBook(bool covered)
+        {
+            if(runBookCover==null)runBookCover=GetComponent<CanvasGroup>();
+            if(runBookCover==null)runBookCover=gameObject.AddComponent<CanvasGroup>();
+            runBookCover.alpha=covered?0f:1f;
+            runBookCover.interactable=runBookCover.blocksRaycasts=!covered;
+        }
+
         public void Init(AbilityManager abilityManager, EntityManager entityManager, Character playerCharacter)
         {
             this.abilityManager = abilityManager;
@@ -113,6 +122,7 @@ namespace Vampire
 
         private void Awake()
         {
+            InstallPanelTheme();
             CacheCardParentScale();
             SetupRerollButton();
         }
@@ -217,6 +227,7 @@ namespace Vampire
 
         private void Populate(List<Ability> abilities)
         {
+            UpdateOriginalRewardNotice();
             if (abilityCards == null)
             {
                 abilityCards = new List<AbilityCard>();
@@ -266,6 +277,7 @@ namespace Vampire
                     $"[AbilitySelectionDialog] 선택 패널 수가 {SelectionPanelCount}개보다 적습니다. actual={visibleCount}. " +
                     "AbilityManager 후보 생성 결과를 확인하세요.");
             }
+            PrepareScrollReveal();
         }
 
         private void CacheCardParentScale()
@@ -281,6 +293,7 @@ namespace Vampire
 
         private void ApplyResponsiveCardScale()
         {
+            if (panelContent != null) { UpdatePanelLayout(); return; }
             if (abilityCardsParent == null)
             {
                 return;
@@ -424,6 +437,7 @@ namespace Vampire
 
         public override void Close()
         {
+            ClearScrollReveal();
             // 증강 선택 BGM이 재생 중이었다면 종료하고,
             // 증강창이 열리기 직전에 재생 중이던 BGM을 이어서 재생합니다.
             GameAudioManager.ExitAugmentSelectionAudio();
@@ -437,7 +451,8 @@ namespace Vampire
             RestoreMinimapLayer();
 
             menuOpen = false;
-            if (abilityManager != null) abilityManager.LegendaryRewardContext = false;
+            if (abilityManager != null) { abilityManager.LegendaryRewardContext = false; abilityManager.OriginalRewardContext = false; }
+            UpdateOriginalRewardNotice();
             Time.timeScale = 1;
 
             if (pauseMenu != null)
@@ -475,10 +490,19 @@ namespace Vampire
             return result;
         }
 
+        public void OpenOvercharge()
+        {
+            if (menuOpen || abilityManager == null) return;
+            abilityManager.LegendaryRewardContext=false;
+            abilityManager.OriginalRewardContext=true;
+            Open(false);
+        }
+
         public void OpenLegendary()
         {
             if (menuOpen || abilityManager == null) return;
             abilityManager.LegendaryRewardContext=true;
+            abilityManager.OriginalRewardContext=false;
             Open(false);
         }
 

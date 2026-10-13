@@ -14,6 +14,12 @@ namespace Vampire
     [System.Serializable]
     public class AntacidBubbleSurgeEventController : RuntimeModule
     {
+        public void CollectPresentations(List<StageEventPresentation> result)
+        {
+            if (isActiveAndEnabled && eventEnabled && started && !finished)
+                result.Add(new StageEventPresentation(this, StageEventVisualKind.Antacid, eventName));
+        }
+
         protected override void OnSuspended() { SetWarningEdgeAlpha(0f); }
         protected override void OnModuleDestroy()
         {
@@ -86,7 +92,7 @@ namespace Vampire
         [SerializeField] private float outsideDamageTickInterval = 0.5f;
 
         [Tooltip("거품 밖에 있을 때 틱마다 받는 피해량입니다.")]
-        [SerializeField] private float outsideDamagePerTick = 2f;
+        [SerializeField] private float outsideDamagePerTick = 3f;
 
         [Tooltip("체크하면 이벤트 시작 직후 거품 밖에 있을 때 바로 첫 피해를 받을 수 있습니다.")]
         [SerializeField] private bool damageImmediatelyWhenOutside = false;
@@ -142,6 +148,7 @@ namespace Vampire
             if (!warningShown && currentTime >= Mathf.Max(0f, startTime - warningDuration))
             {
                 warningShown = true;
+                StartCoroutine(ChameleonPortrait.Foam(transform, Mathf.Max(.5f, warningDuration)));
                 ShowToast("제산 반응 발생");
                 SetWarningEdgeAlpha(1f);
 
@@ -175,6 +182,7 @@ namespace Vampire
         private void StartEvent(float currentTime)
         {
             started = true;
+            Host.GetComponent<AcidToadSpawn>()?.Record(ChameleonKind.Foam);
             eventEndTime = currentTime + Mathf.Max(0.1f, duration);
             bubbleSpawnTimer = 0f;
             outsideDamageTimer = damageImmediatelyWhenOutside
@@ -182,6 +190,7 @@ namespace Vampire
                 : 0f;
 
             ShowToast($"{eventName} 이벤트가 시작됐습니다!");
+            TutorialGuide.QueueStageEvent("antacid-bubble");
             GameAudioManager.PlaySfx(
     GameAudioManager.GameSfxId.FieldEventStart
 );

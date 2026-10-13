@@ -7,8 +7,9 @@ namespace Vampire
     /// Rigidbody2D 속도만 0으로 두면 몬스터 이동 스크립트가 다시 움직일 수 있으므로,
     /// 정지 시간 동안 Monster 컴포넌트 자체도 잠시 비활성화한다.
     /// </summary>
-    public class NeuralBlockedMonsterStatus : MonoBehaviour
+    public class NeuralBlockedMonsterStatus : MonoBehaviour, ICombatStatus
     {
+        public CombatStatusTag ActiveStatusTags => IceFrozen ? CombatStatusTag.Freeze : Active ? CombatStatusTag.Stun : CombatStatusTag.None;
         private SyringeAugmentVfx augmentVisual;
         private Monster monster;
         private Rigidbody2D rb;
@@ -20,6 +21,7 @@ namespace Vampire
         private float endTime = -1f;
         private float iceEndTime = -1f;
         public bool IceFrozen => Time.time < iceEndTime;
+        public bool Active => Time.time < Mathf.Max(endTime,iceEndTime);
         public float IceRemaining => Mathf.Max(0,iceEndTime-Time.time);
         public void ApplyIce(float duration)
         {
@@ -103,7 +105,9 @@ namespace Vampire
 
         private void DisableMonsterMovementComponent()
         {
-            if (monster == null)
+            // Traps are stationary. Disabling them invokes OnDisable and releases
+            // their captive while leaving the vine visual in its active state.
+            if (monster == null || monster is TrapMonster)
             {
                 return;
             }

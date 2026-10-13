@@ -52,6 +52,7 @@ namespace Vampire
 
         public void ApplyStun(float duration)
         {
+            if(GetComponent<Character>()?.IsPortalTravelling==true)return;
             if (duration <= 0f)
             {
                 return;
@@ -74,7 +75,7 @@ namespace Vampire
                 StopCoroutine(stunCoroutine);
             }
 
-            stunCoroutine = StartCoroutine(StunRoutine(duration));
+            stunCoroutine = StartCoroutine(StunRoutine(ownerCharacter != null ? ownerCharacter.DebuffDuration(duration) : duration));
         }
 
         private IEnumerator StunRoutine(float duration)

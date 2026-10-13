@@ -44,6 +44,12 @@ namespace Vampire
         [Header("Legendary Augment")]
         [Tooltip("이 Ability가 적용할 전설증강 종류입니다.")]
         [SerializeField] private LegendaryAugmentType augmentType;
+        public LegendaryAugmentType Type => augmentType;
+        public override string Name => AvailableAsNoble ? PhoenixNobleTheme.NameFor(augmentType.ToString()) : base.Name;
+        public override string Description => AvailableAsNoble ? PhoenixNobleTheme.DescriptionFor(augmentType.ToString()) : base.Description;
+        public override Sprite Image => AvailableAsNoble ? PhoenixNobleArt.Get(augmentType.ToString()) ?? base.Image : base.Image;
+        // Keep the serialized ID and implementation for a future reward category.
+        public bool AvailableAsNoble => augmentType != LegendaryAugmentType.PoisonContagion && augmentType != LegendaryAugmentType.NeedleShotgun;
 
         [Header("Debug")]
         [Tooltip("전설증강 적용/조건 검사 로그를 출력할지 여부입니다.")]
@@ -157,6 +163,7 @@ namespace Vampire
 
         public override bool RequirementsMet()
         {
+            if (!AvailableAsNoble) return false;
             RefreshSyringeDartAbilityReference();
 
             if (syringeDartAbility == null)
@@ -233,10 +240,7 @@ namespace Vampire
 
                 case LegendaryAugmentType.NeedleShotgun:
                     result =
-                        !syringeDartAbility.HasNeedleShotgunLegendary() &&
-                        !syringeDartAbility.HasHeavySnipeLegendary() &&
-                        !syringeDartAbility.HasCursorControlLegendary() &&
-                        baseRequirement;
+                        false; // Temporarily removed from the offer pool; IDs/saves retained.
                     break;
                 default:
                     result = false;

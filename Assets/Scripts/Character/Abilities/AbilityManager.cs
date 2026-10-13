@@ -1,4 +1,4 @@
-﻿using System.Linq;
+using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -13,6 +13,7 @@ namespace Vampire
         [SerializeField] private Ver4AugmentBalance ver4Balance;
         public Ver4AugmentRuntime Ver4 { get; private set; }
         public bool LegendaryRewardContext { get; set; }
+        public bool OriginalRewardContext { get; set; }
 
         [Header("Base Tier Odds")]
         [SerializeField] private float baseGeneralChance = 55f;
@@ -114,14 +115,13 @@ namespace Vampire
                         var ability=obj.AddComponent<SyringeSpecialAugmentAbility>();
                         ability.ConfigureNewAugment((SyringeSpecialAugmentAbility.SpecialAugmentType)(16+i),ver4Balance.plannedIcons[i]);
                         ability.Init(abilityManager,entityManager,playerCharacter);
-                        if(playerCharacter.Blueprint.skills != null && ((playerCharacter.Blueprint.skills.kind == CharacterSkillDefinition.SkillKind.Shini && ability.Type == SyringeSpecialAugmentAbility.SpecialAugmentType.FireNeedle) || (playerCharacter.Blueprint.skills.kind == CharacterSkillDefinition.SkillKind.Hyuki && ability.Type == SyringeSpecialAugmentAbility.SpecialAugmentType.IceNeedle)))
-                        { ability.Select(); ownedAbilities.Add(ability); }
-                        else newAbilities.Add(ability);
+                        newAbilities.Add(ability);
                     }
                     var objState=new GameObject("Ver4 Upgrade State"); objState.transform.SetParent(transform,false);
                     Ver4=objState.AddComponent<Ver4AugmentRuntime>();
                     Ver4.Configure(ver4Balance,abilityManager,entityManager,playerCharacter);
                     ownedAbilities.Add(Ver4);
+                    StartingNeedleSelection.Apply(this,playerCharacter.Blueprint);
                 }
             }
         }
@@ -131,6 +131,10 @@ namespace Vampire
             if (ability==null || ability.Owned || !ability.RequirementsMet() || !newAbilities.Remove(ability)) return false;
             ability.Select();
             ownedAbilities.Add(ability);
+            if (ability is SyringeSpecialAugmentAbility special)
+                TutorialGuide.QueueWeapon(special.Type);
+            // Starting loadouts acquire outside the offer menu; publish their combat state immediately.
+            if (Ver4 != null) Ver4.RefreshProgress();
             return true;
         }
 
@@ -175,7 +179,7 @@ namespace Vampire
         /// </summary>
         public List<Ability> SelectAbilities(IReadOnlyCollection<Ability> rerollExcludedAbilities)
         {
-            if (Ver4 != null) return Ver4.CreateOffers(LegendaryRewardContext, selectionCount);
+            if (Ver4 != null) return Ver4.CreateOffers(LegendaryRewardContext, selectionCount, OriginalRewardContext);
             List<Ability> selectedAbilities = new List<Ability>();
 
             WeightedAbilities availableOwnedAbilities = ExtractAvailableAbilities(ownedAbilities);
@@ -688,6 +692,8 @@ namespace Vampire
 
                         continue;
                     }
+
+                    if (ability is SyringeSpecialAugmentAbility retired && !StartingNeedleSelection.Available(retired.Type)) continue;
 
                     bool isConditional =
                         ability is IRunSceneConditionalAugmentState;

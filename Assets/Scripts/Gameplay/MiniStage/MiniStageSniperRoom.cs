@@ -47,9 +47,41 @@ namespace Vampire
 
         private readonly List<Monster> spawnedSnipers = new List<Monster>();
         private int remainingSniperCount;
+        float teleportAt = -1;
+        float nextTeleportAllowed;
+        void OnEnable(){SniperMonster.Fired+=OnSniperFired;}
+        void OnDisable(){SniperMonster.Fired-=OnSniperFired;teleportAt=-1;}
+        void OnSniperFired(SniperMonster sniper)
+        {
+            if(Enhanced && !RoomCleared && Time.time>=nextTeleportAllowed && spawnedSnipers.Contains(sniper) && teleportAt<0)
+                teleportAt=Time.time+RemakeBalance.Current.sniperTeleportDelay;
+        }
+        void Update()
+        {
+            if(teleportAt<0 || Time.timeScale<=0 || Time.time<teleportAt)return;
+            teleportAt=-1;
+            nextTeleportAllowed=Time.time+RemakeBalance.Current.sniperTeleportCooldown;
+            foreach(var monster in spawnedSnipers)
+            {
+                if(monster==null || monster.HP<=0 || !monster.gameObject.activeInHierarchy)continue;
+                Vector2 next=monster.transform.position;
+                for(int i=0;i<40;i++)
+                {
+                    var candidate=GetRandomOuterPosition();
+                    if(playerCharacter!=null && Vector2.Distance(candidate,playerCharacter.transform.position)<RemakeBalance.Current.sniperSafeDistance)continue;
+                    bool blocked=false;
+                    foreach(var other in spawnedSnipers)
+                        if(other!=null && other!=monster && other.HP>0 && Vector2.Distance(candidate,other.transform.position)<minimumSniperDistance){blocked=true;break;}
+                    if(!blocked){next=candidate;break;}
+                }
+                ForceMonsterPosition(monster,next);
+                (monster as SniperMonster)?.RestartAfterRelocation();
+            }
+        }
 
         protected override void OnBeginRoom()
         {
+            nextTeleportAllowed=Time.time+RemakeBalance.Current.sniperTeleportCooldown;
             SpawnSnipers();
         }
 
@@ -120,19 +152,21 @@ namespace Vampire
         {
             if (sniperSpawnCountOverride > 0)
             {
-                return sniperSpawnCountOverride;
+                return Mathf.Min(5,sniperSpawnCountOverride);
             }
 
             if (useExplicitSniperSpawnPoints && sniperSpawnPoints != null && sniperSpawnPoints.Length > 0)
             {
-                return sniperSpawnPoints.Length;
+                return Mathf.Min(5,sniperSpawnPoints.Length);
             }
 
-            return 10;
+            return 5;
         }
 
         private Vector2 GetSpawnPosition(int index)
         {
+            var arena=GetComponent<MiniStageArenaGeometry>();
+            if(arena!=null)return arena.Perimeter((index+.5f)/Mathf.Max(1,GetSpawnCount()));
             if (useExplicitSniperSpawnPoints &&
                 sniperSpawnPoints != null &&
                 sniperSpawnPoints.Length > 0)
@@ -186,6 +220,8 @@ namespace Vampire
 
         private Vector2 GetRandomOuterPositionRaw()
         {
+            var arena=GetComponent<MiniStageArenaGeometry>();
+            if(arena!=null)return arena.Perimeter(Random.value);
             Vector2 center = transform.position;
 
             float minX = center.x - arenaHalfWidth + edgePadding;
@@ -254,11 +290,18 @@ namespace Vampire
                 if (sniper != null)
                 {
                     sniper.OnKilled.RemoveListener(OnSniperKilled);
+                    if (sniper.gameObject.activeInHierarchy && sniper.IsMiniStageOwned && entityManager != null)
+                    {
+                        if (entityManager.LivingMonsters.Contains(sniper))
+                            entityManager.LivingMonsters.Remove(sniper);
+                        entityManager.DespawnMonster(sniperMonsterPoolIndex, sniper, false);
+                    }
                 }
             }
 
             spawnedSnipers.Clear();
             remainingSniperCount = 0;
+            teleportAt = -1;
         }
     }
 }
