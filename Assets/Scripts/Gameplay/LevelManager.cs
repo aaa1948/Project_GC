@@ -12,6 +12,8 @@ namespace Vampire
         [SerializeField] private AbilityManager abilityManager;
         [SerializeField] private AbilitySelectionDialog abilitySelectionDialog;
         [SerializeField] private InfiniteBackground infiniteBackground;
+        [Header("Stage 1 Terrain")]
+        [SerializeField] private StomachMapDefinition stomachMap;
         [SerializeField] private Inventory inventory;
         [SerializeField] private StatsManager statsManager;
         [SerializeField] private GameOverDialog gameOverDialog;
@@ -93,13 +95,15 @@ namespace Vampire
 
             playerCharacter.OnDeath.AddListener(GameOver);
 
+            infiniteBackground.Init(this.levelBlueprint.backgroundTexture, playerCharacter.transform);
+            FiniteStomachMap.Install(this, stomachMap, infiniteBackground);
+
             entityManager.SpawnGemsAroundPlayer(
                 this.levelBlueprint.initialExpGemCount,
                 this.levelBlueprint.initialExpGemType
             );
 
             entityManager.SpawnChest(levelBlueprint.chestBlueprint);
-            infiniteBackground.Init(this.levelBlueprint.backgroundTexture, playerCharacter.transform);
             inventory.Init();
             var tutorial = GetComponent<TutorialGuide>();
             if (tutorial == null) tutorial = gameObject.AddComponent<TutorialGuide>();

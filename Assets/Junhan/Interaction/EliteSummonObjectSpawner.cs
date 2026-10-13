@@ -199,6 +199,7 @@ namespace Vampire
 
                 float distance = UnityEngine.Random.Range(minDistance, maxDistance);
                 Vector2 candidate = playerPosition + direction * distance;
+                candidate=FiniteStomachMap.SafeSpawn(candidate,1f);
 
                 if (IsTooCloseToOtherInteractables(candidate))
                 {

@@ -503,6 +503,7 @@ namespace Vampire
 
         public bool TryDash()
         {
+            if (FiniteStomachMap.BlocksDash(transform.position)) return false;
             if (IsPortalTravelling || IsPortalPoseHeld) return false;
             if (Time.timeScale <= 0f || (abilitySelectionDialog != null && abilitySelectionDialog.MenuOpen)) return false;
             if (IsTrapBound) return false;
@@ -631,7 +632,7 @@ namespace Vampire
 
                 if (rb != null)
                 {
-                    var allowedPosition=MiniStageArenaGeometry.ClampMovement(rb, BloodClotObstacle.ClampDash(rb,nextPosition));
+                    var allowedPosition=FiniteStomachMap.ClampDash(rb.position,MiniStageArenaGeometry.ClampMovement(rb, BloodClotObstacle.ClampDash(rb,nextPosition)));
                     Skills?.DashStep(rb.position,allowedPosition);
                     rb.MovePosition(allowedPosition);
                 }
@@ -647,7 +648,7 @@ namespace Vampire
 
             if (rb != null)
             {
-                var allowedPosition=MiniStageArenaGeometry.ClampMovement(rb,BloodClotObstacle.ClampDash(rb,targetPosition));
+                var allowedPosition=FiniteStomachMap.ClampDash(rb.position,MiniStageArenaGeometry.ClampMovement(rb,BloodClotObstacle.ClampDash(rb,targetPosition)));
                 Skills?.DashStep(rb.position,allowedPosition);
                 rb.MovePosition(allowedPosition);
 

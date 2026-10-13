@@ -206,6 +206,7 @@ namespace Vampire
         /// </summary>
         public void PrepareForSpawnRuntime(bool isMiniStageOwned)
         {
+            StomachSlopeBody.Ensure(gameObject);
             if (groundShadow != null) groundShadow.Restore();
             miniStageOwned = isMiniStageOwned;
             nextHitFlashTime = 0f;

@@ -148,6 +148,15 @@ namespace Vampire
         {
             var map=ExplorationMapSystem.Instance;
             var viewport=RecordRect("Record map viewport",content,.499f,.214f,.347f,.360f);viewport.gameObject.AddComponent<RectMask2D>();
+            if(map!=null && map.UsesStomachMap)
+            {
+                Canvas.ForceUpdateCanvases();
+                float aspect=FiniteStomachMap.Instance.WorldRect.width/FiniteStomachMap.Instance.WorldRect.height;
+                float available=viewport.rect.width/Mathf.Max(1,viewport.rect.height);
+                float width=available>aspect?aspect/available:1;
+                float height=available<aspect?available/aspect:1;
+                viewport=Rect("Stomach map aspect fit",viewport,(1-width)*.5f,(1-height)*.5f,(1+width)*.5f,(1+height)*.5f);
+            }
             if(map!=null&&map.FullMapTexture!=null)
             {
                 var raw=Rect("Live exploration map",viewport,0,0,1,1).gameObject.AddComponent<RawImage>();raw.texture=map.FullMapTexture;raw.uvRect=map.BookMapUV;raw.raycastTarget=false;

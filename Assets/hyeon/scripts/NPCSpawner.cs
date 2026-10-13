@@ -188,6 +188,7 @@ namespace Vampire
             }
 
             Vector2 safeSpawnPos = GetRandomPositionOutsideScreen();
+            safeSpawnPos = FiniteStomachMap.SafeSpawn(safeSpawnPos, 1f);
 
             Instantiate(merchantPrefab, safeSpawnPos, Quaternion.identity);
 

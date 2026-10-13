@@ -44,6 +44,7 @@ namespace Vampire
             for(int i=0;i<40;i++)
             {
                 Vector2 position=center+Random.insideUnitCircle.normalized*Random.Range(6f,9f);
+                position=FiniteStomachMap.SafeSpawn(position,2.1f);
                 bool blocked=false;
                 foreach(var hit in Physics2D.OverlapCircleAll(position,2.1f))
                     if(!hit.isTrigger&&hit.GetComponentInParent<Character>()==null&&hit.GetComponentInParent<Monster>()==null){blocked=true;break;}
@@ -53,6 +54,7 @@ namespace Vampire
         }
         public SupplyCapsule AnnounceDrop(Vector2 position)
         {
+            position=FiniteStomachMap.SafeSpawn(position,2.1f);
             if(pending!=null)return pending;
             pending=SupplyCapsule.Create(position,level);dropAt=elapsed+NoticeSeconds;
             FindObjectOfType<StageEventToastUI>()?.ShowSupply("잠시 후 보급 캡슐이 드랍됩니다!");
