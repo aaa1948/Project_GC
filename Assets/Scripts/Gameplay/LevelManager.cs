@@ -376,6 +376,7 @@ namespace Vampire
 
         public void GameOver()
         {
+            if (playerCharacter != null && playerCharacter.IsExiting) return;
             if (levelEnded)
             {
                 return;
@@ -404,6 +405,7 @@ namespace Vampire
 
         public void LevelPassed(Monster finalBossKilled)
         {
+            if (playerCharacter != null && !playerCharacter.IsAlive) return;
             if (levelEnded)
             {
                 return;

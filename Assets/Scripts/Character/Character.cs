@@ -211,6 +211,7 @@ namespace Vampire
         public float MaxHealth => GetMaxHealth();
         public CharacterSkillRuntime Skills { get; private set; }
         public bool IsAlive => alive;
+        public bool IsExiting => !alive && GetComponent<CharacterExitSequence>() is CharacterExitSequence exit && !exit.Completed;
         public RelicRuntime Relics { get; private set; }
         public float RelicBonus(RelicBlueprint.RelicEffectType effect) => Relics != null ? Relics.Bonus(effect) : 0;
         public float DebuffDuration(float duration) => Relics != null ? Relics.DebuffDuration(duration) : duration;
@@ -392,6 +393,7 @@ namespace Vampire
 
         protected virtual void Update()
         {
+            if (!alive) return;
             UpdateDashInput();
             HandleHealOnIdle();
             HandleThermometerMovementAndDecay();
@@ -419,6 +421,7 @@ namespace Vampire
 
         protected virtual void FixedUpdate()
         {
+            if (!alive) return;
             if (IsPortalTravelling || IsPortalPoseHeld)
             {
                 if (rb != null) rb.velocity = Vector2.zero;
@@ -1167,6 +1170,11 @@ namespace Vampire
         private IEnumerator DeathAnimation()
         {
             alive = false;
+            currentHealth = 0;
+            moveDirection = Vector2.zero;
+            if (hitAnimationCoroutine != null) { StopCoroutine(hitAnimationCoroutine); hitAnimationCoroutine = null; }
+            if (dashCoroutine != null) { StopCoroutine(dashCoroutine); dashCoroutine = null; }
+            StopDashRecharge();
             GetComponent<PlayerAttackSpeedDebuffRuntime>()?.ClearDebuff();
 
             RestoreDashCollisionGhost();
@@ -1175,50 +1183,22 @@ namespace Vampire
             isDashing = false;
             dashInvincibleEndTime = -1f;
 
-            if (spriteRenderer != null)
-            {
-                spriteRenderer.sharedMaterial = deathMaterial;
-            }
-
+            if (spriteRenderer != null) spriteRenderer.sharedMaterial = defaultMaterial;
+            if (rb != null) { rb.velocity = Vector2.zero; rb.angularVelocity = 0; rb.simulated = false; }
+            if (lookIndicator != null) lookIndicator.gameObject.SetActive(false);
+            var heldWeapon = transform.Find("Weapon");
+            if (heldWeapon != null) heldWeapon.gameObject.SetActive(false);
+            Skills?.EndRun();
             abilityManager.DestroyActiveAbilities();
+            foreach (var projectile in FindObjectsOfType<Projectile>()) projectile.ReleaseForPlayerExit(this);
             StopWalkAnimation();
-
-            if (deathParticles != null)
-            {
-                deathParticles.Play();
-            }
-
-            float height = spriteRenderer != null ? spriteRenderer.bounds.size.y : 1f;
-            float t = 0;
-
-            while (t < 1)
-            {
-                if (spriteRenderer != null)
-                {
-                    spriteRenderer.sharedMaterial = deathMaterial;
-                }
-
-                if (deathParticles != null)
-                {
-                    deathParticles.transform.position = transform.position + Vector3.up * height * (1 - t);
-                }
-
-                if (deathMaterial != null)
-                {
-                    deathMaterial.SetFloat("_Wipe", t);
-                }
-
-                t += Time.deltaTime;
-                yield return null;
-            }
-
-            if (deathMaterial != null)
-            {
-                deathMaterial.SetFloat("_Wipe", 1.0f);
-            }
-
-            yield return new WaitForSeconds(0.5f);
-
+            if (deathParticles != null) deathParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            if (dustParticles != null) dustParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            Time.timeScale = 0;
+            var exit = GetComponent<CharacterExitSequence>();
+            if (exit == null) exit = gameObject.AddComponent<CharacterExitSequence>();
+            yield return exit.Play(this, spriteRenderer);
+            // LevelManager owns reward saving and the result panel, after the final pose holds.
             OnDeath.Invoke();
 
             if (spriteRenderer != null)
@@ -1243,6 +1223,7 @@ namespace Vampire
 
         public void GainHealth(float health)
         {
+            if (!alive) return;
             LegendaryConditionalSpecialRuntime conditionalRuntime =
                 GetComponent<LegendaryConditionalSpecialRuntime>();
 

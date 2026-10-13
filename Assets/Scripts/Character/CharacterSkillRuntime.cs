@@ -163,6 +163,7 @@ namespace Vampire
             ConsumedSleepStacks=0;
             owner.UpdateMoveSpeed();
         }
+        public void EndRun() { Clear(); }
         void Clear()
         {
             Breath?.Cancel();
