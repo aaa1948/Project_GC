@@ -48,12 +48,10 @@ namespace Vampire
             collectable.Init(entityManager, playerCharacter);
             Coin coin = collectable as Coin;
             if (coin != null)
-                coin.Setup(transform.position, loot.coinType, true, true);
+                coin.Setup(transform.position, loot.coinType, true, false, true);
             else
-                collectable.Setup(true, true);
-            // Collect the item immediately if opened by player
-            if (openedByPlayer)
-                collectable.Collect(Collectable.CollectionMode.FromChest);
+                collectable.Setup(true, false, true);
+            // Finish the pop-out before allowing normal, range-based pickup.
         }
 
         public void OpenChest(bool openedByPlayer = true)
