@@ -19,6 +19,7 @@ namespace Vampire
         public bool Active => map != null && map.StageOne;
         public float VisualTime { get; private set; }
         public FiniteStomachMap Map => map;
+        public Renderer SurfaceRenderer => visual != null ? visual.SurfaceRenderer : null;
         LevelManager level;
         FiniteStomachMap map;
         AcidLakeVisual visual;
@@ -83,7 +84,7 @@ namespace Vampire
             if (inset < 0) inset = map.WallWidth + .6f;
             float minY = Flooding ? SurfaceY + margin : map.WorldRect.yMin;
             var vertical=new Vector2(from.x,Mathf.Max(from.y,minY));
-            if(map.DistanceToRim(vertical,out _)>=inset)return vertical;
+            if(map.NavigationDistance(vertical,out _)>=inset)return vertical;
             Vector2 best = from; float bestDistance = float.MaxValue;
             // Boundary projection alone can bounce between a concave wall and the waterline.
             // Search horizontal slices of BOTH upper lobes, then refine the nearest valid point.
@@ -93,7 +94,7 @@ namespace Vampire
                 for (float x = map.WorldRect.xMin; x <= map.WorldRect.xMax; x += 1f)
                 {
                     var p = new Vector2(x, y); float d = (p - from).sqrMagnitude;
-                    if (d < bestDistance && map.DistanceToRim(p, out _) >= inset)
+                    if (d < bestDistance && map.NavigationDistance(p, out _) >= inset)
                     { best = p; bestDistance = d; }
                 }
             }
@@ -103,7 +104,7 @@ namespace Vampire
                     {
                         var p = best + new Vector2(x, y) * step;
                         float d = (p - from).sqrMagnitude;
-                        if (p.y >= minY && d < bestDistance && map.DistanceToRim(p, out _) >= inset)
+                        if (p.y >= minY && d < bestDistance && map.NavigationDistance(p, out _) >= inset)
                         { best = p; bestDistance = d; }
                     }
             return best;
@@ -146,6 +147,7 @@ namespace Vampire
             foreach (var item in FindObjectsOfType<T>())
             {
                 if (!item.gameObject.activeInHierarchy || !IsSubmerged(item.transform.position)) continue;
+                if (item is StomachOpening) continue; // Anatomical terrain stays, interaction is already blocked by water.
                 // Reserved portal travel is atomic; a dive already started may complete.
                 if (item is StageExitPortal && level.PlayerCharacter.IsPortalTravelling) continue;
                 if (item is BloodClotMiniStagePortal p && p.Reserved) continue;

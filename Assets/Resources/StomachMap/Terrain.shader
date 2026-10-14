@@ -20,6 +20,7 @@ Shader "Vampire/Finite Stomach Terrain"
             #pragma fragment frag
             #pragma target 3.0
             #include "UnityCG.cginc"
+            #include "Opening.cginc"
             sampler2D _MainTex, _DetailTex, _DistanceTex, _WallTex, _WallCoordinateTex;
             float _WallWidth;
             float _PixelSize, _DetailStrength, _LayoutLod;
@@ -49,6 +50,14 @@ Shader "Vampire/Finite Stomach Terrain"
                 float rise=saturate(1-distance/_WallWidth);
                 // Large-scale shape/color is filtered; it is NOT enlarged nearest-neighbor art.
                 float3 baseColor=tex2Dlod(_MainTex,float4(uv,0,_LayoutLod)).rgb;
+                // Remove the old painted cavities before drawing the smaller animated ones.
+                // Only macro color is replaced; the existing wall folds and floor pixels remain.
+                float oldInlet=1-smoothstep(.78,1.08,length((uv-float2(.844,.865))/float2(.051,.087)));
+                float oldOutlet=1-smoothstep(.82,1.12,length((uv-float2(.195,.300))/float2(.071,.104)));
+                float3 inletFill=tex2Dlod(_MainTex,float4(uv.x-.09,uv.y-.075,0,_LayoutLod)).rgb;
+                float3 outletFill=tex2Dlod(_MainTex,float4(uv.x+.11,uv.y+.10,0,_LayoutLod)).rgb;
+                baseColor=lerp(baseColor,inletFill,oldInlet);
+                baseColor=lerp(baseColor,outletFill,oldOutlet);
                 // Both layers use absolute world coordinates so neighboring mesh chunks join exactly.
                 // Surface arc-length grows as the floor bends upward: compress the motifs
                 // along the wall normal, without shrinking them along the wall tangent.
@@ -100,11 +109,10 @@ Shader "Vampire/Finite Stomach Terrain"
                 color=lerp(color,lerp(rimMid,rimLight,crown),lip);
                 color=lerp(outside,color,smoothstep(-.72,-.44,distance));
                 // Retain the approved esophagus/outlet landmarks and tube silhouette.
-                float inlet=length((uv-float2(.844,.885))/float2(.060,.105));
-                float outlet=length((uv-float2(.195,.300))/float2(.067,.095));
                 float tube=(1-smoothstep(.043,.058,abs(uv.x-.858)))*smoothstep(.86,.94,uv.y);
-                float landmark=max(1-smoothstep(.70,1,inlet),1-smoothstep(.70,1,outlet));
-                color=lerp(color,baseColor,max(landmark,tube));
+                color=lerp(color,baseColor,tube);
+                color=drawOpening(color,wallUV,_Inlet,_InletOpen,.3);
+                color=drawOpening(color,wallUV,_Outlet,_OutletOpen,-.3);
                 return fixed4(saturate(color),1);
             }
             ENDCG

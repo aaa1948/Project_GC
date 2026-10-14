@@ -37,7 +37,7 @@ namespace Vampire
         {
             var map=FiniteStomachMap.Instance;
             if(map==null || !map.AppliesAt(body.position))return 1;
-            float d=map.DistanceToRim(body.position,out var inward);
+            float d=map.NavigationDistance(body.position,out var inward);
             if(Vector2.Dot(direction,inward)>=0)return 1;
             float progress=Mathf.Clamp01((map.WallWidth-d)/Mathf.Max(.1f,map.Definition.climbableWidth-Radius));
             return FiniteStomachMap.UphillMultiplier(progress);
@@ -46,7 +46,7 @@ namespace Vampire
         {
             var map=FiniteStomachMap.Instance;
             if(!CanApply(map)){slideSpeed=0;return;}
-            float distance=map.DistanceToRim(body.position,out var inward);
+            float distance=map.NavigationDistance(body.position,out var inward);
             // Normalize against this actor's actual stopping point, including its footprint.
             // Otherwise a large monster would stop before ever reaching the intended 90% reduction.
             float progress=Mathf.Clamp01((map.WallWidth-distance)/Mathf.Max(.1f,map.Definition.climbableWidth-Radius));
@@ -88,11 +88,11 @@ namespace Vampire
         void Constrain(FiniteStomachMap map)
         {
             float limit=map.ClimbLimit+Radius;
-            if(map.DistanceToRim(body.position,out _)>=limit+.05f)return;
+            if(map.NavigationDistance(body.position,out _)>=limit+.05f)return;
             Vector2 p=map.ClampToField(body.position,limit);
             if((p-body.position).sqrMagnitude<.000001f)return;
-            map.DistanceToRim(p,out var inward);
             body.position=p;transform.position=new Vector3(p.x,p.y,transform.position.z);
+            map.NavigationDistance(p,out var inward);
             body.velocity-=inward*Mathf.Min(0,Vector2.Dot(body.velocity,inward));
             if(monster!=null && level!=null)level.EntityManager.Grid.UpdateClient(monster);
         }

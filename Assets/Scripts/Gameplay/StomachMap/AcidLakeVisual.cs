@@ -10,6 +10,7 @@ namespace Vampire
         Mesh mesh;
         Material material;
         MeshRenderer water;
+        public Renderer SurfaceRenderer => water;
         Sprite[,] frames;
         SpriteRenderer[] drops, impacts;
         readonly List<Rain> rain = new List<Rain>();

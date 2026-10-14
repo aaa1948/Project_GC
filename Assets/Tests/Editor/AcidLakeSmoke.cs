@@ -104,6 +104,20 @@ namespace Vampire.Tests.Editor
             var t=new Texture2D(1200,800,TextureFormat.RGB24,false);t.ReadPixels(new Rect(0,0,1200,800),0,0);t.Apply();File.WriteAllBytes(Output+"/"+name+".png",t.EncodeToPNG());
             RenderTexture.active=prev;cam.targetTexture=null;RenderTexture.ReleaseTemporary(rt);Object.Destroy(t);Object.Destroy(go);
         }
+        static void OpeningShot(StomachOpening opening,string name)
+        {
+            var go=new GameObject("QA opening camera");var cam=go.AddComponent<Camera>();cam.orthographic=true;
+            cam.orthographicSize=opening.Radii.y*1.4f;cam.transform.position=new Vector3(opening.Center.x,opening.Center.y,-20);
+            var rt=RenderTexture.GetTemporary(900,900,24);var prev=RenderTexture.active;cam.targetTexture=rt;cam.Render();RenderTexture.active=rt;
+            var t=new Texture2D(900,900,TextureFormat.RGB24,false);t.ReadPixels(new Rect(0,0,900,900),0,0);t.Apply();File.WriteAllBytes(Output+"/"+name+".png",t.EncodeToPNG());
+            RenderTexture.active=prev;cam.targetTexture=null;RenderTexture.ReleaseTemporary(rt);Object.Destroy(t);Object.Destroy(go);
+        }
+        static Color MapSample(FiniteStomachMap map,Vector2 uv)
+        {
+            var texture=(RenderTexture)map.OverviewTexture;var prev=RenderTexture.active;RenderTexture.active=texture;
+            var t=new Texture2D(1,1,TextureFormat.RGB24,false);t.ReadPixels(new Rect((int)(uv.x*texture.width),(int)(uv.y*texture.height),1,1),0,0);t.Apply();
+            var color=t.GetPixel(0,0);Object.Destroy(t);RenderTexture.active=prev;return color;
+        }
         static IEnumerator Checks(LevelManager level)
         {
             var prefs=GamePreferences.Current.Copy();prefs.pauseOnFocusLoss=false;prefs.muteOnFocusLoss=false;GamePreferences.Apply(prefs,false);
@@ -118,6 +132,37 @@ namespace Vampire.Tests.Editor
             foreach(var a in Object.FindObjectsOfType<Ability>()){a.enabled=false;a.StopAllCoroutines();}
             foreach(var m in level.EntityManager.LivingMonsters.ToArray())if(!(m is BloodClotMonster))m.DespawnForStageTransfer();
             Set(player,"isInvincible",true);
+            var openings=Object.FindObjectsOfType<StomachOpening>().OrderByDescending(o=>o.Upper).ToArray();
+            Check(openings.Length==2&&openings.All(o=>!o.IsOpen),"two anatomical covers start closed");
+            Check(Mathf.Abs(StomachOpening.Inlet.z/.045f-2f/3)<.0001f&&Mathf.Abs(StomachOpening.Outlet.w/.075f-2f/3)<.0001f,"both opening dimensions reduced to two thirds");
+            foreach(var opening in openings)
+            {
+                string prefix=opening.Upper?"05-inlet":"06-outlet";
+                var front=opening.FrontLip+opening.Inward*.8f;
+                Position(player,front);player.Move(Vector2.zero);
+                for(int i=0;i<12;i++)yield return null;
+                Check(Vector2.Distance(player.transform.position,front)<.35f,"opening front lip is reachable: "+prefix);
+                Check(InteractionFocus.IsFocused(opening),"actual interaction focus at front lip: "+prefix);
+                OpeningShot(opening,prefix+"-closed");
+                var blocked=FiniteStomachMap.ClampDash(front,opening.Center-opening.Inward*opening.Radii.y,.25f);
+                Check(Vector2.Dot(blocked-opening.FrontLip,opening.Inward)>=.20f,"dash stops on the field side of the opening: "+prefix);
+                for(int n=-16;n<=16;n++)
+                {
+                    var candidate=opening.Center+Vector2.right*(n/8f*opening.Radii.x);
+                    var safe=map.ClampToField(candidate,map.ClimbLimit+.25f);
+                    Check(map.NavigationDistance(safe,out _,true)>=map.ClimbLimit+.24f,"wall and opening joined constraint "+prefix+" "+n);
+                }
+                InputSystem.QueueStateEvent(Keyboard.current,new KeyboardState(UnityEngine.InputSystem.Key.E));yield return null;
+                InputSystem.QueueStateEvent(Keyboard.current,new KeyboardState());yield return null;
+                Check(opening.IsOpen,"E triggers opening: "+prefix);
+                for(int i=0;i<32;i++)yield return null;OpeningShot(opening,prefix+"-opening");
+                for(int i=0;i<50;i++)yield return null;OpeningShot(opening,prefix+"-open");
+                Check(opening.Openness==1,"opening finishes and remains open: "+prefix);
+                Check(Vector2.Dot(FiniteStomachMap.ClampDash(front,opening.Center,.25f)-opening.FrontLip,opening.Inward)>=.20f,"open cover cannot be entered: "+prefix);
+            }
+            Position(player,map.UVToWorld(map.Definition.startUV));
+            var liveTexture=map.OverviewTexture;
+            Color beforeFlood=MapSample(map,new Vector2(.5f,.3f));
             Check(AcidLakeEvent.ProgressAt(929)==0&&AcidLakeEvent.ProgressAt(1035)==.5f&&AcidLakeEvent.ProgressAt(1140)==1&&AcidLakeEvent.ProgressAt(2000)==1,"15:30 to 19:00 linear progression and permanent cap");
             Set(level,"levelTime",909f);yield return null;Check(!lake.Raining&&!lake.Flooding,"no early warning");
             Set(level,"levelTime",910f);yield return null;Check(lake.Raining&&!lake.Flooding,"15:10 warning and cosmetic rain");
@@ -131,6 +176,13 @@ namespace Vampire.Tests.Editor
             var wet=map.UVToWorld(new Vector2(.5f,.3f));var dry=map.UVToWorld(new Vector2(.24f,.78f));
             Check(lake.IsSubmerged(wet)&&!lake.IsSubmerged(dry),"shared wet/dry world geometry");
             Position(player,dry);Overview(lake,"02-mid-flood");
+            Set(map,"nextOverview",0f);
+            Color floodedMap=MapSample(map,new Vector2(.5f,.3f));
+            Check(map.OverviewTexture==liveTexture&&floodedMap.g>floodedMap.r*.8f&&floodedMap.b<beforeFlood.b*.7f,"persistent TAB texture updates to actual acid coverage");
+            ApothecaryUI.Instance.OpenRunBook();yield return null;
+            var bookMap=Object.FindObjectsOfType<UnityEngine.UI.RawImage>().First(i=>i.name=="Live exploration map");
+            Check(bookMap.texture==liveTexture,"actual TAB panel is bound to the live water texture");
+            Shot("07-tab-mid-flood");ApothecaryUI.Instance.CloseRunBook();yield return null;
             Position(player,new Vector2(dry.x,lake.SurfaceY+1.5f));
             for(int i=0;i<45;i++)yield return null;
             Shot("02b-shoreline-gameplay");Position(player,dry);
@@ -167,6 +219,8 @@ namespace Vampire.Tests.Editor
             Set(level,"levelTime",1140f);yield return null;float full=lake.SurfaceY;
             Set(level,"levelTime",1300f);yield return null;Check(lake.SurfaceY==full&&!lake.IsSubmerged(dry),"final safe zone stays dry after 19:00");
             Overview(lake,"03-final-safe-zone");
+            ApothecaryUI.Instance.OpenRunBook();yield return null;Set(map,"nextOverview",0f);var finalTexture=map.OverviewTexture;
+            Shot("08-tab-final-flood");ApothecaryUI.Instance.CloseRunBook();yield return null;
             lake.enabled=false;Position(player,wet);Set(player,"isInvincible",false);Set(player,"currentHealth",player.MaxHealth);
             player.TakeAcidLakeDamage(1,false);Check(Mathf.Abs(player.CurrentHealth-player.MaxHealth*.75f)<.01f,"25 percent MAX HP per second, no armor dilution");
             Set(player,"isInvincible",true);hp=player.CurrentHealth;player.TakeAcidLakeDamage(1,false);Check(player.CurrentHealth==hp,"temporary protection blocks HP loss");

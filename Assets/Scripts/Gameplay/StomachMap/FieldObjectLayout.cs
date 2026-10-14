@@ -43,7 +43,7 @@ namespace Vampire
             }
             bool Allowed(Vector2 p, Kind kind, int partner)
             {
-                if (map.DistanceToRim(p, out _) < WallInset || Vector2.Distance(p, start) < StartClearance || blocked?.Invoke(p) == true) return false;
+                if (map.NavigationDistance(p, out _) < WallInset || Vector2.Distance(p, start) < StartClearance || blocked?.Invoke(p) == true) return false;
                 for (int j = 0; j < result.Count; j++)
                 {
                     var other = result[j];

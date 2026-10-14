@@ -90,6 +90,7 @@ namespace Vampire
             }
             foreach(var director in FindObjectsOfType<MiniStageDirector>()) director.KeepRoomsOutside(WorldRect);
             FieldVisible=true;
+            StomachOpening.Install(this);
         }
 
         public Vector2 UVToWorld(Vector2 uv) => WorldRect.min+Vector2.Scale(uv,WorldRect.size);
@@ -134,7 +135,7 @@ namespace Vampire
             // Project repeatedly: a concave corner may have more than one nearest segment.
             for(int pass=0;pass<12;pass++)
             {
-                float distance=ExactDistance(p,out var inward);
+                float distance=NavigationDistance(p,out var inward,true);
                 if(distance>=radius-.001f)return p;
                 p+=inward*(radius-distance+.005f);
             }
@@ -199,6 +200,19 @@ namespace Vampire
                 Color.Lerp(distanceSamples[index+FieldResolution],distanceSamples[index+FieldResolution+1],x-ix),y-iy);
             inward=new Vector2(sample.g,sample.b).normalized;return sample.r;
         }
+        public float NavigationDistance(Vector2 p, out Vector2 inward, bool exact = false)
+        {
+            float distance = exact ? ExactDistance(p, out inward) : DistanceToRim(p, out inward);
+            for (int i = 0; i < 2; i++)
+            {
+                float hole = StomachOpening.FrontDistance(this, p, i == 0, out var direction) + ClimbLimit;
+                // Rounded union with the wall avoids a sharp invisible corner at the lip.
+                float h = Mathf.Clamp01(.5f + .5f * (hole - distance) / .45f);
+                distance = Mathf.Lerp(hole, distance, h) - .45f * h * (1 - h);
+                inward = Vector2.Lerp(direction, inward, h).normalized;
+            }
+            return distance;
+        }
         public float SlopeProgress(Vector2 p) => Mathf.Clamp01((WallWidth-DistanceToRim(p,out _))/Definition.climbableWidth);
         public static float UphillMultiplier(float progress) => progress<=.5f ? Mathf.Lerp(1,.5f,Mathf.SmoothStep(0,1,progress*2)) : Mathf.Lerp(.5f,.1f,Mathf.SmoothStep(0,1,(progress-.5f)*2));
         public bool AppliesAt(Vector2 p) => StageOne && !MiniStageRuntimeState.IsInsideMiniStage && Vector2.Distance(p,WorldRect.center)<WorldRect.width;
@@ -212,9 +226,9 @@ namespace Vampire
             for(int i=1;i<=steps;i++)
             {
                 Vector2 p=Vector2.Lerp(from,to,i/(float)steps);
-                if(map.ExactDistance(p,out _)>=limit){previous=p;continue;}
+                if(map.NavigationDistance(p,out _,true)>=limit){previous=p;continue;}
                 Vector2 lo=previous,hi=p;
-                for(int j=0;j<10;j++){var mid=(lo+hi)*.5f;if(map.ExactDistance(mid,out _)>=limit)lo=mid;else hi=mid;}
+                for(int j=0;j<10;j++){var mid=(lo+hi)*.5f;if(map.NavigationDistance(mid,out _,true)>=limit)lo=mid;else hi=mid;}
                 return lo;
             }
             return to;
@@ -229,41 +243,54 @@ namespace Vampire
             return map.ClampToField(position,map.WallWidth+Mathf.Max(.25f,radius));
         }
 
-        Texture2D overviewTexture;
+        RenderTexture overviewTexture;
+        Camera overviewCamera;
+        float nextOverview;
         public Texture OverviewTexture
         {
             get
             {
-                if(overviewTexture==null)CaptureOverview();
+                if(overviewTexture==null || Time.unscaledTime>=nextOverview)CaptureOverview();
                 return overviewTexture;
             }
         }
         void CaptureOverview()
         {
-            var go=new GameObject("Stomach map overview camera"){hideFlags=HideFlags.HideAndDontSave};
-            var cam=go.AddComponent<Camera>();cam.enabled=false;cam.orthographic=true;
+            if(overviewCamera==null)
+            {
+                var go=new GameObject("Live stomach map camera"){hideFlags=HideFlags.HideAndDontSave};
+                overviewCamera=go.AddComponent<Camera>();overviewCamera.enabled=false;
+                overviewTexture=new RenderTexture(768,512,16){name="Live stomach TAB map",filterMode=FilterMode.Bilinear};
+                overviewTexture.Create();
+            }
+            var cam=overviewCamera;cam.orthographic=true;
             cam.orthographicSize=WorldRect.height*.5f;cam.aspect=WorldRect.width/WorldRect.height;
             cam.transform.position=new Vector3(WorldRect.center.x,WorldRect.center.y,-20);
             cam.clearFlags=CameraClearFlags.SolidColor;cam.backgroundColor=new Color(.25f,.06f,.10f);cam.cullingMask=1<<31;
-            var target=new RenderTexture(768,512,16);var previous=RenderTexture.active;
             var layers=new int[chunks.Count];
+            var water=AcidLakeEvent.Instance;
+            var surface=water!=null?water.SurfaceRenderer:null;
+            int waterLayer=surface!=null?surface.gameObject.layer:0;
+            bool waterEnabled=surface!=null&&surface.enabled;
             try
             {
                 for(int i=0;i<chunks.Count;i++){layers[i]=chunks[i].layer;chunks[i].layer=31;}
-                cam.targetTexture=target;cam.Render();RenderTexture.active=target;
-                overviewTexture=new Texture2D(768,512,TextureFormat.RGB24,false);
-                overviewTexture.ReadPixels(new Rect(0,0,768,512),0,0);overviewTexture.Apply();
+                if(surface!=null){surface.gameObject.layer=31;surface.enabled=water.Flooding;}
+                cam.targetTexture=overviewTexture;cam.Render();nextOverview=Time.unscaledTime+.1f;
             }
             finally
             {
                 for(int i=0;i<chunks.Count;i++)chunks[i].layer=layers[i];
-                RenderTexture.active=previous;cam.targetTexture=null;target.Release();Destroy(target);Destroy(go);
+                if(surface!=null){surface.gameObject.layer=waterLayer;surface.enabled=waterEnabled;}
+                cam.targetTexture=null;
             }
         }
 
         void LateUpdate()
         {
             if(level==null || Definition==null) return;
+            if(overviewTexture!=null && ApothecaryUI.Instance!=null && ApothecaryUI.Instance.Page=="run" && StageOne &&
+                !MiniStageRuntimeState.IsInsideMiniStage && Time.unscaledTime>=nextOverview)CaptureOverview();
             var stage=level.GetComponent<StageProgression>();
             bool stageOne=stage==null || stage.StageNumber==1;
             var player=level.PlayerCharacter;
@@ -297,7 +324,8 @@ namespace Vampire
             if(Instance==this)Instance=null;
             if(distanceTexture!=null)Destroy(distanceTexture);
             if(wallCoordinateTexture!=null)Destroy(wallCoordinateTexture);
-            if(overviewTexture!=null)Destroy(overviewTexture);
+            if(overviewTexture!=null){overviewTexture.Release();Destroy(overviewTexture);}
+            if(overviewCamera!=null)Destroy(overviewCamera.gameObject);
             foreach(var c in chunks)if(c!=null)Destroy(c);
             foreach(var mesh in meshes)if(mesh!=null)Destroy(mesh);
             if(material!=null)Destroy(material);
