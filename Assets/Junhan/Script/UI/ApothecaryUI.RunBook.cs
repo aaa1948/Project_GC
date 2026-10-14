@@ -42,19 +42,9 @@ namespace Vampire
         {
             Tab=0;previewCharacter=null;
             var player=level?.PlayerCharacter;
-            ImageAt(content,RunBookArt.Backplate,0,0,1,1,false).name="Exploration record backplate";
-            foreach(var offset in new[]{new Vector2(-.002f,0),new Vector2(.002f,0),new Vector2(0,-.003f),new Vector2(0,.003f)})
-            {
-                var stroke=RecordText("Record title outline","탐험 기록",.403f+offset.x,.012f+offset.y,.196f,.090f,48,TextAlignmentOptions.Center);stroke.fontStyle=FontStyles.Bold;
-            }
-            var title=RecordText("Record title","탐험 기록",.403f,.012f,.196f,.090f,48,TextAlignmentOptions.Center);
-            title.fontStyle=FontStyles.Bold;title.color=new Color(1,.93f,.69f);title.outlineColor=RecordInk;title.outlineWidth=.2f;
-            var close=RecordButton("Record close","×",.944f,.092f,.039f,.065f,CloseRunBook,false,true,true);
-            var closeLabel=close.GetComponent<ApothecaryButtonFeedback>().label;closeLabel.fontSize=closeLabel.fontSizeMax=36;closeLabel.fontSizeMin=30;
-            RecordButton("Record consumables","소모품",.048f,.030f,.08f,.046f,()=>SwitchTab(4));
-            RecordButton("Record guide","안내",.135f,.030f,.067f,.046f,()=>SwitchTab(5));
-            RecordButton("Record settings","설정",.211f,.030f,.067f,.046f,()=>Show("settings"));
-            RecordText("Record key hint","TAB 닫기",.851f,.038f,.085f,.035f,13,TextAlignmentOptions.Right).color=new Color(1,.94f,.77f);
+            UnifiedBookFrame(false);
+            RecordButton("Record consumables","소모품",.735f,.047f,.073f,.037f,()=>SwitchTab(4));
+            RecordButton("Record guide","안내",.816f,.047f,.061f,.037f,()=>SwitchTab(5));
             if(player==null)return;
             character=player.Blueprint;
             RecordImage("Record character",OctoberArt.Character(character,0)??CharacterSprite(character),.083f,.155f,.161f,.219f);

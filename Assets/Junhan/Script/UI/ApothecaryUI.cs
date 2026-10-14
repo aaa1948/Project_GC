@@ -59,6 +59,7 @@ namespace Vampire
             if (roundSource!=null || config.font != null && config.font.sourceFontFile != null)
                 runtimeFont = TMP_FontAsset.CreateFontAsset(roundSource!=null?roundSource:config.font.sourceFontFile);
             level = FindObjectOfType<LevelManager>();
+            if(!lobby)gameObject.AddComponent<WorldObjectTouchInput>();
             stats = FindObjectOfType<StatsManager>();
             character = CrossSceneData.CharacterBlueprint != null ? CrossSceneData.CharacterBlueprint : config.characters.FirstOrDefault();
             characterIndex = Mathf.Max(0, Array.IndexOf(config.characters, character));
@@ -137,6 +138,7 @@ namespace Vampire
             {
                 if (Page == "hud") OpenRunBook();
                 else if (Page == "run") CloseRunBook();
+                else if (Page == "settings") SelectCharacterBookmark();
             }
             if (GameInput.GetKeyDown(KeyCode.Escape)) Back();
         }
@@ -163,10 +165,9 @@ namespace Vampire
             content = Rect("Page " + Page, root,0,0,1,1);
             bool liveFloodResult = Page == "result" && AcidLakeEvent.Instance != null && AcidLakeEvent.Instance.Flooding;
             fullScreenBackdrop.gameObject.SetActive(Page!="hud"&&Page!="merchant"&&Page!="supplyRelic");
-            fullScreenBackdrop.color=liveFloodResult?new Color(0,0,0,.15f):Page=="run"||Page=="skillReward"?new Color(0,0,0,.68f):new Color(.19f,.08f,.07f);
+            fullScreenBackdrop.color=liveFloodResult?new Color(0,0,0,.15f):Page=="run"||Page=="settings"&&level!=null||Page=="skillReward"?new Color(0,0,0,.68f):new Color(.19f,.08f,.07f);
             if (Page == "hud")
             {
-                BuildSkillHud();
                 BuildPrescriptionHud();
                 BuildHudNavigation();
                 return;
@@ -175,6 +176,7 @@ namespace Vampire
             if(Page=="merchant"){OctoberMerchant();return;}
             if(Page=="supplyRelic"){OctoberSupplyRelics();return;}
             if(Page=="run" && Tab<4){ExplorationRecord();return;}
+            if(Page=="settings"){UnifiedBookFrame(true);Settings();return;}
             // The book background contains the title logo; rewards instead dim the live field.
             if(Page=="skillReward"){BuildSkillReward();return;}
             if (!liveFloodResult)
@@ -381,6 +383,7 @@ namespace Vampire
         }
         public void CloseRunBook()
         {
+            if(Page=="settings" && settingsOriginal!=null)GamePreferences.Apply(settingsOriginal,false);
             level?.EntityManager?.AbilitySelectionDialog?.SetCoveredByRunBook(false);
             if(ownsPause && level!=null&&!level.IsLevelEnded)Time.timeScale=previousTime;
             ownsPause=false;Show("hud");

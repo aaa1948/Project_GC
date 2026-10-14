@@ -359,6 +359,13 @@ namespace Vampire
             currentHealth = GetMaxHealth();
             healthBar.Setup(currentHealth, 0, GetMaxHealth());
             expBar.Setup(currentExp, 0, nextLevelExp);
+            // Reserve only the right end for the journal gear; retain the flush left edge.
+            if(expBar.transform is RectTransform experienceRect)
+            {
+                experienceRect.anchorMax=new Vector2(.94f,experienceRect.anchorMax.y);
+                experienceRect.offsetMax=new Vector2(0,experienceRect.offsetMax.y);
+                expBar.UpdateDisplay();
+            }
 
             currentLevel = 1;
             TrainingUITheme.LevelBadge(levelText);

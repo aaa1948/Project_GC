@@ -77,7 +77,7 @@ namespace Vampire
 
         protected virtual void Awake()
         {
-            InteractionFocus.Register(this, () => CanBeFocusedBy(currentPlayer));
+            InteractionFocus.Register(this, () => CanBeFocusedBy(currentPlayer), () => PromptOwner);
             interactionCollider = GetComponent<Collider2D>();
 
             if (interactionCollider != null)

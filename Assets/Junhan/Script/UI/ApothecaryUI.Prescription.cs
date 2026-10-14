@@ -83,7 +83,7 @@ namespace Vampire
             safe.GetWorldCorners(prescriptionSafeCorners);
             Vector2 corner=prescriptionHud.InverseTransformPoint(prescriptionSafeCorners[2]);
             prescriptionScroll.Dock.anchoredPosition=corner-prescriptionHud.rect.max-new Vector2(0,78);
-            if(hudNavigation!=null)hudNavigation.anchoredPosition=new Vector2(0,-2-330*prescriptionScroll.Reveal);
+            if(hudNavigation!=null)hudNavigation.anchoredPosition=corner-content.rect.max-new Vector2(8,4);
             if(skillHudRoot!=null)
             {
                 Vector2 bottom=content.InverseTransformPoint(prescriptionSafeCorners[3]);
@@ -92,10 +92,17 @@ namespace Vampire
         }
         void BuildHudNavigation()
         {
-            hudNavigation=Rect("HUD navigation",prescriptionScroll.Dock,0,0,1,0);
-            hudNavigation.pivot=new Vector2(.5f,1);hudNavigation.sizeDelta=new Vector2(0,58);
-            ActionButton(hudNavigation,"상태",.04f,0,.48f,1,OpenRunBook).name="HUD status";
-            ActionButton(hudNavigation,"설정",.52f,0,.96f,1,OpenSettings).name="HUD settings";
+            hudNavigation=Rect("HUD navigation",content,1,1,1,1);
+            hudNavigation.pivot=Vector2.one;hudNavigation.sizeDelta=new Vector2(52,52);
+            var gear=ActionButton(hudNavigation,"",0,0,1,1,OpenRunBook);
+            gear.name="HUD journal gear";
+            var feedback=gear.GetComponent<ApothecaryButtonFeedback>();feedback.useThemeStates=false;feedback.body.enabled=false;
+            var face=RecordShape("Gear cream frame",feedback.visual,0,0,1,1,RecordGold,true,25);
+            face.insetColor=new Color(1,.94f,.81f);face.transform.SetAsFirstSibling();
+            var glyph=Rect("Gear symbol",feedback.visual,.22f,.22f,.78f,.78f).gameObject.AddComponent<BookNavigationGraphic>();
+            glyph.gear=true;glyph.color=new Color(.18f,.42f,.39f);glyph.raycastTarget=false;
+            HudTooltip.Bind(gear.gameObject,()=>"탐험 기록 · 설정",()=>"캐릭터정보와 설정을 확인합니다.\nTAB: 캐릭터정보 / ESC: 설정");
+
         }
         public bool RequestSkillReward(Action complete)
         {
