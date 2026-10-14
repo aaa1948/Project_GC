@@ -7,8 +7,7 @@ namespace Vampire
 {
     public sealed partial class ApothecaryUI
     {
-        bool prescriptionExpanded;
-        float prescriptionCloseAt;
+        bool prescriptionExpanded=true;
         RectTransform prescriptionHud;
         RectTransform hudNavigation;
         PrescriptionScrollView prescriptionScroll;
@@ -24,8 +23,8 @@ namespace Vampire
             prescriptionHud=Rect("Prescription HUD",content,0,0,1,1);
             prescriptionScroll=AugmentPanelTheme.Rect("Vision scroll dock",prescriptionHud).gameObject.AddComponent<PrescriptionScrollView>();
             prescriptionScroll.Build(runtimeFont!=null?runtimeFont:Config.font,()=>{
-                prescriptionExpanded=!prescriptionExpanded;prescriptionCloseAt=Time.unscaledTime+4f;prescriptionScroll.SetExpanded(prescriptionExpanded);
-            },()=>Prescription?.TryClaim(FindObjectOfType<EntityManager>()?.AbilitySelectionDialog),prescriptionExpanded);
+                prescriptionExpanded=!prescriptionExpanded;prescriptionScroll.SetExpanded(prescriptionExpanded);
+            },()=>Prescription?.TryClaim(FindObjectOfType<EntityManager>()?.AbilitySelectionDialog),prescriptionExpanded,level?.PlayerCharacter?.Blueprint??character);
             prescriptionTitle=prescriptionScroll.Title;
             for(int i=0;i<3;i++)prescriptionRows[i]=prescriptionScroll.Rows[i];
             prescriptionClaim=prescriptionScroll.Claim;
@@ -41,16 +40,14 @@ namespace Vampire
         {
             if(Page=="hud")
             {
-                if(prescriptionExpanded && Time.unscaledTime>=prescriptionCloseAt)
-                {prescriptionExpanded=false;if(prescriptionScroll!=null)prescriptionScroll.SetExpanded(false);}
                 bool rewardOpen=level!=null && level.EntityManager!=null && level.EntityManager.AbilitySelectionDialog.MenuOpen;
                 if(content!=null)content.gameObject.SetActive(!rewardOpen);
                 if(prescriptionHud!=null)prescriptionHud.gameObject.SetActive(!rewardOpen);
                 var quest=Prescription;
                 if(quest!=null && prescriptionTitle!=null)
                 {
-                    prescriptionTitle.text=quest.Claimed?"비전서 · 완료":$"비전서  {quest.Completed}/3";
-                    prescriptionScroll.Tag.text=$"[{PrescriptionRuntime.Tags[quest.Tag]}] 비전 처방전";
+                    prescriptionTitle.text=quest.Claimed?"퀘스트  3/3 · 완료":$"퀘스트  {quest.Completed}/3";
+                    prescriptionScroll.Tag.text=$"[{PrescriptionRuntime.Tags[quest.Tag]}] 퀘스트";
                     for(int i=0;i<3;i++)if(prescriptionRows[i]!=null)
                     {
                         string line=$"{quest.Description(i)}\n{Mathf.FloorToInt(quest.Progress(i))}/{quest.Target(i):0}";
@@ -60,7 +57,7 @@ namespace Vampire
                     if(prescriptionClaim!=null)
                     {
                         prescriptionClaim.interactable=quest.Ready&&Time.timeScale>0;
-                        prescriptionClaim.GetComponentInChildren<TextMeshProUGUI>().text=quest.Claimed?"고귀 증강 획득 완료":quest.Ready?"고귀 증강 선택":"처방 3개 완료 → 고귀 증강";
+                        prescriptionClaim.GetComponentInChildren<TextMeshProUGUI>().text=quest.Claimed?"고귀 증강 획득 완료":quest.Ready?"고귀 증강 선택":"퀘스트 3개 완료 → 고귀 증강";
                     }
                 }
                 if(overchargeButton!=null)
@@ -82,7 +79,7 @@ namespace Vampire
             if(Page!="hud"||prescriptionScroll==null||safe==null)return;
             safe.GetWorldCorners(prescriptionSafeCorners);
             Vector2 corner=prescriptionHud.InverseTransformPoint(prescriptionSafeCorners[2]);
-            prescriptionScroll.Dock.anchoredPosition=corner-prescriptionHud.rect.max-new Vector2(0,78);
+            prescriptionScroll.Dock.anchoredPosition=corner-prescriptionHud.rect.max-new Vector2(14,78);
             if(hudNavigation!=null)hudNavigation.anchoredPosition=corner-content.rect.max-new Vector2(8,4);
             if(skillHudRoot!=null)
             {
