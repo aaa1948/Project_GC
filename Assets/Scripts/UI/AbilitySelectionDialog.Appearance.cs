@@ -127,6 +127,11 @@ namespace Vampire
             AugmentPanelTheme.Box((RectTransform)abilityCardsParent,
                 noble ? new Vector2(0,-48) : new Vector2(0,-14),
                 noble ? new Vector2(1124,540) : new Vector2(890,454));
+            // Taller noble cards need a separate footer row, including the existing skip action.
+            float footerY = noble ? -331 : -291;
+            var footerSize = new Vector2(310, noble ? 50 : 66);
+            if (rerollButton != null) AugmentPanelTheme.Box((RectTransform)rerollButton.transform,new Vector2(168,footerY),footerSize);
+            if (skipButton != null) AugmentPanelTheme.Box((RectTransform)skipButton.transform,new Vector2(-168,footerY),footerSize);
             var root = (RectTransform)transform;
             float scale = Mathf.Min(root.rect.width/1280f, root.rect.height/720f);
             panelContent.localScale = Vector3.one * Mathf.Max(.01f,scale);
