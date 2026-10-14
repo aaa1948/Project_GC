@@ -1167,8 +1167,38 @@ namespace Vampire
             isInvincible = false;
         }
 
+        public void TakeAcidLakeDamage(float seconds, bool erosionLimitReached)
+        {
+            if (!alive || IsPortalTravelling || seconds <= 0) return;
+            // Armor, evasion and on-hit grace do not turn continuous acid into tiny hits.
+            // Temporary invulnerability may block HP loss; the lake separately tracks erosion.
+            bool protectedNow = isInvincible || IsDashInvincibilityActive() || IsPortalDamageProtected ||
+                (Skills != null && Skills.IsAri && Skills.Active);
+            if (protectedNow && !erosionLimitReached) return;
+            float loss = erosionLimitReached ? currentHealth : Mathf.Min(currentHealth, MaxHealth * AcidLakeEvent.HealthFractionPerSecond * seconds);
+            currentHealth -= loss;
+            healthBar.SubtractPoints(loss);
+            statsManager.IncreaseDamageTaken(loss);
+            lastDamageMonsterBlueprint = null;
+            GetComponent<MucosalFortressShieldController>()?.NotifyPlayerDamaged();
+            if (currentHealth > 0) return;
+            if (ReviveCount > 0) { Revive(); return; }
+            StartCoroutine(DeathAnimation());
+        }
+
+        public void RelocateAfterAcidRevival(Vector2 position)
+        {
+            if (dashCoroutine != null) { StopCoroutine(dashCoroutine); dashCoroutine = null; }
+            RestoreDashCollisionGhost(); RestoreDashSpriteVisual();
+            isDashing = false; dashInvincibleEndTime = -1;
+            moveDirection = Vector2.zero;
+            transform.position = new Vector3(position.x, position.y, transform.position.z);
+            if (rb != null) { rb.position = position; rb.velocity = Vector2.zero; }
+        }
+
         private IEnumerator DeathAnimation()
         {
+            bool submerged = AcidLakeEvent.Contains(transform.position);
             alive = false;
             currentHealth = 0;
             moveDirection = Vector2.zero;
@@ -1195,9 +1225,13 @@ namespace Vampire
             if (deathParticles != null) deathParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             if (dustParticles != null) dustParticles.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
             Time.timeScale = 0;
-            var exit = GetComponent<CharacterExitSequence>();
-            if (exit == null) exit = gameObject.AddComponent<CharacterExitSequence>();
-            yield return exit.Play(this, spriteRenderer);
+            if (!submerged)
+            {
+                var exit = GetComponent<CharacterExitSequence>();
+                if (exit == null) exit = gameObject.AddComponent<CharacterExitSequence>();
+                yield return exit.Play(this, spriteRenderer);
+            }
+            else if (spriteRenderer != null) spriteRenderer.enabled = false;
             // LevelManager owns reward saving and the result panel, after the final pose holds.
             OnDeath.Invoke();
 
@@ -1218,6 +1252,7 @@ namespace Vampire
                 StopCoroutine(hitAnimationCoroutine);
             }
 
+            AcidLakeEvent.Instance?.RelocateRevivedPlayer(this);
             hitAnimationCoroutine = StartCoroutine(HitAnimation());
         }
 

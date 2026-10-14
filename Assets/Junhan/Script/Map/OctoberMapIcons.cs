@@ -6,6 +6,7 @@ namespace Vampire
     {
         public static Sprite For(MapMarker marker)
         {
+            var jar=marker.GetComponent<CurrencyJar>();if(jar!=null)return CurrencyJarArt.Jar(jar.Silver);
             if(marker.GetComponent<SupplyCapsule>()!=null)return SupplyCapsuleArt.Closed;
             var chameleon=marker.GetComponent<AcidToadMonster>();
             if(chameleon!=null)return ChameleonArt.Portrait(chameleon.Kind,0,true);

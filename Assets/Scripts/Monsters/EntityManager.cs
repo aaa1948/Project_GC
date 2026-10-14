@@ -337,6 +337,7 @@ namespace Vampire
             // Some stationary monster Setup methods recalculate their own spawn position.
             Vector2 safePosition=FiniteStomachMap.SafeSpawn(newMonster.transform.position,
                 Mathf.Max(.8f,newMonster.Size.magnitude*.5f),allowDuringMiniStage);
+            safePosition=AcidLakeEvent.DrySpawn(safePosition,Mathf.Max(.8f,newMonster.Size.magnitude*.5f),allowDuringMiniStage);
             newMonster.transform.position=new Vector3(safePosition.x,safePosition.y,newMonster.transform.position.z);
             var spawnBody=newMonster.GetComponent<Rigidbody2D>();
             if(spawnBody!=null)spawnBody.position=safePosition;

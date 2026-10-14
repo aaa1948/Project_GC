@@ -54,6 +54,7 @@ namespace Vampire
         }
         public bool TryCollect()
         {
+            if(AcidLakeEvent.Contains(transform.position))return false;
             if(collected||choosing||age<1.2f||Time.timeScale<=0||level.IsLevelEnded||!player.IsAlive||ApothecaryUI.Instance==null||ApothecaryUI.Instance.Page!="hud")return false;
             choosing=true;art.enabled=false;
             ApothecaryUI.Instance.ShowSupplyRelics(choices,Accept,Cancel);return true;

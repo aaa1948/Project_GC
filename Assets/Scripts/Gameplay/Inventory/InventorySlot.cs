@@ -48,6 +48,10 @@ namespace Vampire
                 itemsBeingAdded.Remove(item);
             AddItem(item);
         }
+        public void CancelItemBeingCollected(Collectable item)
+        {
+            if (itemsBeingAdded != null && itemsBeingAdded.Contains(item)) itemsBeingAdded.Remove(item);
+        }
 
         public void AddItem(Collectable item)
         {

@@ -15,7 +15,7 @@ namespace Vampire
         protected SpriteRenderer spriteRenderer;
         protected bool opened = false;
         public bool GuaranteesOriginal { get; set; }
-        public bool CanInteract => !opened && chestBlueprint!=null && GetComponent<Collider2D>().enabled;
+        public bool CanInteract => !opened && chestBlueprint!=null && GetComponent<Collider2D>().enabled && !AcidLakeEvent.Contains(transform.position);
 
         public void Init(EntityManager entityManager, Character playerCharacter, Transform chestItemsParent)
         {
@@ -56,6 +56,7 @@ namespace Vampire
 
         public void OpenChest(bool openedByPlayer = true)
         {
+            if (AcidLakeEvent.Contains(transform.position)) return;
             if (!opened)
             {
                 opened = true;
@@ -118,6 +119,13 @@ namespace Vampire
             }
             transform.localScale = Vector3.one;
             GetComponent<Collider2D>().enabled = true;
+        }
+
+        public void CompleteInitialPlacement()
+        {
+            if(opened)return;
+            StopAllCoroutines();transform.localScale=Vector3.one;
+            GetComponent<Collider2D>().enabled=true;
         }
 
     }

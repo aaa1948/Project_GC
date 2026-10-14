@@ -88,6 +88,16 @@ namespace Vampire
             }
         }
         public float SpawnMaxHealth { get; private set; }
+        // Environmental removal must not call derived Killed routines: blood clots would
+        // open new portals, elites would drop chests, and player kill passives would proc.
+        public void DissolveInAcidLake()
+        {
+            if (!gameObject.activeInHierarchy || IsMiniStageOwned || this is BossMonster || Blueprint is BossMonsterBlueprint) return;
+            bool notify = !deathStarted;
+            deathStarted = true; currentHealth = 0; alive = false; WasKilledByPlayer = false;
+            if (notify) Died?.Invoke(this);
+            DespawnForStageTransfer();
+        }
         public bool WasKilledByPlayer { get; private set; }
 
         // 결과 화면 및 공격 출처 추적용

@@ -161,8 +161,9 @@ namespace Vampire
             ClearSkillUI();
             portrait = null; previewCharacter = null; silverLabel = null;
             content = Rect("Page " + Page, root,0,0,1,1);
+            bool liveFloodResult = Page == "result" && AcidLakeEvent.Instance != null && AcidLakeEvent.Instance.Flooding;
             fullScreenBackdrop.gameObject.SetActive(Page!="hud"&&Page!="merchant"&&Page!="supplyRelic");
-            fullScreenBackdrop.color=Page=="run"||Page=="skillReward"?new Color(0,0,0,.68f):new Color(.19f,.08f,.07f);
+            fullScreenBackdrop.color=liveFloodResult?new Color(0,0,0,.15f):Page=="run"||Page=="skillReward"?new Color(0,0,0,.68f):new Color(.19f,.08f,.07f);
             if (Page == "hud")
             {
                 BuildSkillHud();
@@ -176,7 +177,8 @@ namespace Vampire
             if(Page=="run" && Tab<4){ExplorationRecord();return;}
             // The book background contains the title logo; rewards instead dim the live field.
             if(Page=="skillReward"){BuildSkillReward();return;}
-            ImageAt(content,Page == "main" ? Config.mainBackground : Page=="settings"||Page=="exit"?Config.panelBackground:Config.bookBackground,0,0,1,1,false);
+            if (!liveFloodResult)
+                ImageAt(content,Page == "main" ? Config.mainBackground : Page=="settings"||Page=="exit"?Config.panelBackground:Config.bookBackground,0,0,1,1,false);
             if (Page == "main") { OctoberMain(); return; }
             string title = Page == "prepare" ? "출전 준비" : Page == "unlock" ? "업적 · 해금 도감" : Page == "run" ? "탐험 기록" : Page == "result" ? (passed ? "게임 클리어!" : "아쉽지만 실패!") : Page == "exit" ? "게임 종료" : "설정";
             OctoberFrame(title);

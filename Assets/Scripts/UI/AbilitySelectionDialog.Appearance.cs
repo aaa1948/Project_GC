@@ -45,7 +45,7 @@ namespace Vampire
             if (rerollButton != null)
             {
                 rerollButton.transform.SetParent(panelContent,false);
-                AugmentPanelTheme.Box((RectTransform)rerollButton.transform,new Vector2(-168,-291),new Vector2(310,66));
+                AugmentPanelTheme.Box((RectTransform)rerollButton.transform,new Vector2(168,-291),new Vector2(310,66));
                 foreach (Transform child in rerollButton.transform) child.gameObject.SetActive(false);
                 rerollButtonImage = rerollButton.GetComponent<Image>();
                 rerollButtonImage.color=Color.clear;
@@ -73,7 +73,7 @@ namespace Vampire
 
             }
             var skipRoot=AugmentPanelTheme.Rect("Skip augment",panelContent);
-            AugmentPanelTheme.Box(skipRoot,new Vector2(168,-291),new Vector2(310,66));
+            AugmentPanelTheme.Box(skipRoot,new Vector2(-168,-291),new Vector2(310,66));
             var hit=skipRoot.gameObject.AddComponent<Image>();hit.color=Color.clear;
             skipButton=skipRoot.gameObject.AddComponent<Button>();skipButton.targetGraphic=hit;skipButton.transition=Selectable.Transition.None;
             var skipVisual=AugmentPanelTheme.Rect("Visual",skipRoot);AugmentPanelTheme.Anchors(skipVisual,Vector2.zero,Vector2.one);

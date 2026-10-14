@@ -79,7 +79,7 @@ namespace Vampire
                 }
             }
             ActionButton(content,"메인으로",.13f,.02f,.355f,.105f,()=>ReturnToLobby(false));
-            ActionButton(content,"다시하기",.387f,.02f,.613f,.105f,()=>{Time.timeScale=1;CrossSceneData.CharacterBlueprint=character;CrossSceneData.ClearStartingLobbyItems();UnityEngine.SceneManagement.SceneManager.LoadScene(1);});
+            ActionButton(content,"다시하기",.387f,.02f,.613f,.105f,()=>{CrossSceneData.CharacterBlueprint=character;CrossSceneData.ClearStartingLobbyItems();StageEntryLoading.Begin(character);});
             ActionButton(content,"준비화면",.645f,.02f,.87f,.105f,()=>ReturnToLobby(true),true);
         }
         Sprite ResultSourceIcon(string name)

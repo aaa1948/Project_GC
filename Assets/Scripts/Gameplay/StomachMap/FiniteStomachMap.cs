@@ -20,6 +20,7 @@ namespace Vampire
         public float WallWidth => Definition.wallWidth;
         public float ClimbLimit => Mathf.Max(.5f, WallWidth-Definition.climbableWidth);
         public Material TerrainMaterial => material;
+        public Texture2D BoundaryDistanceTexture => distanceTexture;
         Texture2D distanceTexture;
         Texture2D wallCoordinateTexture;
         float[] boundaryLengths;

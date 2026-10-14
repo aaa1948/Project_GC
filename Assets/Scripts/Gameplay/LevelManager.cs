@@ -46,7 +46,8 @@ namespace Vampire
         public EntityManager EntityManager => entityManager;
         public Character PlayerCharacter => playerCharacter;
         public Inventory PlayerInventory => inventory;
-        public bool IsRunFlowPaused => runFlowPaused;
+        public bool InitialFieldObjectsReady => !UsesInitialFieldLayout || GetComponent<FieldObjectLayout>()?.Ready == true;
+        public bool IsRunFlowPaused => runFlowPaused || !InitialFieldObjectsReady;
         public bool IsLevelEnded => levelEnded;
         public bool UsesInitialFieldLayout => stomachMap != null && (GetComponent<StageProgression>() == null || GetComponent<StageProgression>().StageNumber == 1);
 
@@ -112,6 +113,7 @@ namespace Vampire
             StageProgression.Ensure(this);
             SupplyCapsuleDirector.Ensure(this);
             FieldObjectLayout.Ensure(this);
+            AcidLakeEvent.Install(this);
         }
 
         // Preserve the actual player, abilities, inventory, relic runtimes, stats and loot pools.
@@ -142,7 +144,7 @@ namespace Vampire
                 return;
             }
 
-            if (runFlowPaused)
+            if (IsRunFlowPaused || StageEntryLoading.IsLoading)
             {
                 return;
             }

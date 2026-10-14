@@ -245,6 +245,7 @@ namespace Vampire
 
         private bool CanBeFocusedBy(Character player)
         {
+            if (AcidLakeEvent.Contains(transform.position)) return false;
             if (!InteractionAvailable || (MiniStageRuntimeState.IsInsideMiniStage && !AllowMiniStageInteraction))
             {
                 return false;

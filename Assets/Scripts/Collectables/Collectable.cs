@@ -64,6 +64,7 @@ namespace Vampire
 
         public virtual void Collect(CollectionMode collectionMode = CollectionMode.FromGround)
         {
+            if (AcidLakeEvent.Contains(transform.position)) return;
             // Don't collect again if already being collected
             if (beingCollected || waitingForSpawn)
                 return;
@@ -96,6 +97,18 @@ namespace Vampire
         public void Use()
         {
             OnCollected();
+        }
+
+        public void DissolveInAcidLake()
+        {
+            if (!gameObject.activeInHierarchy) return;
+            StopAllCoroutines();
+            if (beingCollected && entityManager.Inventory.TryGetInventorySlot(this, out var slot)) slot.CancelItemBeingCollected(this);
+            if (entityManager.MagneticCollectables.Contains(this)) entityManager.MagneticCollectables.Remove(this);
+            if (this is ExpGem gem) entityManager.DespawnGem(gem);
+            // Chest coins are instantiated rather than obtained from CoinPool.
+            else if (this is Coin coin && GetComponentInParent<CoinPool>() != null) entityManager.DespawnCoin(coin, false);
+            else Destroy(gameObject);
         }
 
         protected abstract void OnCollected();

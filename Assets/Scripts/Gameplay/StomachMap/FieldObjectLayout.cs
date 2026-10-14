@@ -15,9 +15,12 @@ namespace Vampire
         public const float WallInset = 10f, StartClearance = 7f, ClusterChance = .20f;
         public IReadOnlyList<Slot> Slots => slots;
         public bool Ready { get; private set; }
+        public bool Failed { get; private set; }
+        public IReadOnlyList<GameObject> SpawnedObjects => objects;
         public int Seed { get; private set; }
         readonly List<Slot> slots = new List<Slot>();
         readonly List<Chest> chests = new List<Chest>();
+        readonly List<GameObject> objects = new List<GameObject>();
         LevelManager level;
         Transform root;
 
@@ -104,12 +107,24 @@ namespace Vampire
         {
             yield return null; // All scene Start hooks (mini-stage director and NPC references) have run.
             if (level == null || !level.UsesInitialFieldLayout) yield break;
+            try { SpawnInitialObjects(); }
+            catch (Exception error) { Failed=true; Debug.LogException(error,this); }
+            if(Failed)yield break;
+            // NPC Start hooks and interaction registration finish under the loading overlay.
+            yield return null;
+            foreach(var chest in chests)chest.CompleteInitialPlacement();
+            Physics2D.SyncTransforms();
+            Ready = objects.Count == Counts.Sum() && objects.All(o=>o!=null&&o.activeInHierarchy);
+            if(!Ready){Failed=true;Debug.LogError("Initial field objects did not finish placing.",this);}
+        }
+        void SpawnInitialObjects()
+        {
             var host = FindObjectOfType<TimedSpecialMonsterSpawner>();
             var merchant = FindObjectsOfType<NPCSpawner>().Select(n => n.MerchantPrefab).FirstOrDefault(p => p != null);
             var altar = host != null ? host.EliteAltarPrefab : null;
             var bp = level.CurrentLevelBlueprint;
             int clotIndex = Array.FindIndex(bp.monsters, m => m.monstersPrefab.GetComponent<BloodClotMonster>() != null);
-            if (merchant == null || altar == null || clotIndex < 0) { Debug.LogError("Field layout references are incomplete."); yield break; }
+            if (merchant == null || altar == null || clotIndex < 0) throw new InvalidOperationException("Field layout references are incomplete.");
             Seed = UnityEngine.Random.Range(0, int.MaxValue);
             bool Blocked(Vector2 p) => Physics2D.OverlapCircleAll(p, 2f).Any(c => !c.isTrigger && c.GetComponentInParent<Character>() == null && c.GetComponentInParent<Monster>() == null);
             slots.AddRange(Generate(FiniteStomachMap.Instance, level.PlayerCharacter.transform.position, Seed, Blocked));
@@ -118,18 +133,25 @@ namespace Vampire
             var director = FindObjectOfType<MiniStageDirector>();
             foreach (var slot in slots)
             {
+                GameObject placed;
                 switch (slot.kind)
                 {
-                    case Kind.Chest: chests.Add(level.EntityManager.SpawnChest(bp.chestBlueprint, slot.position)); break;
-                    case Kind.Merchant: Instantiate(merchant, slot.position, Quaternion.identity, root); break;
-                    case Kind.EliteAltar: Instantiate(altar, slot.position, Quaternion.identity, root); break;
+                    case Kind.Chest:
+                        var chest=level.EntityManager.SpawnChest(bp.chestBlueprint, slot.position);chests.Add(chest);placed=chest.gameObject;break;
+                    case Kind.Merchant: placed=Instantiate(merchant, slot.position, Quaternion.identity, root); break;
+                    case Kind.EliteAltar: placed=Instantiate(altar, slot.position, Quaternion.identity, root); break;
                     case Kind.BloodClot:
                         var clot = level.EntityManager.SpawnMonster(clotIndex, slot.position, bp.monsters[clotIndex].monsterBlueprints[0]) as BloodClotMonster;
-                        clot.ConfigureMiniStage(director, BloodClotMiniStageRole.EnterMiniStageOnDeath); break;
-                    default: CurrencyJar.Create(level, slot.position, slot.kind == Kind.SilverJar, root); break;
+                        clot.ConfigureMiniStage(director, BloodClotMiniStageRole.EnterMiniStageOnDeath);placed=clot.gameObject;break;
+                    default: placed=CurrencyJar.Create(level, slot.position, slot.kind == Kind.SilverJar, root).gameObject;break;
                 }
+                objects.Add(placed);
+                var marker=placed.GetComponent<MapMarker>()??placed.AddComponent<MapMarker>();
+                var kind=slot.kind==Kind.Chest?MapMarkerKind.Chest:slot.kind==Kind.Merchant?MapMarkerKind.Shop:
+                    slot.kind==Kind.EliteAltar?MapMarkerKind.EliteSpawner:slot.kind==Kind.BloodClot?MapMarkerKind.Portal:MapMarkerKind.Object;
+                marker.Configure(kind,slot.kind==Kind.GoldJar?"골드 초콜릿 병":slot.kind==Kind.SilverJar?"실버 초콜릿 병":placed.name);
+                marker.RequireNearbyDiscovery=true;marker.ResetDiscovery();
             }
-            Ready = true;
         }
 
         void Update()

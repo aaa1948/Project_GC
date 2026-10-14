@@ -1158,6 +1158,7 @@ namespace Vampire
 
         private void UpdateMarkerDiscovery()
         {
+            if (StageEntryLoading.IsLoading || (levelManager != null && !levelManager.InitialFieldObjectsReady)) return;
             if (playerCharacter == null)
             {
                 return;
@@ -1198,9 +1199,9 @@ namespace Vampire
 
                 if (distance <=
                     marker.DiscoverDistance ||
-                    IsWorldPositionExplored(
+                    (!marker.RequireNearbyDiscovery && IsWorldPositionExplored(
                         marker.transform.position
-                    ))
+                    )))
                 {
                     marker.SetDiscovered(
                         true
