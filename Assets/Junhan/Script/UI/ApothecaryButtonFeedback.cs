@@ -69,7 +69,7 @@ namespace Vampire
             {
                 // Scale the corner slices with button height, preserving the main button silhouette.
                 body.pixelsPerUnitMultiplier=4f*73.44f/Mathf.Max(18,visual.rect.height);
-                bool red=primary||active;
+                bool red=available&&(primary||active);
                 body.sprite=OctoberArt.Button(red);
                 if(label!=null)label.color=red?Color.white:OctoberArt.Ink;
             }

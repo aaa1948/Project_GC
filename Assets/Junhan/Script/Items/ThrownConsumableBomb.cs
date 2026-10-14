@@ -33,6 +33,8 @@ namespace Vampire
         }
         void Explode()
         {
+            foreach(var hit in Physics2D.OverlapCircleAll(Target,BombTargeting.Radius,LayerMask.GetMask("Monster Full")))
+                hit.GetComponentInParent<CurrencyJar>()?.TakeDamage(damage);
             foreach(var monster in entities.LivingMonsters.ToArray())
             {
                 if(!NeedleTargeting.IsValid(monster,~0))continue;

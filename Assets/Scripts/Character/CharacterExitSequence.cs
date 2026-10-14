@@ -60,6 +60,17 @@ namespace Vampire
             return clip;
         }
 
+        public static Sprite ResultPortrait(CharacterBlueprint blueprint)
+        {
+            string name = blueprint?.skills != null ? blueprint.skills.kind.ToString().ToLowerInvariant() : "ashi";
+            var clip = Load(name);
+            if (clip == null) return null;
+            // Keep the result illustration consistent with the nonlethal field exit.
+            // Flying/vanishing characters use a readable frame before disappearing.
+            int index = name == "ari" ? 9 : name == "hyuki" ? 15 : name == "shini" ? 8 : 5;
+            return clip.frames[Mathf.Min(index, clip.frames.Length - 1)];
+        }
+
         public static Bounds PaintedBounds(Sprite sprite)
         {
             var vertices = sprite.vertices;

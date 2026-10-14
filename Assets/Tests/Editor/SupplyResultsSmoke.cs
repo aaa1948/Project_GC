@@ -114,6 +114,11 @@ namespace Vampire.Tests.Editor
             yield return new WaitForSeconds(.3f);yield return Capture("02-supply-warning");
             yield return new WaitForSeconds(3.8f);
             var bodyScale=capsule.Visual.localScale;Check(capsule.StartedDescent&&!capsule.Landed,"capsule descending after warning");
+            var groundShadow=capsule.GetComponentsInChildren<SpriteRenderer>().First(r=>r.name=="Capsule ground shadow");
+            var shadowPosition=groundShadow.transform.position;float airborneShadowAlpha=groundShadow.color.a;
+            Check(groundShadow.transform.parent==capsule.transform&&!groundShadow.transform.IsChildOf(capsule.Visual),"landing shadow is independent of airborne capsule");
+            Check(!capsule.GetComponentsInChildren<SpriteRenderer>().Any(r=>r.name=="Pink landing droplet"),"no landing droplets before ground contact");
+            Check(SupplyCapsuleArt.Closed.texture.name=="ClosedClean","capsule uses cleaned art without baked-in dust or ground shadow");
             Check(!(bool)Call(capsule,"ExecuteInteraction",player),"airborne interaction rejected");
             var frozen=capsule.Visual.position;Time.timeScale=0;yield return new WaitForSecondsRealtime(.15f);
             Check(capsule.Visual.position==frozen,"descent freezes during game pause");Time.timeScale=1;
@@ -123,9 +128,12 @@ namespace Vampire.Tests.Editor
                 if(frame%6==0)ScreenCapture.CaptureScreenshot(Output+"/frames/drop-"+(frame/6).ToString("D3")+".png");
                 if(frame==270)ScreenCapture.CaptureScreenshot(Output+"/03-parachute-descent.png");
                 if(frame==357)ScreenCapture.CaptureScreenshot(Output+"/04-landing-splash.png");
+                Check(Vector3.Distance(groundShadow.transform.position,shadowPosition)<.001f,"shadow remains on landing ground "+frame);
+                if(!capsule.Landed)Check(!capsule.GetComponentsInChildren<SpriteRenderer>().Any(r=>r.name=="Pink landing droplet"),"airborne has no landing spray "+frame);
                 yield return null;
             }
             Check(capsule.Landed&&capsule.GetComponent<Collider2D>().enabled&&capsule.Visual.localScale==bodyScale,"landing at ten active seconds enables collider without scale swap");
+            Check(groundShadow.color.a>airborneShadowAlpha,"shadow becomes denser toward contact");
             player.transform.position=target;player.GetComponent<Rigidbody2D>().position=target;Physics2D.SyncTransforms();
             yield return new WaitForSeconds(.9f);
             Check(capsule.GetComponentsInChildren<SpriteRenderer>().Any(r=>r.name=="Pixel E Interaction Prompt"&&r.enabled),"E keycap visible only after landed and player is nearby");
@@ -188,6 +196,18 @@ namespace Vampire.Tests.Editor
                 }
                 yield return Capture(pass==1?"09-success":"08-failure");
             }
+            var resultCharacter=Field(ui,"character").GetValue(ui) as CharacterBlueprint;
+            foreach(var skillName in new[]{"AshiSkills","AriSkills","HyukiSkills","ShiniSkills"})
+            {
+                var preview=Object.Instantiate(resultCharacter);
+                preview.skills=Resources.Load<CharacterSkillDefinition>(skillName);
+                Set(ui,"character",preview);Set(ui,"passed",false);ui.Show("result");yield return null;
+                var resultImage=Field(ui,"portrait").GetValue(ui) as Image;
+                Check(resultImage!=null&&resultImage.sprite==CharacterExitSequence.ResultPortrait(preview),"failure portrait matches nonlethal exit "+skillName);
+                yield return Capture("result-exit-"+skillName);
+                Object.Destroy(preview);
+            }
+            Set(ui,"character",resultCharacter);
             File.WriteAllText(Output+"/checks.txt","PASS: symmetric fixed-color buttons, skip and reroll; exact ten-second supply timing, pause, airborne gate, fixed size, landing splash, E keycap, cap hinge, orb bounce, reusable relic panel, cancel/reopen stable choices, additional relic stacking/state persistence/TAB, top-4+other damage aggregation, numeric labels, 150 inventory counts within bounds, success/failure rendering.");
             SessionState.SetBool(Key+"Done",true);
         }

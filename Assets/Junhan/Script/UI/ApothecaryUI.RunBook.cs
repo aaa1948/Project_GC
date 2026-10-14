@@ -50,7 +50,7 @@ namespace Vampire
             var title=RecordText("Record title","탐험 기록",.403f,.012f,.196f,.090f,48,TextAlignmentOptions.Center);
             title.fontStyle=FontStyles.Bold;title.color=new Color(1,.93f,.69f);title.outlineColor=RecordInk;title.outlineWidth=.2f;
             var close=RecordButton("Record close","×",.944f,.092f,.039f,.065f,CloseRunBook,false,true,true);
-            var closeLabel=close.GetComponent<ApothecaryButtonFeedback>().label;closeLabel.fontSize=closeLabel.fontSizeMax=40;closeLabel.fontSizeMin=40;
+            var closeLabel=close.GetComponent<ApothecaryButtonFeedback>().label;closeLabel.fontSize=closeLabel.fontSizeMax=36;closeLabel.fontSizeMin=30;
             RecordButton("Record consumables","소모품",.048f,.030f,.08f,.046f,()=>SwitchTab(4));
             RecordButton("Record guide","안내",.135f,.030f,.067f,.046f,()=>SwitchTab(5));
             RecordButton("Record settings","설정",.211f,.030f,.067f,.046f,()=>Show("settings"));

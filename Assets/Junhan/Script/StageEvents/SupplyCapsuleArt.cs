@@ -4,7 +4,7 @@ namespace Vampire
 {
     public static class SupplyCapsuleArt
     {
-        public static Sprite Closed => OctoberArt.Get("SupplyCapsule/Closed");
+        public static Sprite Closed => OctoberArt.Get("SupplyCapsule/ClosedClean");
         public static Sprite Parachute => OctoberArt.Get("SupplyCapsule/Parachute");
         static Sprite orb;
         static Sprite droplet;

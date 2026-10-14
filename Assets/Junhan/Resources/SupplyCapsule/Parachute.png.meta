@@ -140,7 +140,7 @@ TextureImporter:
       spriteID: e43892fb90091f1c0800000000000000
       internalID: -4471634583465917618
       vertices: []
-      indices:
+      indices: 
       edges: []
       weights: []
     outline: []
@@ -149,14 +149,14 @@ TextureImporter:
     spriteID: 5e97eb03825dee720800000000000000
     internalID: 0
     vertices: []
-    indices:
+    indices: 
     edges: []
     weights: []
     secondaryTextures: []
     nameFileIdTable:
       Parachute: -4471634583465917618
-  mipmapLimitGroupName:
+  mipmapLimitGroupName: 
   pSDRemoveMatte: 0
-  userData:
-  assetBundleName:
-  assetBundleVariant:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

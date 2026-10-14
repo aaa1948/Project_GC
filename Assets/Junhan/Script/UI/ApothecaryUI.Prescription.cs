@@ -105,8 +105,8 @@ namespace Vampire
         }
         void BuildSkillReward()
         {
-            Label(content,"처방 강화",.25f,.84f,.75f,.94f,34);
-            Label(content,"패시브 · 액티브 · 대쉬 중 하나를 선택하세요",.15f,.75f,.85f,.82f,23);
+            Label(content,"처방 강화",.25f,.84f,.75f,.94f,34).color=Color.white;
+            Label(content,"패시브 · 액티브 · 대쉬 중 하나를 선택하세요",.15f,.75f,.85f,.82f,23).color=Color.white;
             var skills=CurrentSkills;
             if(skills==null)return;
             for(int i=0;i<2;i++)
@@ -117,19 +117,22 @@ namespace Vampire
                 ImageAt(content,active?d.activeIcon:d.passiveIcon,x+.06f,.49f,x+.22f,.68f);
                 Label(content,active?"액티브 강화":"패시브 강화",x+.02f,.425f,x+.26f,.49f,23);
                 Label(content,skills.UpgradeDescription(active),x+.025f,.30f,x+.255f,.425f,17);
-                ActionButton(content,current>=max?"최대 레벨":$"Lv.{current} → Lv.{current+1}",x+.04f,.22f,x+.24f,.295f,()=>FinishSkillReward(active),true,current<max);
+                bool available=skills.CanUpgrade(active);
+                var upgradeButton=ActionButton(content,available?$"Lv.{current} → Lv.{current+1}":current>=max?"최대 레벨":"최대 강화 제한",x+.025f,.22f,x+.255f,.295f,()=>FinishSkillReward(active),true,available);
+                if(!available)HudTooltip.Bind(upgradeButton.gameObject,()=>"강화 제한",()=>skills.UpgradeUnavailableReason(active));
             }
             Panel(content,.655f,.20f,.935f,.72f);
             var dash=Rect("Shared dash reward icon",content,.725f,.49f,.865f,.68f).gameObject.AddComponent<SharedDashIcon>();
             dash.color=new Color(.12f,.65f,.63f);dash.raycastTarget=false;
-            Label(content,"대쉬 +1",.675f,.425f,.915f,.49f,25);
-            Label(content,"최대 대쉬 횟수 +1\n대쉬 충전 1회 즉시 획득",.68f,.30f,.91f,.425f,18);
-            ActionButton(content,"대쉬 횟수 증가",.695f,.22f,.895f,.295f,FinishDashReward,true);
-            if(skills.PassiveLevel>=skills.PassiveMaxLevel && skills.ActiveLevel>=skills.ActiveMaxLevel)
+            Label(content,$"대쉬 +1 · {skills.DashRewardUpgrades}/{CharacterSkillRuntime.MaxDashRewardUpgrades}",.675f,.425f,.915f,.49f,23);
+            Label(content,"최대 대쉬 횟수 +1\n대쉬 충전 1회 즉시 획득\n한 판에 최대 3회 강화",.68f,.30f,.91f,.425f,17);
+            ActionButton(content,skills.CanUpgradeDash?"대쉬 횟수 증가":"최대 강화",.695f,.22f,.895f,.295f,FinishDashReward,true,skills.CanUpgradeDash);
+            if(!skills.CanUpgrade(false) && !skills.CanUpgrade(true) && !skills.CanUpgradeDash)
             {
-                Label(content,"두 스킬 모두 최대 레벨 · 최대 체력의 20% 회복으로 대체",.12f,.12f,.88f,.185f,20);
+                Label(content,"강화 완료 · 최대 체력의 20% 회복으로 대체",.12f,.12f,.88f,.185f,20).color=Color.white;
                 ActionButton(content,"회복하고 계속",.34f,.025f,.66f,.105f,()=>FinishSkillReward(null),true);
             }
+            else Label(content,"액티브와 패시브 중 한 스킬만 최대 레벨까지 강화할 수 있습니다.",.12f,.10f,.88f,.17f,17).color=Color.white;
         }
         void FinishSkillReward(bool? active)
         {
@@ -143,7 +146,8 @@ namespace Vampire
         void FinishDashReward()
         {
             if(!skillRewardQueued||level==null||level.PlayerCharacter==null)return;
-            skillRewardQueued=false;level.PlayerCharacter.AddDashCharge(1);
+            if(CurrentSkills==null||!CurrentSkills.TryUpgradeDash())return;
+            skillRewardQueued=false;
             var callback=skillRewardCallback;skillRewardCallback=null;CloseRunBook();callback?.Invoke();
         }
     }

@@ -162,7 +162,7 @@ namespace Vampire
             portrait = null; previewCharacter = null; silverLabel = null;
             content = Rect("Page " + Page, root,0,0,1,1);
             fullScreenBackdrop.gameObject.SetActive(Page!="hud"&&Page!="merchant"&&Page!="supplyRelic");
-            fullScreenBackdrop.color=Page=="run"?new Color(0,0,0,.68f):new Color(.19f,.08f,.07f);
+            fullScreenBackdrop.color=Page=="run"||Page=="skillReward"?new Color(0,0,0,.68f):new Color(.19f,.08f,.07f);
             if (Page == "hud")
             {
                 BuildSkillHud();
@@ -174,9 +174,10 @@ namespace Vampire
             if(Page=="merchant"){OctoberMerchant();return;}
             if(Page=="supplyRelic"){OctoberSupplyRelics();return;}
             if(Page=="run" && Tab<4){ExplorationRecord();return;}
+            // The book background contains the title logo; rewards instead dim the live field.
+            if(Page=="skillReward"){BuildSkillReward();return;}
             ImageAt(content,Page == "main" ? Config.mainBackground : Page=="settings"||Page=="exit"?Config.panelBackground:Config.bookBackground,0,0,1,1,false);
             if (Page == "main") { OctoberMain(); return; }
-            if (Page == "skillReward") { BuildSkillReward(); return; }
             string title = Page == "prepare" ? "출전 준비" : Page == "unlock" ? "업적 · 해금 도감" : Page == "run" ? "탐험 기록" : Page == "result" ? (passed ? "게임 클리어!" : "아쉽지만 실패!") : Page == "exit" ? "게임 종료" : "설정";
             OctoberFrame(title);
             if (Page == "prepare" || Page == "unlock")
@@ -455,11 +456,12 @@ namespace Vampire
             var hit=Rect("Button "+text,parent,x,y,r,t);var hitImage=hit.gameObject.AddComponent<Image>();hitImage.color=Color.clear;
             var button=hit.gameObject.AddComponent<Button>();button.targetGraphic=hitImage;button.transition=Selectable.Transition.None;button.interactable=enabled;
             var visual=Rect("Visual",hit,0,0,1,1);
-            var body=visual.gameObject.AddComponent<Image>();body.sprite=primary?Config.primaryButton:Config.buttonBody;body.type=Image.Type.Sliced;body.pixelsPerUnitMultiplier=4;body.raycastTarget=false;
+            var body=visual.gameObject.AddComponent<Image>();body.sprite=primary&&enabled?Config.primaryButton:Config.buttonBody;body.type=Image.Type.Sliced;body.pixelsPerUnitMultiplier=4;body.raycastTarget=false;
+            if(!enabled)body.color=new Color(.60f,.64f,.72f);
             var surface=Rect("Orbiting edge light",visual,0,0,1,1).gameObject.AddComponent<TitleMenuSurface>();
             surface.button=button;surface.hideIcon=true;surface.decorationOnly=true;surface.raycastTarget=false;
             var label=Label(visual,text,.04f,.04f,.96f,.96f,24);label.fontStyle=FontStyles.Bold;
-            if(primary)label.color=new Color(1,.97f,.88f);
+            if(primary&&enabled)label.color=new Color(1,.97f,.88f);
             var feedback=hit.gameObject.AddComponent<ApothecaryButtonFeedback>();feedback.button=button;feedback.visual=visual;feedback.body=body;feedback.sparkle=surface;feedback.primary=primary;feedback.chosen=chosen;feedback.label=label;
             button.onClick.AddListener(()=>{if(button.IsInteractable()){if(clickSound)GameAudioManager.PlaySfx(GameAudioManager.GameSfxId.UiClick);action?.Invoke();}});
             return button;

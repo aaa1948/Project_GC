@@ -18,7 +18,8 @@ namespace Vampire
         void OctoberResult()
         {
             previewCharacter=null;
-            portrait=ImageAt(content,OctoberArt.Character(character,passed?2:1),.07f,.66f,.235f,.84f);
+            var resultPortrait=passed?OctoberArt.Character(character,2):CharacterExitSequence.ResultPortrait(character);
+            portrait=ImageAt(content,resultPortrait??OctoberArt.Character(character,passed?2:1),.07f,.66f,.235f,.84f);
             var player=level?.PlayerCharacter;
             float time=level!=null?level.CurrentLevelTime:0;
             string[] names={"플레이 시간","처치한 적","획득한 코인","도달 레벨","가한 피해","받은 피해","회복량","획득 실버"};

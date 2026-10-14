@@ -18,7 +18,7 @@ namespace Vampire.EditorTools
         }
         public static void Prepare()
         {
-            foreach(string name in new[]{"Closed","Parachute"})
+            foreach(string name in new[]{"ClosedClean","Parachute"})
             {
                 string path="Assets/Junhan/Resources/SupplyCapsule/"+name+".png";
                 AssetDatabase.ImportAsset(path,ImportAssetOptions.ForceUpdate);

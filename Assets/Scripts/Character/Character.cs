@@ -1820,6 +1820,7 @@ namespace Vampire
             snapshot.ShiniFuel=Skills?.Breath!=null?Skills.Breath.Fuel:0;
             snapshot.SkillPassiveLevel=Skills != null ? Skills.PassiveLevel : 1;
             snapshot.SkillActiveLevel=Skills != null ? Skills.ActiveLevel : 1;
+            snapshot.SkillDashRewardUpgrades=Skills != null ? Skills.DashRewardUpgrades : 0;
             snapshot.Prescription=GetComponent<PrescriptionRuntime>()?.Capture();
             snapshot.SkillPassiveRemaining=Skills != null ? Skills.PassiveRemaining : 0;
             snapshot.SkillActiveRemaining=Skills != null ? Skills.ActiveRemaining : 0;
@@ -2037,6 +2038,7 @@ namespace Vampire
                 currentHealth > 0f;
 
             Skills?.RestoreLevels(snapshot.SkillPassiveLevel,snapshot.SkillActiveLevel);
+            Skills?.RestoreDashRewardUpgrades(snapshot.SkillDashRewardUpgrades);
             GetComponent<PrescriptionRuntime>()?.Restore(snapshot.Prescription);
             Skills?.Restore(snapshot.SkillPassiveRemaining,snapshot.SkillActiveRemaining,snapshot.SkillCooldownRemaining,snapshot.SkillSummonRemaining);
             Skills?.RestoreSleep(snapshot.SkillSleepSeconds,snapshot.SkillConsumedSleepStacks);

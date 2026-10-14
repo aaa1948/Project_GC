@@ -48,6 +48,7 @@ namespace Vampire
         public Inventory PlayerInventory => inventory;
         public bool IsRunFlowPaused => runFlowPaused;
         public bool IsLevelEnded => levelEnded;
+        public bool UsesInitialFieldLayout => stomachMap != null && (GetComponent<StageProgression>() == null || GetComponent<StageProgression>().StageNumber == 1);
 
         public void Init(LevelBlueprint levelBlueprint)
         {
@@ -103,13 +104,14 @@ namespace Vampire
                 this.levelBlueprint.initialExpGemType
             );
 
-            entityManager.SpawnChest(levelBlueprint.chestBlueprint);
+            if (!UsesInitialFieldLayout) entityManager.SpawnChest(levelBlueprint.chestBlueprint);
             inventory.Init();
             var tutorial = GetComponent<TutorialGuide>();
             if (tutorial == null) tutorial = gameObject.AddComponent<TutorialGuide>();
             tutorial.Initialize(this);
             StageProgression.Ensure(this);
             SupplyCapsuleDirector.Ensure(this);
+            FieldObjectLayout.Ensure(this);
         }
 
         // Preserve the actual player, abilities, inventory, relic runtimes, stats and loot pools.
@@ -226,6 +228,7 @@ namespace Vampire
 
         private void HandleChestSpawn()
         {
+            if (UsesInitialFieldLayout) return;
             if (levelBlueprint == null)
             {
                 return;
