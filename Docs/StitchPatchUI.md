@@ -24,3 +24,17 @@ Create production transparent UI ornament atlas based on the attached approved s
 `Vampire.Tests.Editor.StitchPatchPlaySmoke.Run` exercises title/preparation navigation, four character motifs, live silver dock, settings categories/bookmarks, reward reroll/skip, grade accents, decorative raycast exclusion, gold orbit preservation, and mobile book navigation. It captures the actual Unity screens under `../work/stitch-*.png` and restores temporary character unlocks after the run.
 
 Final verification (2026-10-17): Unity 2022.3.62f3 Play Mode runner passed 198 assertions with no errors. Actual 1920x1080 captures cover all four preparation characters, title buttons, reward selection, six grade accents, exploration record and settings, including mobile UI mode. Inspected text/seam overlap, close-button draw order, motif transparency and ribbon stitching. Mobile mode was exercised in the editor; this was not a physical-device QA run. Existing unrelated texture import changes were excluded from the commit.
+
+## Reference alignment revision — 2026-10-17
+
+The three approved references (`04-preparation.png`, `04-augment.png`, `04-tab.png`) exposed stacked legacy frames and stitched overlays. The revised renderer gives each surface one owner:
+
+- Preparation panels and selection/loadout cards replace their original frame graphics. The stitched skin sits behind icons and captions; it is never appended over the content. Skill slots and record inventory cells retain their plain original frames without a stitched overlay.
+- Where the exploration record already has a printed border, the overlay draws only a single seam. Each lower inventory column gets one perimeter seam, not separate overlapping inventory/description outlines.
+- Corner patches follow rounded quarter-circle silhouettes. Button seams follow their body; bookmark seams follow the curved lower edge. Label padding and record skill/item cell bounds keep text and slots clear of compartment dividers.
+- Common augment cards use the reference's salmon frame, retaining the neutral grade label. Other card frames retain grade accents. Decorative diamonds use the card-frame color and the existing subtle twinkle. No corner or reward-button leaves are added.
+- Character motifs, the independent live silver dock, gold selection orbit and fixed reward-button colors remain intact.
+
+The play-mode regression now checks replacement-frame uniqueness, original-frame retirement, draw order behind content, plain inventory cell borders, column seam count and inventory/description bounds in addition to existing navigation and grade checks. Reference comparison uses real Unity captures, including all four characters and both book pages. No game balance or live shared-link build is changed.
+
+Revision verification: Unity 2022.3.62f3 final run passed 409 assertions without errors. Reviewed actual preparation, reward, record and settings screenshots after the final seam and divider adjustments. Physical mobile-device QA was not part of this revision.

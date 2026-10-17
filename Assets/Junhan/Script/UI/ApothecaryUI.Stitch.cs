@@ -34,23 +34,33 @@ namespace Vampire
                 // Preserve the enlarged bookmark silhouette and inventory hit rectangles.
                 if(bookmark)
                 {
-                    var g=StitchPatchTheme.Attach(f.visual,StitchPatchTheme.Thread);g.rectTransform.anchorMin=new Vector2(.03f,.25f);g.rectTransform.anchorMax=new Vector2(.97f,.98f);g.radius=7;g.inset=5;
+                    var g=StitchPatchTheme.Attach(f.visual,StitchPatchTheme.Thread);g.bookmarkOnly=true;g.accent=f.chosen?Color.white:new Color(.90f,.60f,.30f);
                     continue;
                 }
-                if(f.name=="Record close")continue;
-                StitchPatchTheme.Button(f,f.primary||f.chosen,!slot);
+                if(f.name=="Record close"||f.name.Contains("skill slot")||f.name.StartsWith("Record ")&&f.name.Contains("slot "))continue;
+                bool smallToolbar=f.name=="Record consumables"||f.name=="Record guide";
+                StitchPatchTheme.Button(f,f.primary||f.chosen,!slot&&!smallToolbar);
+                if(slot)
+                    foreach(var label in f.visual.GetComponentsInChildren<TextMeshProUGUI>())
+                        if(!string.IsNullOrEmpty(label.text)&&label.rectTransform.anchorMax.y<.25f)
+                        {var r=label.rectTransform;r.anchorMin+=Vector2.up*.025f;r.anchorMax+=Vector2.up*.025f;}
                 if(!slot)
                     foreach(var shape in f.visual.GetComponentsInChildren<IdentityShape>())shape.enabled=false;
             }
             foreach(var image in content.GetComponentsInChildren<Image>().ToArray())
-                if(image.sprite==Config.scrollPanel)
-                {bool outer=Page=="prepare"&&image.rectTransform.anchorMin.x==.10f;StitchPatchTheme.Attach(image.transform,outer?StitchPatchTheme.Coral:StitchPatchTheme.Thread,false,outer);}
+                if(image.sprite==Config.scrollPanel&&image.name=="Art"&&image.transform.parent==content)
+                {
+                    bool outer=Page=="prepare"&&image.rectTransform.anchorMin.x==.10f;
+                    image.enabled=false;
+                    var skin=StitchPatchTheme.Attach(image.transform,outer?StitchPatchTheme.Coral:StitchPatchTheme.Thread,true,outer);
+                    skin.inset=outer?10:8;skin.radius=outer?18:12;skin.cornerButtons=outer;
+                }
             foreach(var shape in content.GetComponentsInChildren<IdentityShape>().ToArray())
                 if(shape.name.StartsWith("Category "))
                 {
-                    shape.color=StitchPatchTheme.Coral;shape.SetVerticesDirty();
+                    shape.enabled=false;
                     foreach(var text in shape.GetComponentsInChildren<TextMeshProUGUI>())text.color=Color.white;
-                    var seam=StitchPatchTheme.Attach(shape.transform,Color.Lerp(shape.color,Color.white,.25f));seam.inset=4;seam.radius=13;
+                    var seam=StitchPatchTheme.Attach(shape.transform,StitchPatchTheme.Coral,true);seam.paper=StitchPatchTheme.Coral;seam.lightThread=true;seam.inset=5;seam.radius=13;seam.transform.SetAsFirstSibling();
                 }
             if(Page=="prepare")
             {
@@ -68,7 +78,9 @@ namespace Vampire
             }
             if(Page=="run"||Page=="settings")
             {
-                StitchBox("Book outer stitch",.023f,.031f,.976f,.907f,StitchPatchTheme.Coral,true).titleGap=true;
+                var outer=StitchBox("Book outer stitch",.023f,.031f,.976f,.907f,StitchPatchTheme.Coral,true);outer.titleGap=true;outer.inset=6;outer.cornerButtons=true;
+                var bannerHolder=Rect("Book ribbon seam",content,.30f,.82f,.70f,1.01f);
+                var bookRibbon=StitchPatchTheme.Attach(bannerHolder,StitchPatchTheme.Coral);bookRibbon.bannerOnly=true;bookRibbon.bannerStars=false;bookRibbon.bannerBottom=.44f;
                 if(Page=="run")
                 {
                     // Compartments match the approved exploration record backplate.
@@ -76,7 +88,8 @@ namespace Vampire
                     StitchBox("Map section stitch",.483f,.401f,.963f,.866f,StitchPatchTheme.Thread);
                     StitchBox("Map frame stitch",.493f,.415f,.855f,.799f,StitchPatchTheme.Thread);
                     foreach(var span in new[]{new Vector2(.035f,.347f),new Vector2(.355f,.645f),new Vector2(.653f,.964f)})
-                    {StitchBox("Inventory stitch",span.x,.199f,span.y,.390f,StitchPatchTheme.Thread);StitchBox("Description stitch",span.x,.063f,span.y,.196f,StitchPatchTheme.Thread);}
+                    {StitchBox("Inventory stitch",span.x,.063f,span.y,.390f,StitchPatchTheme.Thread);}
+                    BookAppliques();
                 }
                 else
                 {
@@ -87,6 +100,23 @@ namespace Vampire
                     if(parchment!=null){parchment.color=new Color(1,.951f,.837f);parchment.glossy=true;}
                 }
             }
+        }
+        void BookAppliques()
+        {
+            // Small decorations live in the margins, never in the slot or description rectangles.
+            foreach(var point in new[]{new Vector2(.046f,.850f),new Vector2(.461f,.850f),new Vector2(.046f,.425f),
+                new Vector2(.951f,.850f),new Vector2(.951f,.425f),new Vector2(.331f,.365f),new Vector2(.627f,.365f),
+                new Vector2(.950f,.365f),new Vector2(.048f,.079f),new Vector2(.330f,.079f),new Vector2(.950f,.079f)})
+            {
+                var holder=Rect("Book leaf applique",content,point.x,point.y,point.x,point.y);holder.sizeDelta=Vector2.one*20;
+                ImageAt(holder,StitchPatchTheme.Motif("Ashi"),0,0,1,1).color=new Color(.80f,.88f,.75f,.85f);
+            }
+            foreach(var point in new[]{new Vector2(.051f,.832f),new Vector2(.496f,.837f),new Vector2(.049f,.363f),new Vector2(.371f,.365f),new Vector2(.670f,.364f)})
+                {
+                    var pad=Rect("Book emblem backing",content,point.x,point.y,point.x,point.y);pad.sizeDelta=Vector2.one*21;
+                    var shape=pad.gameObject.AddComponent<IdentityShape>();shape.color=new Color(1,.954f,.84f);shape.radius=11;shape.raycastTarget=false;
+                    Sticker(point.x,point.y,22,new Color(1,.78f,.36f));
+                }
         }
         void SilverStitchPanel()
         {

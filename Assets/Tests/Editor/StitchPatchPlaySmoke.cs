@@ -53,6 +53,23 @@ namespace Vampire.Tests.Editor
         {
             if(ui.Page=="run"||ui.Page=="settings")
             {var outer=ui.GetComponentsInChildren<RectTransform>().First(t=>t.name=="Book outer stitch");var close=ui.GetComponentsInChildren<Button>().First(b=>b.name=="Record close");Check(outer.GetSiblingIndex()<close.transform.GetSiblingIndex(),"Close button renders above decorative corner");}
+            foreach(var state in ui.GetComponentsInChildren<StitchPatchButton>())
+            {
+                var visual=state.feedback.visual;
+                var skins=visual.GetComponentsInChildren<StitchPatchGraphic>().Where(g=>g.transform.parent==visual&&g.fill).ToArray();
+                Check(!state.feedback.body.enabled&&skins.Length==1,"Exactly one replacement frame: "+state.name);
+                Check(skins[0].transform.GetSiblingIndex()==0,"Frame stays behind icons and labels: "+state.name);
+            }
+            if(ui.Page=="run")
+            {
+                Check(!ui.GetComponentsInChildren<RectTransform>().Any(r=>r.name=="Description stitch"),"No extra description box over printed compartments");
+                Check(ui.GetComponentsInChildren<StitchPatchGraphic>().Where(g=>g.transform.parent.name=="Inventory stitch").Count()==3,"One continuous seam per inventory column");
+                foreach(var b in ui.GetComponentsInChildren<Button>().Where(b=>b.name.StartsWith("Record ")&&b.name.Contains("slot ")))
+                {
+                    Check(!b.GetComponentsInChildren<StitchPatchGraphic>().Any(),"Inventory cells keep a single plain outline");
+                    var r=(RectTransform)b.transform;Check(r.anchorMin.y>=.205f,"Inventory cell stays above description compartment");
+                }
+            }
             Check(ui.GetComponentsInChildren<StitchPatchGraphic>().All(g=>!g.raycastTarget),"Appliques never block clicks");
             foreach(var f in ui.GetComponentsInChildren<ApothecaryButtonFeedback>())Check(f.sparkle!=null,"Gold selection orbit retained "+f.name);
         }
@@ -86,6 +103,7 @@ namespace Vampire.Tests.Editor
             dialog.Open(false);yield return new WaitForSecondsRealtime(1.2f);yield return Settle();var cards=dialog.GetComponentsInChildren<AbilityCard>();
             Check(cards.All(c=>!c.GetComponentsInChildren<Image>().Any(i=>i.name.StartsWith("Training leaf"))),"No leaves on augment corners");
             Check(cards.All(c=>c.GetComponentsInChildren<StitchPatchGraphic>().Any(g=>g.stars&&g.twinkle)),"Each regular card has subtle star twinkle");
+            Check(cards.All(c=>!c.GetComponentsInChildren<IdentityShape>().Any(g=>g.name=="Glossy training frame"&&g.enabled)),"Old augment frame is disabled beneath replacement");
             Capture("augments");
             var reroll=(Button)Get(dialog,"rerollButton");var skip=(Button)Get(dialog,"skipButton");
             foreach(var b in new[]{reroll,skip})
@@ -96,7 +114,7 @@ namespace Vampire.Tests.Editor
             int index=0;foreach(AugmentUpgradeGrade grade in Enum.GetValues(typeof(AugmentUpgradeGrade)))
             {
                 var offer=new GameObject("Stitch grade preview").AddComponent<Ver4AugmentOffer>();offer.Configure(manager.Ver4,Ver4RewardKind.Numeric,grade,source,0,1,"테스트","침 피해량 +8%");cards[index%3].Init(dialog,offer,0);yield return Settle();
-                var stars=cards[index%3].GetComponentsInChildren<StitchPatchGraphic>().First(g=>g.stars);Check(stars.accent==AugmentPanelTheme.Accent(grade),"Stars match border "+grade);index++;if(index%3==0)Capture("grades-"+index);
+                var stars=cards[index%3].GetComponentsInChildren<StitchPatchGraphic>().First(g=>g.stars);Check(stars.accent==StitchPatchTheme.CardAccent(grade),"Stars match border "+grade);index++;if(index%3==0)Capture("grades-"+index);
             }
             dialog.Close();yield return Settle();
             typeof(MobileGameplayInput).GetProperty("Active").SetValue(null,true);ui.Show("hud");ui.OpenRunBook();yield return Settle();Check(ui.Page=="run","Mobile journal opens");Capture("tab-mobile");Click("Settings bookmark");yield return Settle();Capture("settings-mobile");ui.CloseRunBook();typeof(MobileGameplayInput).GetProperty("Active").SetValue(null,false);

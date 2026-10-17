@@ -8,6 +8,7 @@ namespace Vampire
     {
         public static readonly Color Coral=new Color(.98f,.38f,.43f), Mint=new Color(.73f,.88f,.79f), Thread=new Color(.88f,.58f,.42f);
         static readonly Dictionary<string,Sprite> motifs=new Dictionary<string,Sprite>();
+        public static Color CardAccent(AugmentUpgradeGrade grade)=>grade==AugmentUpgradeGrade.Common?new Color(1,.55f,.48f):AugmentPanelTheme.Accent(grade);
         public static Sprite Motif(string key)
         {
             if(motifs.TryGetValue(key,out var cached)&&cached!=null)return cached;
@@ -26,9 +27,8 @@ namespace Vampire
         public static void Button(ApothecaryButtonFeedback f,bool coral,bool replaceBody=true)
         {
             if(f==null||f.visual.Find("Stitch decoration")!=null)return;
-            var g=Attach(f.visual,coral?Coral:Mint,replaceBody);g.button=replaceBody;g.inset=4;g.radius=13;
-            if(replaceBody){f.body.enabled=false;f.useThemeStates=false;g.transform.SetAsFirstSibling();}
-            else g.transform.SetSiblingIndex(Mathf.Min(1,f.visual.childCount-1));
+            var g=Attach(f.visual,replaceBody?(coral?Coral:Mint):Thread,true);g.button=replaceBody;g.inset=8;g.radius=replaceBody?15:12;
+            f.body.enabled=false;f.useThemeStates=false;g.transform.SetAsFirstSibling();
             var state=f.gameObject.AddComponent<StitchPatchButton>();state.feedback=f;state.surface=g;state.coral=coral;state.replaceBody=replaceBody;
         }
     }

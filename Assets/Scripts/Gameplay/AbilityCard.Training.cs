@@ -21,7 +21,8 @@ namespace Vampire
                 trainingFrame.frame=true;trainingFrame.sparkle=true;trainingFrame.glossy=true;trainingFrame.radius=19;
                 trainingFrame.insetColor=new Color(1,.975f,.90f);
                 trainingFrame.sparkle=false;
-                stitchFrame=StitchPatchTheme.Attach(trainingFrame.transform,Color.white,false,true,true);
+                trainingFrame.enabled=false;
+                stitchFrame=StitchPatchTheme.Attach(trainingFrame.transform,Color.white,true,true,true);
                 stitchFrame.twinkle=true;stitchFrame.inset=9;stitchFrame.radius=18;
                 trainingGrade=TrainingUITheme.Pill("Rounded grade ribbon",transform,Color.white,new Vector2(.29f,.568f),new Vector2(.71f,.613f));
                 trainingEffect=TrainingUITheme.Pill("Effect name ribbon",transform,new Color(1,.79f,.81f),new Vector2(.08f,.410f),new Vector2(.92f,.474f));
@@ -36,7 +37,10 @@ namespace Vampire
                 // A small gold flourish separates weapon identity from the effect below it.
                 for(int i=0;i<3;i++)
                     TrainingUITheme.Pill("Name ornament "+i,transform,new Color(.80f,.55f,.35f),new Vector2(.41f+i*.065f,.478f),new Vector2(.445f+i*.065f,.487f));
-                var effectStitch=StitchPatchTheme.Attach(trainingEffect.transform,new Color(.93f,.47f,.56f));effectStitch.inset=3;effectStitch.radius=14;
+                trainingEffect.enabled=false;
+                var effectStitch=StitchPatchTheme.Attach(trainingEffect.transform,new Color(.93f,.47f,.56f),true);effectStitch.effectRibbon=true;effectStitch.paper=new Color(1,.79f,.81f);effectStitch.inset=5;effectStitch.radius=14;effectStitch.transform.SetAsFirstSibling();
+                var flourish=StitchPatchTheme.Attach(progressRule.transform,new Color(.84f,.55f,.32f));flourish.flourishOnly=true;
+                AugmentPanelTheme.Anchors(flourish.rectTransform,Vector2.one*.5f,Vector2.one*.5f);flourish.rectTransform.sizeDelta=new Vector2(32,8);
             }
             bool enabled=UsesTrainingLayout;
             trainingFrame.gameObject.SetActive(enabled);trainingGrade.gameObject.SetActive(enabled);
@@ -45,7 +49,7 @@ namespace Vampire
             if(!enabled)return;
             var accent=AugmentPanelTheme.Accent(grade);
             trainingFrame.color=accent;trainingGrade.color=Color.Lerp(accent,Color.white,.3f);
-            stitchFrame.accent=accent;stitchFrame.SetVerticesDirty();
+            stitchFrame.accent=StitchPatchTheme.CardAccent(grade);stitchFrame.SetVerticesDirty();
             gradeBorder.color=Color.clear;gradeBody.color=Color.clear;
             AugmentPanelTheme.Anchors(gradeBorder.rectTransform,new Vector2(.29f,.51f),new Vector2(.71f,.555f));
             gradeLabel.transform.SetParent(trainingGrade.transform,false);
@@ -56,7 +60,7 @@ namespace Vampire
             var button=cardBackgroundImage.GetComponent<Button>();
             if(button!=null)
             {
-                button.targetGraphic=trainingFrame;
+                button.targetGraphic=stitchFrame;
                 button.colors=ColorBlock.defaultColorBlock;
                 if(button.GetComponent<UIButtonPressEffect>()==null)button.gameObject.AddComponent<UIButtonPressEffect>();
             }
