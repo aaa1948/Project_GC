@@ -67,6 +67,7 @@ namespace Vampire
         }
         public static bool IsSpecial(Monster m) => m is SniperMonster || m is TrapMonster || m is AcidLeechMonster || m is MonsterSupportCaster || m is NutritionThiefBacteriaMonster || m is TreasureRunnerMonster;
         public void SpecialKill() { if (!finished) Data.special++; }
+        public void BossKill() { if (!finished) Data.boss++; }
         public void Enter(UnityEngine.Object portal) { if (!finished && portal != null && portals.Add(portal.GetInstanceID())) Data.entered++; }
         public void Clear() { if (!finished) Data.cleared++; }
         public void Overcharge(UnityEngine.Object source) { if (!finished && source != null && overcharges.Add(source.GetInstanceID())) Data.overcharge++; }

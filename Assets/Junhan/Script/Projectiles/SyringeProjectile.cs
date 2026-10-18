@@ -391,8 +391,10 @@ namespace Vampire
         {
             Transform target = ver4HomingTarget;
             Monster monster = target != null ? target.GetComponentInParent<Monster>() : null;
-            if (!NeedleTargeting.IsValid(monster, targetLayer) || hitTargetIds.Contains(monster.gameObject.GetInstanceID()) ||
-                (NeedleTargeting.Position(monster) - (Vector2)transform.position).sqrMagnitude > specials.homingRange * specials.homingRange)
+            var targetDamageable=target!=null?target.GetComponentInParent<IDamageable>():null;
+            bool valid=NeedleTargeting.IsValid(monster,targetLayer)||NeedleTargeting.IsValidBossTarget(target,targetLayer);
+            if (!valid || targetDamageable==null || hitTargetIds.Contains(targetDamageable.gameObject.GetInstanceID()) ||
+                ((Vector2)target.position - (Vector2)transform.position).sqrMagnitude > specials.homingRange * specials.homingRange)
                 target = FindClosestTarget();
             ver4HomingTarget = target;
 
@@ -861,6 +863,12 @@ namespace Vampire
 
             foreach (Collider2D hit in hits)
             {
+                if(NeedleTargeting.IsValidBossTarget(hit,targetLayer))
+                {
+                    var bossTarget=hit.GetComponentInParent<IDamageable>();float bossDistance=Vector2.Distance(transform.position,hit.transform.position);
+                    if(!hitTargetIds.Contains(bossTarget.gameObject.GetInstanceID())&&bossDistance<closestDistance){closestDistance=bossDistance;closestTarget=hit.transform;}
+                    continue;
+                }
                 Monster monster;
                 if (!TryGetValidMonsterTarget(hit, out monster) || !NeedleTargeting.IsValid(monster, targetLayer)) continue;
 
@@ -1749,6 +1757,14 @@ namespace Vampire
 
             foreach (Collider2D hit in hits)
             {
+                if(NeedleTargeting.IsValidBossTarget(hit,targetLayer))
+                {
+                    var boss=hit.GetComponentInParent<IDamageable>();
+                    if(boss.gameObject==originalTarget||originalTarget.transform.IsChildOf(boss.transform)||!damagedIds.Add(boss.GetInstanceID()))continue;
+                    float amount=specials.explosionDamage*Ver4HitEffects.ExplosionCenterMultiplier(boss,transform.position,specials);bool critical;
+                    if(statRuntime!=null)amount=statRuntime.CalculateOffensiveDamage(playerCharacter,boss,amount,out critical);
+                    Ver4HitEffects.Damage(boss,amount,Vector2.zero,playerCharacter,"폭발침");continue;
+                }
                 Monster monster;
                 if (!TryGetValidMonsterTarget(hit, out monster)) continue;
                 if (IsSameTarget(originalTarget, monster)) continue;

@@ -316,7 +316,7 @@ namespace Vampire
 
         private static float GetCorrosionDamageMultiplier(Component damageableComponent)
         {
-            Monster monster = GetMonster(damageableComponent);
+            Component monster = FoodBossCombatStatus.Supports(damageableComponent)?damageableComponent:GetMonster(damageableComponent);
 
             if (monster == null)
             {
@@ -362,7 +362,7 @@ namespace Vampire
 
         private static bool TryConsumeNeedleMark(Component damageableComponent)
         {
-            Monster monster = GetMonster(damageableComponent);
+            Component monster = FoodBossCombatStatus.Supports(damageableComponent)?damageableComponent:GetMonster(damageableComponent);
 
             if (monster == null)
             {

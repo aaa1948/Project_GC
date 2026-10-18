@@ -24,6 +24,7 @@ namespace Vampire
         }
         public static void AfterHit(Component target,SyringeSpecialRuntime runtime,Character source,LayerMask layer,bool markConsumed)
         {
+            FoodBossCombatStatus.Apply(target,runtime,source,markConsumed);
             var snapshot=runtime.ver4;
             if(snapshot==null || target==null || source==null) return;
             int polarityStage = snapshot.Count(P.BipolarNeedle, 2);
@@ -63,6 +64,8 @@ namespace Vampire
         }
         public static float Health(Component target)
         {
+            if(target is FoodBossRuntime food)return food.Health;
+            if(target is FoodBossWeakpoint weak)return weak.Health;
             if(target is CurrencyJar jar)return jar.CanBreak ? 1 : 0;
             if(target is SnailBossRuntime snail)return snail.Health;
             if(target is Monster monster) return monster.HP;
@@ -71,12 +74,14 @@ namespace Vampire
         }
         public static float MaxHealth(Component target)
         {
+            if(target is FoodBossRuntime food)return food.MaxHealth;
+            if(target is FoodBossWeakpoint weak)return weak.MaxHealth;
             if(target is SnailBossRuntime snail)return snail.settings!=null?snail.settings.maxHealth:1;
             if(target is Monster monster) return monster.SpawnMaxHealth;
             if(target is BossPartDamageTestPart part) return part.MaxHealth;
             return 0;
         }
-        public static bool IsBoss(Component target) => target is SnailBossRuntime || target is BossMonster || target is MiniBossMonster || target is BossPartDamageTestPart;
+        public static bool IsBoss(Component target) => target is FoodBossRuntime || target is FoodBossWeakpoint || target is SnailBossRuntime || target is BossMonster || target is MiniBossMonster || target is BossPartDamageTestPart;
         public static List<Component> Nearby(Vector2 center,float radius,LayerMask layer,Character source)
         {
             var result=new List<Component>(); var ids=new HashSet<int>();
