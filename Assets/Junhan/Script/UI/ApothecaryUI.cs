@@ -100,6 +100,7 @@ namespace Vampire
             LobbyLoadoutData.OnChanged += OnLoadout;
             AudioListener.volume = GamePreferences.Current.muted ? 0 : GamePreferences.Current.master;
             Show(lobby ? "main" : "hud");
+            if (lobby) IntroMovie.TryShow(this);
         }
         void OnDestroy()
         {
@@ -116,6 +117,7 @@ namespace Vampire
         void OnLoadout() { dirty = true; }
         void Update()
         {
+            if (IntroMovie.BlocksMenuInput) return;
             UpdateSkillUI();
             UpdateBossCompass();
             UpdatePrescriptionUI();

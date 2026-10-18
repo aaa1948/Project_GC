@@ -535,22 +535,23 @@ namespace Vampire
 
         private void ApplySourceVolumes()
         {
+            float introGain = IntroMovie.Active ? 0 : 1;
             if (baseBgmSource != null)
             {
                 baseBgmSource.volume =
-                    masterVolume * bgmVolume;
+                    masterVolume * bgmVolume * introGain;
             }
 
             if (overrideBgmSource != null)
             {
                 overrideBgmSource.volume =
-                    masterVolume * bgmVolume;
+                    masterVolume * bgmVolume * introGain;
             }
 
             if (modalBgmSource != null)
             {
                 modalBgmSource.volume =
-                    masterVolume * bgmVolume;
+                    masterVolume * bgmVolume * introGain;
             }
 
             if (sfxSource != null)
@@ -565,6 +566,10 @@ namespace Vampire
             // Master is applied once at AudioListener, including the independent UI channel.
             masterVolume=1;bgmVolume=GamePreferences.Current.music;sfxVolume=GamePreferences.Current.effects;
             ApplySourceVolumes();if(uiSource!=null)uiSource.volume=GamePreferences.Current.ui;
+        }
+        public static void RefreshIntroVolume()
+        {
+            if (Instance != null) Instance.ApplySourceVolumes();
         }
         public static void PlayUiClip(AudioClip clip)
         {
