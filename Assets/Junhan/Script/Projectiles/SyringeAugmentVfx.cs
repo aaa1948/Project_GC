@@ -131,6 +131,8 @@ namespace Vampire
         public static bool IsLiving(Component owner)
         {
             if (owner == null || !owner.gameObject.activeInHierarchy) return false;
+            var food=owner.GetComponentInParent<FoodBossRuntime>();if(food!=null&&food.Dead)return false;
+            var weak=owner.GetComponentInParent<FoodBossWeakpoint>();if(weak!=null&&weak.Health<=0)return false;
             var monster = owner.GetComponentInParent<Monster>();
             if (monster != null && monster.HP <= 0f) return false;
             var part = owner.GetComponentInParent<BossPartDamageTestPart>();

@@ -209,12 +209,15 @@ namespace Vampire
         /// Monster Spawning
         ////////////////////////////////////////////////////////////////////////////////
         // UFO bosses own their five-core health and rewards; they are not MonsterPool entries.
-        public GameObject SpawnFinalBoss(LevelBlueprint blueprint, Vector2 position, float hpBuff = 0f)
+        public GameObject SpawnFinalBoss(LevelBlueprint blueprint, Vector2 position, float hpBuff = 0f, FoodBossKind? selectedBoss = null)
         {
             if (ShouldBlockFieldMonsterSpawn(false) || blueprint == null ||
                 blueprint.finalBoss == null || blueprint.finalBoss.bossPrefab == null) return null;
             GameObject prefab = blueprint.finalBoss.bossPrefab;
             position = FiniteStomachMap.SafeSpawn(position, 2f);
+            var level = GetComponent<LevelManager>() ?? FindObjectOfType<LevelManager>();
+            if (prefab.GetComponent<SnailBossRuntime>() != null && (level == null || StageProgression.Ensure(level).StageNumber == 1))
+                return FoodBossRuntime.Spawn(selectedBoss ?? (FoodBossKind)Random.Range(0,5), playerCharacter, position, transform).gameObject;
             if (prefab.GetComponent<Monster>() != null)
             {
                 Monster monster = SpawnMonster(blueprint.monsters.Length, position,

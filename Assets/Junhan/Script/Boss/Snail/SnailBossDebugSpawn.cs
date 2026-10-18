@@ -18,7 +18,7 @@ namespace Vampire
         }
         void Update()
         {
-            if(GameInput.GetKeyDown(KeyCode.Insert))TrySpawn();
+            if(GameInput.GetKeyDown(KeyCode.Insert)){RunScore.Exclude("보스 소환 테스트");TrySpawn();}
             var level=FindObjectOfType<LevelManager>();
             if(level==null||SnailBossRuntime.Paused||level.IsRunFlowPaused||level.IsLevelEnded)return;
             if(level.CurrentLevelTime>=nextFieldWave)
@@ -26,7 +26,7 @@ namespace Vampire
         }
         public static int SpawnFieldMinis(LevelManager level)
         {
-            if(level==null||level.PlayerCharacter==null||FindObjectOfType<SnailBossRuntime>()!=null)return 0;
+            if(level==null||level.PlayerCharacter==null||FindObjectOfType<SnailBossRuntime>()!=null||FindObjectOfType<FoodBossRuntime>()!=null)return 0;
             int living=0;foreach(var m in level.EntityManager.LivingMonsters)if(m is AcidLeechMonster)living++;
             var entries=level.CurrentLevelBlueprint.monsters;
             for(int i=0;i<entries.Length;i++)
@@ -44,9 +44,9 @@ namespace Vampire
         }
         public static bool TrySpawn()
         {
-            if(SnailBossRuntime.Paused||FindObjectOfType<SnailBossRuntime>()!=null||FinalBossSummonInteractable.IsSummoning)return false;
+            if(SnailBossRuntime.Paused||FindObjectOfType<SnailBossRuntime>()!=null||FindObjectOfType<FoodBossRuntime>()!=null||FinalBossSummonInteractable.IsSummoning)return false;
             var level=FindObjectOfType<LevelManager>();if(level==null||level.IsLevelEnded||level.IsRunFlowPaused)return false;
-            var terminal=FindObjectOfType<FinalBossSummonInteractable>();if(terminal!=null)return terminal.TryAutomaticSummon();
+            var terminal=FindObjectOfType<FinalBossSummonInteractable>();if(terminal!=null)return terminal.OpenBossChoice(level.PlayerCharacter);
             if(level.PlayerCharacter==null)return false;
             var boss=level.EntityManager.SpawnFinalBoss(level.CurrentLevelBlueprint,(Vector2)level.PlayerCharacter.transform.position+Vector2.up*7);
             if(boss==null)return false;level.NotifyExternalFinalBossSpawned();GameAudioManager.StartBossAudio();return true;

@@ -26,7 +26,7 @@ namespace Vampire
         }
         void ApplyStitchTheme()
         {
-            if(content==null || Page!="main"&&Page!="prepare"&&Page!="run"&&Page!="settings")return;
+            if(content==null || Page!="main"&&Page!="prepare"&&Page!="run"&&Page!="settings"&&Page!="rankingName"&&Page!="rankingInfo")return;
             foreach(var f in content.GetComponentsInChildren<ApothecaryButtonFeedback>(true))
             {
                 bool slot=f.name.StartsWith("Choice ")||f.name.StartsWith("Loadout ")||f.name.StartsWith("Record ")&&f.name.Contains("slot ")||f.name.Contains("skill slot");

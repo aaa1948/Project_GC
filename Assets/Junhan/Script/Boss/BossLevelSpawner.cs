@@ -93,6 +93,7 @@ namespace Vampire
             if (Vampire.GameInput.GetKeyDown(debugSpawnKey))
             {
                 Debug.Log("[BossLevelSpawner] Debug spawn key pressed.");
+                RunScore.Exclude("보스 소환 테스트");
                 SpawnBoss();
             }
         }

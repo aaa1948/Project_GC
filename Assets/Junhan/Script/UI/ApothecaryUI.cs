@@ -100,6 +100,7 @@ namespace Vampire
             LobbyLoadoutData.OnChanged += OnLoadout;
             AudioListener.volume = GamePreferences.Current.muted ? 0 : GamePreferences.Current.master;
             Show(lobby ? "main" : "hud");
+            if (lobby) IntroMovie.TryShow(this);
         }
         void OnDestroy()
         {
@@ -116,6 +117,8 @@ namespace Vampire
         void OnLoadout() { dirty = true; }
         void Update()
         {
+            if (IntroMovie.BlocksMenuInput) return;
+            UpdateRanking();
             UpdateSkillUI();
             UpdateBossCompass();
             UpdatePrescriptionUI();
@@ -150,6 +153,7 @@ namespace Vampire
         }
         public void Back()
         {
+            if(Page=="bossChoice"){CloseBossChoice();return;}
             if(Page=="supplyRelic"){CloseSupplyRelics(false);return;}
             if(Page=="merchant"){merchant?.CloseShop();return;}
             if (starting || Page == "skillReward" || Page == "result" || (level != null && level.PlayerCharacter != null && level.PlayerCharacter.Skills != null && level.PlayerCharacter.Skills.IsCutin)) return;
@@ -178,6 +182,7 @@ namespace Vampire
                 return;
             }
             var blocker=content.gameObject.AddComponent<Image>();blocker.color=Color.clear;blocker.raycastTarget=true;
+            if(Page=="bossChoice"){BuildBossChoice();return;}
             if(Page=="merchant"){OctoberMerchant();return;}
             if(Page=="supplyRelic"){OctoberSupplyRelics();return;}
             if(Page=="run" && Tab<4){ExplorationRecord();return;}
@@ -187,6 +192,8 @@ namespace Vampire
             if (!liveFloodResult)
                 ImageAt(content,Page == "main" ? Config.mainBackground : Page=="settings"||Page=="exit"?Config.panelBackground:Config.bookBackground,0,0,1,1,false);
             if (Page == "main") { OctoberMain(); return; }
+            if (Page == "rankingName") { RankingName(); return; }
+            if (Page == "rankingInfo") { RankingInfo(); return; }
             string title = Page == "prepare" ? "출전 준비" : Page == "unlock" ? "업적 · 해금 도감" : Page == "run" ? "탐험 기록" : Page == "result" ? (passed ? "게임 클리어!" : "아쉽지만 실패!") : Page == "exit" ? "게임 종료" : "설정";
             OctoberFrame(title);
             if (Page == "prepare" || Page == "unlock")
