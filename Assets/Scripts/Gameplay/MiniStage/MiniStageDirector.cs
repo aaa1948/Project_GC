@@ -231,6 +231,7 @@ namespace Vampire
             isTransitioning = false;
 
             currentRoom.BeginRoom();
+            RunScore.Current?.Enter(returnPortal);
 
             if (debugLog)
             {

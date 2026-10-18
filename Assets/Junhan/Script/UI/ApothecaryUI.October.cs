@@ -16,7 +16,7 @@ namespace Vampire
                 string role=OctoberArt.CharacterKey(c);float x,y,r,t;
                 switch(role)
                 {
-                    case "Hyuki":x=.11f;y=.12f;r=.255f;t=.425f;break;
+                    case "Hyuki":x=.255f;y=.12f;r=.365f;t=.425f;break;
                     case "Shini":x=.475f;y=.45f;r=.615f;t=.74f;break;
                     case "Ari":x=.655f;y=.10f;r=.86f;t=.42f;break;
                     default:x=.36f;y=.075f;r=.53f;t=.39f;break;
@@ -28,6 +28,7 @@ namespace Vampire
             germ.gameObject.AddComponent<OctoberTitleMotion>().role="Germ";
             string[] labels={"게임 시작","업적","설정","종료"};string[] pages={"prepare","unlock","settings","exit"};
             for(int i=0;i<4;i++){int index=i;ActionButton(content,labels[i],.768f,.77f-i*.104f,.968f,.872f-i*.104f,()=>Show(pages[index]),i==0);}
+            RankingPanel();
         }
         void OctoberFrame(string title)
         {

@@ -114,6 +114,7 @@ namespace Vampire
             SupplyCapsuleDirector.Ensure(this);
             FieldObjectLayout.Ensure(this);
             AcidLakeEvent.Install(this);
+            RunScore.Install(this);
         }
 
         // Preserve the actual player, abilities, inventory, relic runtimes, stats and loot pools.
@@ -392,6 +393,7 @@ namespace Vampire
             SaveCoinsGained();
 
             GameAudioManager.EndRunAudio(false);
+            RunScore.Current?.Finish(false);
 
             Time.timeScale = 0f;
 
@@ -420,6 +422,7 @@ namespace Vampire
 
             SaveCoinsGained();
             GameAudioManager.EndRunAudio(true);
+            RunScore.Current?.Finish(true);
             // Boss BGM 종료.
             // Ingame BGM은 재개하지 않음.
             // 승리 보상 효과음 재생.

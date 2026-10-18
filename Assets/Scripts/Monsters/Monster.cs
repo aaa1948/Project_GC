@@ -99,6 +99,13 @@ namespace Vampire
             DespawnForStageTransfer();
         }
         public bool WasKilledByPlayer { get; private set; }
+        bool rankingKillRecorded;
+        public void RecordRankingKill()
+        {
+            if (rankingKillRecorded) return;
+            rankingKillRecorded = true;
+            RunScore.Current?.Kill(this);
+        }
 
         // 결과 화면 및 공격 출처 추적용
         public MonsterBlueprint Blueprint => monsterBlueprint;
@@ -231,6 +238,7 @@ namespace Vampire
             miniStageOwned = isMiniStageOwned;
             nextHitFlashTime = 0f;
             deathStarted = false;
+            rankingKillRecorded = false;
 
             fieldRuntimeSuspended = false;
             hasCachedRigidbodySimulated = false;
@@ -635,6 +643,7 @@ namespace Vampire
             deathStarted = true;
             alive = false;
             WasKilledByPlayer = killedByPlayer;
+            if (killedByPlayer) RecordRankingKill();
             Died?.Invoke(this);
 
             if (monsterHitbox != null)

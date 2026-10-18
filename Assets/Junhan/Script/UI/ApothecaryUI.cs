@@ -118,6 +118,7 @@ namespace Vampire
         void Update()
         {
             if (IntroMovie.BlocksMenuInput) return;
+            UpdateRanking();
             UpdateSkillUI();
             UpdateBossCompass();
             UpdatePrescriptionUI();
@@ -189,6 +190,8 @@ namespace Vampire
             if (!liveFloodResult)
                 ImageAt(content,Page == "main" ? Config.mainBackground : Page=="settings"||Page=="exit"?Config.panelBackground:Config.bookBackground,0,0,1,1,false);
             if (Page == "main") { OctoberMain(); return; }
+            if (Page == "rankingName") { RankingName(); return; }
+            if (Page == "rankingInfo") { RankingInfo(); return; }
             string title = Page == "prepare" ? "출전 준비" : Page == "unlock" ? "업적 · 해금 도감" : Page == "run" ? "탐험 기록" : Page == "result" ? (passed ? "게임 클리어!" : "아쉽지만 실패!") : Page == "exit" ? "게임 종료" : "설정";
             OctoberFrame(title);
             if (Page == "prepare" || Page == "unlock")

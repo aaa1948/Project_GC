@@ -18,7 +18,7 @@ namespace Vampire
         }
         void Update()
         {
-            if(GameInput.GetKeyDown(KeyCode.Insert))TrySpawn();
+            if(GameInput.GetKeyDown(KeyCode.Insert)){RunScore.Exclude("보스 소환 테스트");TrySpawn();}
             var level=FindObjectOfType<LevelManager>();
             if(level==null||SnailBossRuntime.Paused||level.IsRunFlowPaused||level.IsLevelEnded)return;
             if(level.CurrentLevelTime>=nextFieldWave)

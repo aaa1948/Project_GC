@@ -42,6 +42,7 @@ namespace Vampire
         // Does not advance the boss, monster, capsule or other run schedules.
         public void StartDebugFlood()
         {
+            RunScore.Exclude("위산 이벤트 테스트");
             if (!Active || level.IsLevelEnded || level.IsRunFlowPaused || MiniStageRuntimeState.IsInsideMiniStage) return;
             debugOffset = Mathf.Max(debugOffset, FloodTime - level.CurrentLevelTime);
             EventTime = Mathf.Max(EventTime, FloodTime);
