@@ -70,10 +70,8 @@ namespace Vampire
         {
             if (monsterSpriteRenderer == null || monsterHitbox == null) SetupHitboxReference();
             var mini=GetComponentInChildren<SnailMiniVisual>();
-            var food=GetComponent<FoodSnailMonster>();
             var fit=GetComponent<MonsterBodyFit>() ?? gameObject.AddComponent<MonsterBodyFit>();
-            if(food!=null && food.Shell!=null)fit.Configure(monsterHitbox,monsterSpriteRenderer,food.Shell);
-            else if(mini!=null)fit.Configure(monsterHitbox,mini.Body,mini.Shell);
+            if(mini!=null)fit.Configure(monsterHitbox,mini.Body,mini.Shell);
             else fit.Configure(monsterHitbox, monsterSpriteRenderer);
         }
         public void DespawnForStageTransfer()
