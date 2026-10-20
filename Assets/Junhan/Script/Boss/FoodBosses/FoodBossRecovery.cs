@@ -26,7 +26,7 @@ namespace Vampire
             }
             Recovering=false;hitbox.enabled=true;Visual.ResetPose();Audio.Play(FoodBossSound.Break);FoodBossEffects.Burst(this,transform.position,2);yield return Wait(.8f);
         }
-        public void ConsumeMini(FoodBossWeakpoint mini){if(!Recovering||mini==null||mini.Health<=0)return;Heal(.02f);Audio.Play(FoodBossSound.Recover,.35f);mini.Consume();}
+        public void ConsumeMini(FoodBossWeakpoint mini){if(!Recovering||mini==null||mini.Health<=0)return;Heal(.02f);Audio.Play(FoodBossSound.Consume,.5f);mini.Consume();}
     }
     public sealed class FoodBossWeakpoint:IDamageable
     {

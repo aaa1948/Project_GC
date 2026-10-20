@@ -1,332 +1,458 @@
 [
   {
-    "name": "0-Shot.wav",
-    "seconds": 0.18,
-    "peak": 0.5300267934799194,
-    "rms": 0.10728798887605456
+    "file": "0-Shot.wav",
+    "sha256": "6c3453da4daa0a7028f7133319cf6b2f50adf37d4b5fd6e9428e0aaf9ec2289f",
+    "seconds": 0.295034,
+    "sampleRate": 44100,
+    "peak": 0.314453125,
+    "rms": 0.029493847979260693
   },
   {
-    "name": "0-Radial.wav",
-    "seconds": 0.48,
-    "peak": 0.64,
-    "rms": 0.13116525752996294
+    "file": "0-Radial.wav",
+    "sha256": "ac06df9e6cd28f68fbcaa7c0cf0ae342f613e4d9894b761a43f8a8dce842fb72",
+    "seconds": 0.415034,
+    "sampleRate": 44100,
+    "peak": 0.3599853515625,
+    "rms": 0.04377681527620703
   },
   {
-    "name": "0-Dash.wav",
-    "seconds": 0.9,
-    "peak": 0.64,
-    "rms": 0.12341445261056555
+    "file": "0-Dash.wav",
+    "sha256": "24e5dc51102d8094c3448ae080551572997b08e07ae40ca77219256a8eeee4b7",
+    "seconds": 1.410023,
+    "sampleRate": 44100,
+    "peak": 0.45001220703125,
+    "rms": 0.05165488135394698
   },
   {
-    "name": "0-Land.wav",
-    "seconds": 0.62,
-    "peak": 0.64,
-    "rms": 0.08169711034421422
+    "file": "0-Land.wav",
+    "sha256": "f3c7e921a0f00916bf6ba1cb885cae79c727613a5e4b7b7bee0fc9631c775cc1",
+    "seconds": 0.440023,
+    "sampleRate": 44100,
+    "peak": 0.3599853515625,
+    "rms": 0.025171121159766476
   },
   {
-    "name": "0-Skill1.wav",
-    "seconds": 1,
-    "peak": 0.64,
-    "rms": 0.11892363014590784
+    "file": "0-Skill1.wav",
+    "sha256": "ca5731b3d048e6edbb4f991ce31988a343d4c4f5b668bc9a7f2735b5d7e892da",
+    "seconds": 1.160023,
+    "sampleRate": 44100,
+    "peak": 0.360015869140625,
+    "rms": 0.0346682889290886
   },
   {
-    "name": "0-Skill2.wav",
-    "seconds": 0.75,
-    "peak": 0.64,
-    "rms": 0.11455131705976748
+    "file": "0-Skill2.wav",
+    "sha256": "e67e2b320405462c5cf5f5cce6562ab77aa7fbc07ff16c8040f77ca1b9c272fd",
+    "seconds": 0.350023,
+    "sampleRate": 44100,
+    "peak": 0.329620361328125,
+    "rms": 0.05437006105992992
   },
   {
-    "name": "0-Recover.wav",
-    "seconds": 0.85,
-    "peak": 0.5522301197052002,
-    "rms": 0.11843295836162532
+    "file": "0-Recover.wav",
+    "sha256": "1e5d30180abdb2d3cbee1a447d079db6e628b8358c59eaaf0eac7dabcaa361a8",
+    "seconds": 1.160023,
+    "sampleRate": 44100,
+    "peak": 0.277099609375,
+    "rms": 0.03104068327532971
   },
   {
-    "name": "0-Break.wav",
-    "seconds": 0.34,
-    "peak": 0.64,
-    "rms": 0.06544039277664591
+    "file": "0-Break.wav",
+    "sha256": "5a65eb0b7fa68d615c3c7a62167eff77ed9c6a3b8b4e47f0010389924d0a1546",
+    "seconds": 0.490023,
+    "sampleRate": 44100,
+    "peak": 0.314971923828125,
+    "rms": 0.03013727664279109
   },
   {
-    "name": "0-Phase.wav",
-    "seconds": 1.15,
-    "peak": 0.64,
-    "rms": 0.16605828962159175
+    "file": "0-Phase.wav",
+    "sha256": "635c2a2cd16bf4b2929a6a1f7923a2a711dc2e0259db9dc079cdc05e500c121d",
+    "seconds": 1.410023,
+    "sampleRate": 44100,
+    "peak": 0.449981689453125,
+    "rms": 0.037012478282598994
   },
   {
-    "name": "0-Death.wav",
-    "seconds": 1.1,
-    "peak": 0.4693259000778198,
-    "rms": 0.11636716512351691
+    "file": "0-Death.wav",
+    "sha256": "d874600241a31caa49dc441b93663672c597649361170a2c2e567c9a66a65027",
+    "seconds": 0.910023,
+    "sampleRate": 44100,
+    "peak": 0.27001953125,
+    "rms": 0.01356513075520769
   },
   {
-    "name": "0-Skid.wav",
-    "seconds": 0.55,
-    "peak": 0.64,
-    "rms": 0.10554629571567424
+    "file": "0-Skid.wav",
+    "sha256": "14050cc2e32b044c70ef427bd462d4a992f3aa3a5b349f691383e7b0976c5060",
+    "seconds": 0.880023,
+    "sampleRate": 44100,
+    "peak": 0.45001220703125,
+    "rms": 0.038972947042378345
   },
   {
-    "name": "1-Shot.wav",
-    "seconds": 0.18,
-    "peak": 0.64,
-    "rms": 0.0903125436140864
+    "file": "0-Consume.wav",
+    "sha256": "cd0525195d26935da5ccf79a431b04aede8d20a7a9954221d3389b0669378c14",
+    "seconds": 0.300023,
+    "sampleRate": 44100,
+    "peak": 0.250946044921875,
+    "rms": 0.033110384212789085
   },
   {
-    "name": "1-Radial.wav",
-    "seconds": 0.48,
-    "peak": 0.64,
-    "rms": 0.13070378365199328
+    "file": "1-Shot.wav",
+    "sha256": "d11dbc169a4d12a06e47cc32d112e7c48cf41f4abdf99912c7a92e6482b3c90d",
+    "seconds": 0.250023,
+    "sampleRate": 44100,
+    "peak": 0.449981689453125,
+    "rms": 0.07238828264784207
   },
   {
-    "name": "1-Dash.wav",
-    "seconds": 0.9,
-    "peak": 0.64,
-    "rms": 0.14523071666558846
+    "file": "1-Radial.wav",
+    "sha256": "328739cecf4fdf86543f9cc69573d071fcfb378055ab78cd30039379013ca481",
+    "seconds": 0.375011,
+    "sampleRate": 44100,
+    "peak": 0.344146728515625,
+    "rms": 0.05957382974056967
   },
   {
-    "name": "1-Land.wav",
-    "seconds": 0.62,
-    "peak": 0.64,
-    "rms": 0.0759245599609402
+    "file": "1-Dash.wav",
+    "sha256": "160aac47135bcefe8d30f6bac6e2c1e5487ee9d80f384c7cb97d30eeeb189e8d",
+    "seconds": 0.900023,
+    "sampleRate": 44100,
+    "peak": 0.362396240234375,
+    "rms": 0.06650519546347793
   },
   {
-    "name": "1-Skill1.wav",
-    "seconds": 1,
-    "peak": 0.64,
-    "rms": 0.10098972800409792
+    "file": "1-Land.wav",
+    "sha256": "a612b2a777ae93b3e0c7c18da21383612f251e9d50de6d3afb8da42b3bac3aff",
+    "seconds": 0.430023,
+    "sampleRate": 44100,
+    "peak": 0.388397216796875,
+    "rms": 0.07149875041116445
   },
   {
-    "name": "1-Skill2.wav",
-    "seconds": 0.75,
-    "peak": 0.64,
-    "rms": 0.10630938741464639
+    "file": "1-Skill1.wav",
+    "sha256": "65578bd0f9874588e5b75b2be93290c7ec1c913fc881633d99697e7fef5fce72",
+    "seconds": 0.440023,
+    "sampleRate": 44100,
+    "peak": 0.37530517578125,
+    "rms": 0.05287051689616387
   },
   {
-    "name": "1-Recover.wav",
-    "seconds": 0.85,
-    "peak": 0.24500642716884613,
-    "rms": 0.09208707602550807
+    "file": "1-Skill2.wav",
+    "sha256": "8d7532b7875ee985fedd4f8204c22bada6aec6e7536c0c9b583e0bfb6aba3d5b",
+    "seconds": 0.610023,
+    "sampleRate": 44100,
+    "peak": 0.2633056640625,
+    "rms": 0.029682798573325914
   },
   {
-    "name": "1-Break.wav",
-    "seconds": 0.34,
-    "peak": 0.4587239623069763,
-    "rms": 0.06213285537452764
+    "file": "1-Recover.wav",
+    "sha256": "b05450aacfc6c1fc8e7268212d5aec3f25dcb97c3743c3c5637ea18558c6a682",
+    "seconds": 0.630023,
+    "sampleRate": 44100,
+    "peak": 0.326141357421875,
+    "rms": 0.03934611905354692
   },
   {
-    "name": "1-Phase.wav",
-    "seconds": 1.15,
-    "peak": 0.64,
-    "rms": 0.18161091750595684
+    "file": "1-Break.wav",
+    "sha256": "df4da89e0c083e577e047662d034d6055853b64fc2d54e74f542874630dd346c",
+    "seconds": 0.420023,
+    "sampleRate": 44100,
+    "peak": 0.319793701171875,
+    "rms": 0.06200417459635805
   },
   {
-    "name": "1-Death.wav",
-    "seconds": 1.1,
-    "peak": 0.26896610856056213,
-    "rms": 0.10455764160685231
+    "file": "1-Phase.wav",
+    "sha256": "57189a82b690b7c8a8aa1ec386a257f79a80ae3251d81353ac5db3f20fcff8df",
+    "seconds": 0.770023,
+    "sampleRate": 44100,
+    "peak": 0.330474853515625,
+    "rms": 0.04616865180464006
   },
   {
-    "name": "1-Skid.wav",
-    "seconds": 0.55,
-    "peak": 0.6400000000000001,
-    "rms": 0.11757727734624497
+    "file": "1-Death.wav",
+    "sha256": "e07f6b005deeea41936598207100e0dba4c5808ceff0878159fc3bb5ff4fe1b1",
+    "seconds": 0.710023,
+    "sampleRate": 44100,
+    "peak": 0.3360595703125,
+    "rms": 0.03640541478277922
   },
   {
-    "name": "2-Shot.wav",
-    "seconds": 0.18,
-    "peak": 0.596189022064209,
-    "rms": 0.10561657343365398
+    "file": "1-Skid.wav",
+    "sha256": "c5479c37c34757a0806417ba466d95653c1d42bfba89f34bf6cbc35b5d868a0e",
+    "seconds": 0.640023,
+    "sampleRate": 44100,
+    "peak": 0.342803955078125,
+    "rms": 0.041814126543247135
   },
   {
-    "name": "2-Radial.wav",
-    "seconds": 0.48,
-    "peak": 0.64,
-    "rms": 0.13352226554178498
+    "file": "2-Shot.wav",
+    "sha256": "e66d165f3afbfa4aecfff630d266b9558cfda32f920f0d0c82d75c4414bc5628",
+    "seconds": 0.165011,
+    "sampleRate": 44100,
+    "peak": 0.416290283203125,
+    "rms": 0.06748404263243188
   },
   {
-    "name": "2-Dash.wav",
-    "seconds": 0.9,
-    "peak": 0.64,
-    "rms": 0.14982225934827875
+    "file": "2-Radial.wav",
+    "sha256": "2fdc81dac8ecd7a5b52cc0d492308c08ee39b61d290bc01f277b60d0124df87c",
+    "seconds": 0.280023,
+    "sampleRate": 44100,
+    "peak": 0.242462158203125,
+    "rms": 0.038215683342620065
   },
   {
-    "name": "2-Land.wav",
-    "seconds": 0.62,
-    "peak": 0.64,
-    "rms": 0.07387833284520832
+    "file": "2-Dash.wav",
+    "sha256": "db8df217c14b7f3ab0070953c5ef3ca18509641965da5ebdf240b8e1bceb6dc1",
+    "seconds": 0.385011,
+    "sampleRate": 44100,
+    "peak": 0.29443359375,
+    "rms": 0.03208779628684045
   },
   {
-    "name": "2-Skill1.wav",
-    "seconds": 1,
-    "peak": 0.64,
-    "rms": 0.10898718249285351
+    "file": "2-Land.wav",
+    "sha256": "5f26d1642279933aabb33e721f429c48623444b774c6858521fab3c677b562d1",
+    "seconds": 0.300023,
+    "sampleRate": 44100,
+    "peak": 0.326202392578125,
+    "rms": 0.05077773929144858
   },
   {
-    "name": "2-Skill2.wav",
-    "seconds": 0.75,
-    "peak": 0.64,
-    "rms": 0.09200172398900677
+    "file": "2-Skill1.wav",
+    "sha256": "8e64ab72c7296f7f8712462d5ec5fc2ca32b69ff86b500f230f98d918c9fc134",
+    "seconds": 0.360023,
+    "sampleRate": 44100,
+    "peak": 0.2379150390625,
+    "rms": 0.04726166379718583
   },
   {
-    "name": "2-Recover.wav",
-    "seconds": 0.85,
-    "peak": 0.3960835039615631,
-    "rms": 0.10225362566913337
+    "file": "2-Skill2.wav",
+    "sha256": "2025b8970b3dac1112add8920b4601612504951164e6fff711f28593343158b5",
+    "seconds": 0.840023,
+    "sampleRate": 44100,
+    "peak": 0.45001220703125,
+    "rms": 0.051024831185342234
   },
   {
-    "name": "2-Break.wav",
-    "seconds": 0.34,
-    "peak": 0.49256449937820435,
-    "rms": 0.05945685706640412
+    "file": "2-Recover.wav",
+    "sha256": "167dc8184982cad6f465159e28df0350509ea1236c3c80effcf87159c9043ff4",
+    "seconds": 0.365034,
+    "sampleRate": 44100,
+    "peak": 0.266204833984375,
+    "rms": 0.03599094476596293
   },
   {
-    "name": "2-Phase.wav",
-    "seconds": 1.15,
-    "peak": 0.64,
-    "rms": 0.17761929445312333
+    "file": "2-Break.wav",
+    "sha256": "44ff4a57b97bc24a7d660a332ca3c2fa5cc1f1f945ac924537018a5df0b38c05",
+    "seconds": 0.300023,
+    "sampleRate": 44100,
+    "peak": 0.27972412109375,
+    "rms": 0.0442512096787557
   },
   {
-    "name": "2-Death.wav",
-    "seconds": 1.1,
-    "peak": 0.3781302869319916,
-    "rms": 0.10729218893765181
+    "file": "2-Phase.wav",
+    "sha256": "6177099aea5a5ac45f40963bc53cbdf4b835f36e14a4ee0817f99ea83319f82a",
+    "seconds": 0.480023,
+    "sampleRate": 44100,
+    "peak": 0.36749267578125,
+    "rms": 0.046918743913929216
   },
   {
-    "name": "2-Skid.wav",
-    "seconds": 0.55,
-    "peak": 0.64,
-    "rms": 0.1132767700139108
+    "file": "2-Death.wav",
+    "sha256": "05dc6374debf688864e4f52cf1cbe1821a08aa80c79261ac54bc88a7afeac6e0",
+    "seconds": 0.780023,
+    "sampleRate": 44100,
+    "peak": 0.269622802734375,
+    "rms": 0.025723643620852683
   },
   {
-    "name": "3-Shot.wav",
-    "seconds": 0.18,
-    "peak": 0.64,
-    "rms": 0.09331565184765729
+    "file": "2-Skid.wav",
+    "sha256": "91aa899879c93e05dbf71c79c1e8e0aa31a3dfa6fd35430a3a39240c8f50a827",
+    "seconds": 0.500023,
+    "sampleRate": 44100,
+    "peak": 0.449981689453125,
+    "rms": 0.041891953774012294
   },
   {
-    "name": "3-Radial.wav",
-    "seconds": 0.48,
-    "peak": 0.64,
-    "rms": 0.1120877259524295
+    "file": "3-Shot.wav",
+    "sha256": "1dd80b5bc0270145b55bddcc9ae3379222c8d5368d17488d47d751791c9beb12",
+    "seconds": 0.202018,
+    "sampleRate": 44100,
+    "peak": 0.2906494140625,
+    "rms": 0.04128633893955698
   },
   {
-    "name": "3-Dash.wav",
-    "seconds": 0.9,
-    "peak": 0.64,
-    "rms": 0.13352508962342416
+    "file": "3-Radial.wav",
+    "sha256": "2863f05fab35e058ba6995ef8e07a90053723677bc6e5ec4ea54293f1abcb79b",
+    "seconds": 0.460023,
+    "sampleRate": 44100,
+    "peak": 0.45001220703125,
+    "rms": 0.030378619679495948
   },
   {
-    "name": "3-Land.wav",
-    "seconds": 0.62,
-    "peak": 0.64,
-    "rms": 0.0753602526789081
+    "file": "3-Dash.wav",
+    "sha256": "0285c7464d8ba719e9a96f0c4e28deed42a807ccb5ff9f3dae0d806253218de6",
+    "seconds": 3.6,
+    "sampleRate": 44100,
+    "peak": 0.79815673828125,
+    "rms": 0.14524248002828907
   },
   {
-    "name": "3-Skill1.wav",
-    "seconds": 1,
-    "peak": 0.64,
-    "rms": 0.1059660338486861
+    "file": "3-Land.wav",
+    "sha256": "0863a02d94a83f14e014e19f478d838d30f7e6c57d46c8f6e7592f109164acc9",
+    "seconds": 0.420023,
+    "sampleRate": 44100,
+    "peak": 0.404876708984375,
+    "rms": 0.03461704794583001
   },
   {
-    "name": "3-Skill2.wav",
-    "seconds": 0.75,
-    "peak": 0.6400000000000001,
-    "rms": 0.10722033710413817
+    "file": "3-Skill1.wav",
+    "sha256": "9438e3e81259cb9222c68a65e6e4ad5ae4435a63becf0c64b9b3558fc63fa3d3",
+    "seconds": 1.815011,
+    "sampleRate": 44100,
+    "peak": 0.160247802734375,
+    "rms": 0.02001953384100547
   },
   {
-    "name": "3-Recover.wav",
-    "seconds": 0.85,
-    "peak": 0.2532019019126892,
-    "rms": 0.0923768636257013
+    "file": "3-Skill2.wav",
+    "sha256": "2e28ee4d5083b92d633abba5320534372b85aab33fd640eeb795414acaec0bcb",
+    "seconds": 0.580023,
+    "sampleRate": 44100,
+    "peak": 0.27001953125,
+    "rms": 0.01854481314805239
   },
   {
-    "name": "3-Break.wav",
-    "seconds": 0.34,
-    "peak": 0.5557306408882141,
-    "rms": 0.06351776260480047
+    "file": "3-Recover.wav",
+    "sha256": "f5efdc05c64529628a40f27744503ec8b84d06be4bf6744ae043387191ef462d",
+    "seconds": 1.350023,
+    "sampleRate": 44100,
+    "peak": 0.29248046875,
+    "rms": 0.027802159410599072
   },
   {
-    "name": "3-Phase.wav",
-    "seconds": 1.15,
-    "peak": 0.64,
-    "rms": 0.16437460464954845
+    "file": "3-Break.wav",
+    "sha256": "3fc6b13dddf4256a6fda940a623a039aadfed6f6ad51e5de8978a5a378e8950e",
+    "seconds": 0.370023,
+    "sampleRate": 44100,
+    "peak": 0.45001220703125,
+    "rms": 0.04346896526075289
   },
   {
-    "name": "3-Death.wav",
-    "seconds": 1.1,
-    "peak": 0.271418958902359,
-    "rms": 0.10354502187167251
+    "file": "3-Phase.wav",
+    "sha256": "5044342b522235d5d6e82864548f5a30d12a99821f7f8205519119fa7c6ac3b3",
+    "seconds": 0.900023,
+    "sampleRate": 44100,
+    "peak": 0.3123779296875,
+    "rms": 0.018971616865579074
   },
   {
-    "name": "3-Skid.wav",
-    "seconds": 0.55,
-    "peak": 0.64,
-    "rms": 0.14891478727539742
+    "file": "3-Death.wav",
+    "sha256": "d8d14a62c2b03ed866b13cd4bf4d1be2312c76f594efb441c7a368566f5882bf",
+    "seconds": 0.860023,
+    "sampleRate": 44100,
+    "peak": 0.29248046875,
+    "rms": 0.029478456679176247
   },
   {
-    "name": "4-Shot.wav",
-    "seconds": 0.18,
-    "peak": 0.5906144380569458,
-    "rms": 0.11005933572802118
+    "file": "3-Skid.wav",
+    "sha256": "3965144bb8c49554204e4e8ed560e25962167a0e0df94667e47f168c5b752189",
+    "seconds": 0.880023,
+    "sampleRate": 44100,
+    "peak": 0.45001220703125,
+    "rms": 0.02582196141722485
   },
   {
-    "name": "4-Radial.wav",
-    "seconds": 0.48,
-    "peak": 0.64,
-    "rms": 0.1398042131853457
+    "file": "3-Beam.wav",
+    "sha256": "52e73712acabf2069b46c99edd9f7beda67bb961f5ef967a47220a25e60bb92a",
+    "seconds": 0.835011,
+    "sampleRate": 44100,
+    "peak": 0.542083740234375,
+    "rms": 0.03948743768298774
   },
   {
-    "name": "4-Dash.wav",
-    "seconds": 0.9,
-    "peak": 0.64,
-    "rms": 0.1424573251088918
+    "file": "4-Shot.wav",
+    "sha256": "44ab51b16b97743c0dd77a72da8036c72510f9038b7676badf66f8bb52490e36",
+    "seconds": 0.240023,
+    "sampleRate": 44100,
+    "peak": 0.45001220703125,
+    "rms": 0.06630048337803544
   },
   {
-    "name": "4-Land.wav",
-    "seconds": 0.62,
-    "peak": 0.64,
-    "rms": 0.07601160162949272
+    "file": "4-Radial.wav",
+    "sha256": "532c80b84dec62afc8efb4cbe0a9179dc2f66598a8a8d07d4e38ff8fbc59cb84",
+    "seconds": 0.400045,
+    "sampleRate": 44100,
+    "peak": 0.337493896484375,
+    "rms": 0.037602402376264735
   },
   {
-    "name": "4-Skill1.wav",
-    "seconds": 1,
-    "peak": 0.64,
-    "rms": 0.13525659025716458
+    "file": "4-Dash.wav",
+    "sha256": "e08785b1e3c20625ae7618189e0aed5b885cc122ae55c05ef8c2180995d0977c",
+    "seconds": 0.500023,
+    "sampleRate": 44100,
+    "peak": 0.3375244140625,
+    "rms": 0.02879037620652846
   },
   {
-    "name": "4-Skill2.wav",
-    "seconds": 0.75,
-    "peak": 0.64,
-    "rms": 0.1351025160519151
+    "file": "4-Land.wav",
+    "sha256": "bc8b708e64a63861dd2fab8de35afbaa3af87df20c7b82bcdc57048e9b16cdcb",
+    "seconds": 0.545057,
+    "sampleRate": 44100,
+    "peak": 0.382476806640625,
+    "rms": 0.027703364514822852
   },
   {
-    "name": "4-Recover.wav",
-    "seconds": 0.85,
-    "peak": 0.5077375769615173,
-    "rms": 0.11167447926402344
+    "file": "4-Skill1.wav",
+    "sha256": "3f27515809eab8eb2890f0448c33de137b92e661d250902abd9ca3a114a9c883",
+    "seconds": 3.305011,
+    "sampleRate": 44100,
+    "peak": 0.34930419921875,
+    "rms": 0.026799962527355066
   },
   {
-    "name": "4-Break.wav",
-    "seconds": 0.34,
-    "peak": 0.5853927135467529,
-    "rms": 0.06121740586932237
+    "file": "4-Skill2.wav",
+    "sha256": "9f46e33780ef296c54942df03ede6913fbc7c21b07375a9543827645b64f6ac5",
+    "seconds": 1.35,
+    "sampleRate": 44100,
+    "peak": 0.629974365234375,
+    "rms": 0.038796455435942
   },
   {
-    "name": "4-Phase.wav",
-    "seconds": 1.15,
-    "peak": 0.64,
-    "rms": 0.1788904254959408
+    "file": "4-Recover.wav",
+    "sha256": "939836b254cfb7f58237f76f0202c39cbefd73995838448170bfde49a630c276",
+    "seconds": 0.680023,
+    "sampleRate": 44100,
+    "peak": 0.31500244140625,
+    "rms": 0.02500789059328928
   },
   {
-    "name": "4-Death.wav",
-    "seconds": 1.1,
-    "peak": 0.4198673963546753,
-    "rms": 0.11069280320430662
+    "file": "4-Break.wav",
+    "sha256": "2abefa881ecbef8ec64a64775195dd23a4f78a2dea6ca8e2cd830409037d94ea",
+    "seconds": 0.540023,
+    "sampleRate": 44100,
+    "peak": 0.24749755859375,
+    "rms": 0.021598477493420264
   },
   {
-    "name": "4-Skid.wav",
-    "seconds": 0.55,
-    "peak": 0.64,
-    "rms": 0.12440094779044349
+    "file": "4-Phase.wav",
+    "sha256": "672d84a5c5bde7faebf72e90db57c4d8b0feb582b22e41204287801b17e8e112",
+    "seconds": 1.160023,
+    "sampleRate": 44100,
+    "peak": 0.292510986328125,
+    "rms": 0.030404101459335194
+  },
+  {
+    "file": "4-Death.wav",
+    "sha256": "ad5ff76382484df886143f1c8e57194d38240eae73323663bfc0379eee8cf1fd",
+    "seconds": 0.930023,
+    "sampleRate": 44100,
+    "peak": 0.29248046875,
+    "rms": 0.020501118103903773
+  },
+  {
+    "file": "4-Skid.wav",
+    "sha256": "1543eacb38c35f0236722764c39c64db1fdb53370473a06fdb7d49a53c09ad29",
+    "seconds": 0.700023,
+    "sampleRate": 44100,
+    "peak": 0.27093505859375,
+    "rms": 0.030890481619382616
   }
 ]

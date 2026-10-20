@@ -16,7 +16,10 @@ namespace Vampire
                 var warning=FoodBossEffects.Line(Effects,new[]{from,to},1.25f,new Color(Warning.r,Warning.g,Warning.b,.5f));
                 Visual.Face(dir);
                 if(Kind==FoodBossKind.Denikani){Visual.LeftClaw=Visual.RestClaw(0);Visual.RightClaw=Visual.RestClaw(1);Visual.ClawsActive=true;}
-                yield return Wait(n==0?1.1f:.8f);Destroy(warning.gameObject);Audio.Play(FoodBossSound.Dash);Visual.Charge=true;
+                if(Kind==FoodBossKind.Tangdengi)Audio.Play(FoodBossSound.Dash);
+                yield return Wait(n==0?1.1f:.8f);Destroy(warning.gameObject);
+                if(Kind!=FoodBossKind.Tangdengi)Audio.Play(FoodBossSound.Dash);
+                Visual.Charge=true;
                 Vector2 restLeft=Visual.LeftClaw,restRight=Visual.RightClaw;
                 for(float t=0;t<.85f;t+=Time.deltaTime){float u=t/.85f;MoveToward(Vector2.Lerp(from,to,u));
                     float stride=t*24;
@@ -24,6 +27,7 @@ namespace Vampire
                     Vector2 r=Vector2.up*.7f+dir*(1.55f-Mathf.Cos(stride)*.25f)-side*.55f+Vector2.up*Mathf.Max(0,-Mathf.Sin(stride))*.28f;
                     Visual.LeftClaw=Vector2.Lerp(restLeft,l,Mathf.Clamp01(t/.15f));Visual.RightClaw=Vector2.Lerp(restRight,r,Mathf.Clamp01(t/.15f));yield return null;}
                 MoveToward(to);
+                if(Kind==FoodBossKind.Tangdengi)Audio.Stop(FoodBossSound.Dash,.14f);
                 if(Kind==FoodBossKind.Tangdengi&&PhaseTwo&&n==0)
                 {
                     Audio.Play(FoodBossSound.Skid);var start=(Vector2)transform.position;var end=FiniteStomachMap.ClampDash(start,start+dir*1.4f,1.3f);
@@ -69,6 +73,7 @@ namespace Vampire
                 while(segmentProgress>len&&segment<points.Count-1){segmentProgress-=len;segment++;len=Vector2.Distance(points[segment-1],points[segment]);}
                 MoveToward(Vector2.Lerp(points[segment-1],points[segment],len<.001f?1:segmentProgress/len));shell.transform.position=transform.position+Vector3.up*1.5f;shell.transform.Rotate(0,0,-Time.deltaTime*800);toppings.transform.position=transform.position+Vector3.up*(3.2f+Mathf.Sin(progress*3)*.12f);yield return null;
             }
+            Audio.Stop(FoodBossSound.Dash,.1f);Audio.Play(FoodBossSound.Land,.45f);
             for(float t=0;t<.35f;t+=Time.deltaTime){toppings.transform.position=transform.position+Vector3.up*Mathf.Lerp(3.2f,2.5f,t/.35f);yield return null;}
             Destroy(shell.gameObject);Destroy(toppings.gameObject);Visual.Body.enabled=true;
         }
@@ -91,19 +96,19 @@ namespace Vampire
                 Visual.Lift=0;Visual.Airborne=false;hitbox.enabled=true;Destroy(w.gameObject);Destroy(shadow.gameObject);
                 foreach(var splashWarning in splashWarnings)Destroy(splashWarning.gameObject);
                 Audio.Play(FoodBossSound.Land,n==0&&count==2?.6f:1);HitCircle(target,radius,n==0&&count==2?10:18);FoodBossEffects.Burst(this,target,radius);ToadCameraShake.Play(.18f,.10f);
-                if(Kind==FoodBossKind.Maribi&&PhaseTwo){for(int i=0;i<4;i++){var direction=Dir(45+i*90);FoodBossEffects.Fan(this,target,direction,3.8f,45,1.1f,10);}yield return Wait(1.1f);}
+                if(Kind==FoodBossKind.Maribi&&PhaseTwo){Audio.Play(FoodBossSound.Skill2,.7f);for(int i=0;i<4;i++){var direction=Dir(45+i*90);FoodBossEffects.Fan(this,target,direction,3.8f,45,1.1f,10);}yield return Wait(1.1f);}
                 yield return Wait(n+1<count?.35f:.5f);
             }
         }
         void HitCircle(Vector2 at,float radius,float damage){if(Player!=null&&Vector2.Distance(Player.transform.position,at)<=radius+.18f)Player.TakeDamage(damage);}
         IEnumerator UniqueOne()
         {
-            Audio.Play(FoodBossSound.Skill1);
+            if(Kind==FoodBossKind.Maribi||Kind==FoodBossKind.Tangdengi)Audio.Play(FoodBossSound.Skill1);
             switch(Kind){case FoodBossKind.Rolpangi:yield return CreamSpiral();break;case FoodBossKind.Denikani:yield return Grab();break;case FoodBossKind.Maribi:yield return Seeds();break;case FoodBossKind.Tangdengi:yield return GrapeBeam();break;case FoodBossKind.Hurumi:yield return Curtain();break;}
         }
         IEnumerator UniqueTwo()
         {
-            Audio.Play(FoodBossSound.Skill2);
+            if(Kind!=FoodBossKind.Maribi&&Kind!=FoodBossKind.Hurumi)Audio.Play(FoodBossSound.Skill2);
             switch(Kind){case FoodBossKind.Rolpangi:yield return Toppings();break;case FoodBossKind.Denikani:yield return ClawWaves();break;case FoodBossKind.Maribi:yield return Juice();break;case FoodBossKind.Tangdengi:yield return StrawberrySeeds();break;case FoodBossKind.Hurumi:yield return Whips();break;}
         }
         IEnumerator CreamSpiral()
@@ -114,7 +119,7 @@ namespace Vampire
                 var paths=new List<Vector2[]>();var current=new List<Vector2>();
                 for(int i=0;i<=150;i++){float t=i/150f;bool gap=PhaseTwo&&i%38>=28;if(gap){if(current.Count>1)paths.Add(current.ToArray());current.Clear();continue;}current.Add(origin+Dir(t*600+arm*180)*(1.6f+t*5));}
                 if(current.Count>1)paths.Add(current.ToArray());var warnings=new List<LineRenderer>();foreach(var p in paths)warnings.Add(FoodBossEffects.Line(Effects,p,.65f,new Color(Warning.r,Warning.g,Warning.b,.35f)));
-                yield return Wait(.9f);foreach(var w in warnings)Destroy(w.gameObject);
+                yield return Wait(.9f);foreach(var w in warnings)Destroy(w.gameObject);Audio.Play(FoodBossSound.Skill1);
                 foreach(var p in paths)FoodBossEffects.Path(this,p,.55f,6,0,true);yield return Wait(.45f);
             }
         }
@@ -148,6 +153,7 @@ namespace Vampire
             if(PhaseTwo)converge=FoodBossEffects.Line(Effects,new[]{origin+leftEnd,origin+rightEnd},1.1f,new Color(Warning.r,Warning.g,Warning.b,.45f));
             yield return PoseClaws(ready+side*.65f,ready-side*.65f,.45f);yield return Wait(1.55f);
             Destroy(a.gameObject);Destroy(b.gameObject);if(converge!=null)Destroy(converge.gameObject);
+            Audio.Play(FoodBossSound.Skill1);
             bool caught=false;Vector2 beginL=Visual.LeftClaw,beginR=Visual.RightClaw,prevL=beginL,prevR=beginR;
             for(float t=0;t<.85f;t+=Time.deltaTime)
             {
@@ -182,6 +188,7 @@ namespace Vampire
         }
         IEnumerator ClawSweep(Vector2 dir,float sweep,float duration)
         {
+            Audio.Play(FoodBossSound.Skid,.8f);
             bool hit=false;float a=Mathf.Atan2(dir.y,dir.x)*Mathf.Rad2Deg;Vector2 previous=Visual.LeftClaw;
             for(float t=0;t<duration;t+=Time.deltaTime){float u=Mathf.SmoothStep(0,1,t/duration);var p=Dir(a-sweep*.5f+sweep*u)*3.0f;Visual.LeftClaw=p;
                 if(!hit&&SnailBossProjectile.SegmentDistance((Vector2)Player.transform.position-(Vector2)transform.position,previous,p)<.72f){Player.TakeDamage(14);hit=true;}previous=p;yield return null;}
@@ -213,7 +220,7 @@ namespace Vampire
         IEnumerator Juice()
         {
             int count=PhaseTwo?2:1;for(int i=0;i<count;i++){Visual.Face(Aim);Vector2 origin=Mouth,dir=FireAim;float reach=PhaseTwo?(i==0?7:3.7f):4.7f,angle=PhaseTwo?(i==0?28:120):70;
-                var w=FoodBossEffects.Line(Effects,FoodBossEffects.FanOutline(origin,dir,reach,angle),.12f,Warning);yield return Wait(.9f);Destroy(w.gameObject);FoodBossEffects.Fan(this,origin,dir,reach,angle,1.15f,12);yield return Wait(1.35f);}
+                var w=FoodBossEffects.Line(Effects,FoodBossEffects.FanOutline(origin,dir,reach,angle),.12f,Warning);yield return Wait(.9f);Destroy(w.gameObject);Audio.Play(FoodBossSound.Skill2);FoodBossEffects.Fan(this,origin,dir,reach,angle,1.15f,12);yield return Wait(1.35f);}
         }
         IEnumerator GrapeBeam()
         {
@@ -222,9 +229,10 @@ namespace Vampire
             for(int i=0;i<count;i++){Vector2 d=Rotate(dir,(i-(count-1)*.5f)*32);warnings.Add(FoodBossEffects.Line(Effects,new[]{origin,origin+d*9},1.0f,new Color(Warning.r,Warning.g,Warning.b,.5f)));}
             var orb=FoodBossArt.Make(Effects,"Grape",.65f,522);orb.transform.position=origin;Vector3 size=orb.transform.localScale;
             var charge=FoodBossEffects.Line(Effects,FoodBossEffects.Arc(origin,.6f),.055f,new Color(.85f,1,.42f),false,523);
-            for(float t=0;t<1.3f;t+=Time.deltaTime){orb.transform.localScale=size*(.30f+.70f*t/1.3f)*(1+.06f*Mathf.Sin(t*24));var arc=FoodBossEffects.Arc(origin,Mathf.Lerp(1,.30f,t/1.3f));for(int j=0;j<arc.Length;j++)charge.SetPosition(j,arc[j]);yield return null;}
+            float chargeDuration=Mathf.Max(1.3f,Audio.Duration(FoodBossSound.Skill1)+.065f);
+            for(float t=0;t<chargeDuration;t+=Time.deltaTime){orb.transform.localScale=size*(.30f+.70f*t/chargeDuration)*(1+.06f*Mathf.Sin(t*24));var arc=FoodBossEffects.Arc(origin,Mathf.Lerp(1,.30f,t/chargeDuration));for(int j=0;j<arc.Length;j++)charge.SetPosition(j,arc[j]);yield return null;}
             Destroy(orb.gameObject);Destroy(charge.gameObject);foreach(var w in warnings)Destroy(w.gameObject);
-            Audio.Play(FoodBossSound.Skill1,.8f);
+            Audio.Stop(FoodBossSound.Skill1,.035f);Audio.Play(FoodBossSound.Beam,.8f);
             for(int i=0;i<count;i++)FoodBossEnergyBeam.Create(this,origin,Rotate(dir,(i-(count-1)*.5f)*32));
             yield return Wait(1.25f);
         }
@@ -242,7 +250,7 @@ namespace Vampire
             Vector2 side=Rotate(direction,90),center=(Vector2)Player.transform.position+direction*.8f;int gap=3;
             var warnings=new List<LineRenderer>();
             for(int lane=1;lane<6;lane++)if(lane!=gap){Vector2 at=center+side*((lane-3)*laneSpacing);warnings.Add(FoodBossEffects.Line(Effects,new[]{at-direction*2.3f,at+direction*2.3f},.80f,new Color(Warning.r,Warning.g,Warning.b,.48f)));}
-            yield return Wait(1.1f);foreach(var w in warnings)Destroy(w.gameObject);
+            yield return Wait(1.1f);foreach(var w in warnings)Destroy(w.gameObject);Audio.Play(FoodBossSound.Skill1);
             var noodles=new FoodBossNoodle[7,2];var holes=new LineRenderer[7,4];var ground=new LineRenderer[7];
             for(int lane=0;lane<7;lane++){
                 Vector2 row=center+side*((lane-3)*laneSpacing);
@@ -253,7 +261,7 @@ namespace Vampire
             for(float t=0;t<4.8f;t+=Time.deltaTime)
             {
                 int nextGap=PhaseTwo?(t<1.7f?3:t<3.2f?4:2):3;float transition=PhaseTwo?(t<1.7f?1:t<3.2f?t-1.7f:t-3.2f):1;
-                if(nextGap!=gap&&warned!=gap){if(closing!=null)Destroy(closing.gameObject);Vector2 at=center+side*((gap-3)*laneSpacing);closing=FoodBossEffects.Line(Effects,new[]{at-direction*2.3f,at+direction*2.3f},.80f,new Color(Warning.r,Warning.g,Warning.b,.48f));warned=gap;}
+                if(nextGap!=gap&&warned!=gap){Audio.Stop(FoodBossSound.Skill1,.08f);Audio.Play(FoodBossSound.Skill1,.45f);if(closing!=null)Destroy(closing.gameObject);Vector2 at=center+side*((gap-3)*laneSpacing);closing=FoodBossEffects.Line(Effects,new[]{at-direction*2.3f,at+direction*2.3f},.80f,new Color(Warning.r,Warning.g,Warning.b,.48f));warned=gap;}
                 for(int lane=0;lane<7;lane++)
                 {
                     bool safe=lane==0||lane==6||lane==nextGap||PhaseTwo&&transition<.65f&&lane==gap;
@@ -271,6 +279,7 @@ namespace Vampire
                 if(transition>=.65f){gap=nextGap;if(closing!=null){Destroy(closing.gameObject);closing=null;}}
                 yield return null;
             }
+            Audio.Stop(FoodBossSound.Skill1,.12f);
             foreach(var r in noodles)Destroy(r.gameObject);foreach(var h in holes)Destroy(h.gameObject);foreach(var g in ground)Destroy(g.gameObject);if(closing!=null)Destroy(closing.gameObject);
         }
         IEnumerator Whips()
@@ -284,7 +293,7 @@ namespace Vampire
                 // A short curl grows from the tip of the existing raised noodle, winds up, lashes, then retracts.
                 float wind=n==0?.85f:1.2f;
                 for(float t=0;t<wind;t+=Time.deltaTime){float u=Mathf.SmoothStep(0,1,t/wind);Vector2 tip=root+Dir(baseAngle-sign*sweep*.5f)*(reach*u);var curve=WhipCurve(root,tip,Vector2.up*.6f,u);for(int j=0;j<curve.Length;j++)curve[j]=Vector2.Lerp(rest[j],curve[j],u);noodle.Set(curve);yield return null;}
-                Destroy(warning.gameObject);bool hit=false;Vector2[] previous=null;
+                Destroy(warning.gameObject);Audio.Play(FoodBossSound.Skill2);bool hit=false;Vector2[] previous=null;
                 for(float t=0;t<.60f;t+=Time.deltaTime){float u=Mathf.SmoothStep(0,1,t/.60f),angle=baseAngle+sign*(-sweep*.5f+sweep*u);Vector2 tip=root+Dir(angle)*reach;
                     var points=WhipCurve(root,tip,Rotate(dir,90)*(-sign*.48f*Mathf.Sin(u*Mathf.PI)),1);noodle.Set(points);
                     Vector2 playerDelta=Player!=null?(Vector2)Player.transform.position-root:Vector2.zero;
