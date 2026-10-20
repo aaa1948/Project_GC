@@ -25,6 +25,19 @@ namespace Vampire
         private bool heavyImpactVisual;
         public Vector2 VisualFlightDirection => direction;
 
+        protected override IEnumerator DestroyProjectileAnimation()
+        {
+            // Replace the template particle for all needle disappearances. The
+            // detached world-space glint survives this projectile's pool return.
+            if (destructionParticleSystem != null)
+                destructionParticleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            MotionVfx.PlayNeedleEnd(transform.position, projectileSpriteRenderer);
+            if (projectileSpriteRenderer != null) projectileSpriteRenderer.gameObject.SetActive(false);
+            yield return new WaitForSeconds(MotionVfx.NeedleLifetime);
+            if (projectileSpriteRenderer != null) projectileSpriteRenderer.gameObject.SetActive(true);
+            entityManager.DespawnProjectile(projectileIndex, this);
+        }
+
         public void ConfigureFlightVfx(bool bipolar, bool heavy)
         {
             SyringeAugmentVfx.ReleaseOwned(ref bipolarVisual);
