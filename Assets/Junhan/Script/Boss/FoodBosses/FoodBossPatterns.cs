@@ -16,9 +16,9 @@ namespace Vampire
                 var warning=FoodBossEffects.Line(Effects,new[]{from,to},1.25f,new Color(Warning.r,Warning.g,Warning.b,.5f));
                 Visual.Face(dir);
                 if(Kind==FoodBossKind.Denikani){Visual.LeftClaw=Visual.RestClaw(0);Visual.RightClaw=Visual.RestClaw(1);Visual.ClawsActive=true;}
-                if(Kind==FoodBossKind.Tangdengi)Audio.Play(FoodBossSound.Dash);
                 yield return Wait(n==0?1.1f:.8f);Destroy(warning.gameObject);
-                if(Kind!=FoodBossKind.Tangdengi)Audio.Play(FoodBossSound.Dash);
+                // The selected short flutter belongs to the launch, not the warning.
+                Audio.Play(FoodBossSound.Dash);
                 Visual.Charge=true;
                 Vector2 restLeft=Visual.LeftClaw,restRight=Visual.RightClaw;
                 for(float t=0;t<.85f;t+=Time.deltaTime){float u=t/.85f;MoveToward(Vector2.Lerp(from,to,u));

@@ -1,458 +1,538 @@
 [
   {
     "file": "0-Shot.wav",
-    "sha256": "6c3453da4daa0a7028f7133319cf6b2f50adf37d4b5fd6e9428e0aaf9ec2289f",
-    "seconds": 0.295034,
+    "sha256": "74e79277f85608e855948ed6c1404b729b6130c269e19b4a8c940af2b7f964a6",
+    "seconds": 0.217007,
     "sampleRate": 44100,
-    "peak": 0.314453125,
-    "rms": 0.029493847979260693
+    "peak": 0.42999267578125,
+    "rms": 0.09030067666899555
   },
   {
     "file": "0-Radial.wav",
-    "sha256": "ac06df9e6cd28f68fbcaa7c0cf0ae342f613e4d9894b761a43f8a8dce842fb72",
-    "seconds": 0.415034,
+    "sha256": "51517991ac584044629f01c1e5dd337f1fd34d01180e77d324bbfb01c31fb71a",
+    "seconds": 0.387007,
     "sampleRate": 44100,
-    "peak": 0.3599853515625,
-    "rms": 0.04377681527620703
+    "peak": 0.344085693359375,
+    "rms": 0.09841679535206817
   },
   {
     "file": "0-Dash.wav",
-    "sha256": "24e5dc51102d8094c3448ae080551572997b08e07ae40ca77219256a8eeee4b7",
-    "seconds": 1.410023,
+    "sha256": "c4fbdd701571db342a43ec23f09288817378c34bc1e56610e8c27e8b78f2096f",
+    "seconds": 0.817007,
     "sampleRate": 44100,
-    "peak": 0.45001220703125,
-    "rms": 0.05165488135394698
+    "peak": 0.430023193359375,
+    "rms": 0.08779661375349683
   },
   {
     "file": "0-Land.wav",
-    "sha256": "f3c7e921a0f00916bf6ba1cb885cae79c727613a5e4b7b7bee0fc9631c775cc1",
-    "seconds": 0.440023,
+    "sha256": "e0a534a820b30e50ef57f7df1935c0f89fb55ca7eb1a854c8662cb84dbc21629",
+    "seconds": 0.287007,
     "sampleRate": 44100,
-    "peak": 0.3599853515625,
-    "rms": 0.025171121159766476
+    "peak": 0.430023193359375,
+    "rms": 0.09104428350481214
   },
   {
     "file": "0-Skill1.wav",
-    "sha256": "ca5731b3d048e6edbb4f991ce31988a343d4c4f5b668bc9a7f2735b5d7e892da",
-    "seconds": 1.160023,
+    "sha256": "288fb4b714352953c8f9c9bd7cdf55ad271013787fa2824b667b26a54ad0c4f2",
+    "seconds": 0.787007,
     "sampleRate": 44100,
-    "peak": 0.360015869140625,
-    "rms": 0.0346682889290886
+    "peak": 0.281463623046875,
+    "rms": 0.10181588765069091
   },
   {
     "file": "0-Skill2.wav",
-    "sha256": "e67e2b320405462c5cf5f5cce6562ab77aa7fbc07ff16c8040f77ca1b9c272fd",
-    "seconds": 0.350023,
+    "sha256": "0a0db5a15418f28db4d1f30a5e01299f359081495103fde9bfe8a33c7ea25307",
+    "seconds": 0.297007,
     "sampleRate": 44100,
-    "peak": 0.329620361328125,
-    "rms": 0.05437006105992992
+    "peak": 0.384490966796875,
+    "rms": 0.09633316996307756
   },
   {
     "file": "0-Recover.wav",
-    "sha256": "1e5d30180abdb2d3cbee1a447d079db6e628b8358c59eaaf0eac7dabcaa361a8",
-    "seconds": 1.160023,
+    "sha256": "56a8a57750022ef09863cfd15f1234cf60992cea2ce22701018d9fc390c5cb1f",
+    "seconds": 0.507007,
     "sampleRate": 44100,
-    "peak": 0.277099609375,
-    "rms": 0.03104068327532971
+    "peak": 0.28399658203125,
+    "rms": 0.10001415398033076
   },
   {
     "file": "0-Break.wav",
-    "sha256": "5a65eb0b7fa68d615c3c7a62167eff77ed9c6a3b8b4e47f0010389924d0a1546",
-    "seconds": 0.490023,
+    "sha256": "e7e449709be6480e4c9a36c6d11b6afc3b76c4cb073d3f26e6f80ad6a462d34f",
+    "seconds": 0.347007,
     "sampleRate": 44100,
-    "peak": 0.314971923828125,
-    "rms": 0.03013727664279109
+    "peak": 0.399169921875,
+    "rms": 0.09762944560090084
   },
   {
     "file": "0-Phase.wav",
-    "sha256": "635c2a2cd16bf4b2929a6a1f7923a2a711dc2e0259db9dc079cdc05e500c121d",
-    "seconds": 1.410023,
+    "sha256": "93622bcce2f6f9f58b5f36a3eaeff23c0f0c417b8768d0eeee53520f362c4073",
+    "seconds": 0.717007,
     "sampleRate": 44100,
-    "peak": 0.449981689453125,
-    "rms": 0.037012478282598994
+    "peak": 0.249114990234375,
+    "rms": 0.10149979312177426
   },
   {
     "file": "0-Death.wav",
-    "sha256": "d874600241a31caa49dc441b93663672c597649361170a2c2e567c9a66a65027",
-    "seconds": 0.910023,
+    "sha256": "b07952546b16d2ed63af3528839e7e24b812e818b6bfd2135f782ea2619e4d59",
+    "seconds": 0.577007,
     "sampleRate": 44100,
-    "peak": 0.27001953125,
-    "rms": 0.01356513075520769
+    "peak": 0.36712646484375,
+    "rms": 0.10063220050434235
   },
   {
     "file": "0-Skid.wav",
-    "sha256": "14050cc2e32b044c70ef427bd462d4a992f3aa3a5b349f691383e7b0976c5060",
-    "seconds": 0.880023,
+    "sha256": "43c30ea3c3f5bce1a0565b384b5e479330f1f9a47fdfd8e7a9af076e19cd60a1",
+    "seconds": 0.337007,
     "sampleRate": 44100,
-    "peak": 0.45001220703125,
-    "rms": 0.038972947042378345
+    "peak": 0.362213134765625,
+    "rms": 0.09740223130770953
   },
   {
     "file": "0-Consume.wav",
-    "sha256": "cd0525195d26935da5ccf79a431b04aede8d20a7a9954221d3389b0669378c14",
-    "seconds": 0.300023,
+    "sha256": "d64dce0303c280089aa7c67b24f65e303789dbace64fac2df44895537d8abb32",
+    "seconds": 0.237007,
     "sampleRate": 44100,
-    "peak": 0.250946044921875,
-    "rms": 0.033110384212789085
+    "peak": 0.405548095703125,
+    "rms": 0.0940124505602047
   },
   {
     "file": "1-Shot.wav",
-    "sha256": "d11dbc169a4d12a06e47cc32d112e7c48cf41f4abdf99912c7a92e6482b3c90d",
-    "seconds": 0.250023,
+    "sha256": "f7658851fbb6e1ee89ce21d639ff6d8f9312cf19961481024adc1de7cb0c9fa3",
+    "seconds": 0.157007,
     "sampleRate": 44100,
-    "peak": 0.449981689453125,
-    "rms": 0.07238828264784207
+    "peak": 0.42999267578125,
+    "rms": 0.05683991319273124
   },
   {
     "file": "1-Radial.wav",
-    "sha256": "328739cecf4fdf86543f9cc69573d071fcfb378055ab78cd30039379013ca481",
-    "seconds": 0.375011,
+    "sha256": "d524fcfd5ca8e8811b20119a5e85a8b1fea09e5788fbe2ab702b570058888438",
+    "seconds": 0.297007,
     "sampleRate": 44100,
-    "peak": 0.344146728515625,
-    "rms": 0.05957382974056967
+    "peak": 0.42999267578125,
+    "rms": 0.06735602295155287
   },
   {
     "file": "1-Dash.wav",
-    "sha256": "160aac47135bcefe8d30f6bac6e2c1e5487ee9d80f384c7cb97d30eeeb189e8d",
-    "seconds": 0.900023,
+    "sha256": "a196003629c5b403c66d5fbbd60d9ad930df8db197a8dd533b92ee196b18b9b1",
+    "seconds": 0.632018,
     "sampleRate": 44100,
-    "peak": 0.362396240234375,
-    "rms": 0.06650519546347793
+    "peak": 0.42999267578125,
+    "rms": 0.05313765898151875
   },
   {
     "file": "1-Land.wav",
-    "sha256": "a612b2a777ae93b3e0c7c18da21383612f251e9d50de6d3afb8da42b3bac3aff",
-    "seconds": 0.430023,
+    "sha256": "441b6b7affedc8163c44acf99a2695d79e17c75548af99bae4ea6436a4eff593",
+    "seconds": 0.297007,
     "sampleRate": 44100,
-    "peak": 0.388397216796875,
-    "rms": 0.07149875041116445
+    "peak": 0.42999267578125,
+    "rms": 0.06968338282607126
   },
   {
     "file": "1-Skill1.wav",
-    "sha256": "65578bd0f9874588e5b75b2be93290c7ec1c913fc881633d99697e7fef5fce72",
-    "seconds": 0.440023,
+    "sha256": "4b4e67097b6a319da6629511698e8564eeaa385a652b1829c67bb5ea8f6008b6",
+    "seconds": 0.277007,
     "sampleRate": 44100,
-    "peak": 0.37530517578125,
-    "rms": 0.05287051689616387
+    "peak": 0.430023193359375,
+    "rms": 0.08948002423820714
   },
   {
     "file": "1-Skill2.wav",
-    "sha256": "8d7532b7875ee985fedd4f8204c22bada6aec6e7536c0c9b583e0bfb6aba3d5b",
-    "seconds": 0.610023,
+    "sha256": "041d4581adaae517e81d216763be538d1aa9cf65ae6afa50ddea8f124baeb75a",
+    "seconds": 0.407007,
     "sampleRate": 44100,
-    "peak": 0.2633056640625,
-    "rms": 0.029682798573325914
+    "peak": 0.42999267578125,
+    "rms": 0.09691366963855011
   },
   {
     "file": "1-Recover.wav",
-    "sha256": "b05450aacfc6c1fc8e7268212d5aec3f25dcb97c3743c3c5637ea18558c6a682",
-    "seconds": 0.630023,
+    "sha256": "ec4c77847e806995760c53a19b0a7d1bd8162d22e65524f430da45d63fc4675f",
+    "seconds": 0.327007,
     "sampleRate": 44100,
-    "peak": 0.326141357421875,
-    "rms": 0.03934611905354692
+    "peak": 0.430023193359375,
+    "rms": 0.09140305397528807
   },
   {
     "file": "1-Break.wav",
-    "sha256": "df4da89e0c083e577e047662d034d6055853b64fc2d54e74f542874630dd346c",
-    "seconds": 0.420023,
+    "sha256": "870b343bd97e5203ac627f00090bd8950f45c03904427beed22418eb2cabe6cc",
+    "seconds": 0.311995,
     "sampleRate": 44100,
-    "peak": 0.319793701171875,
-    "rms": 0.06200417459635805
+    "peak": 0.42999267578125,
+    "rms": 0.06432808251225776
   },
   {
     "file": "1-Phase.wav",
-    "sha256": "57189a82b690b7c8a8aa1ec386a257f79a80ae3251d81353ac5db3f20fcff8df",
-    "seconds": 0.770023,
+    "sha256": "8baafcacf336730c8920cd506021120c0d663f052c56eaf8b9b42fc02d540dc8",
+    "seconds": 0.587007,
     "sampleRate": 44100,
-    "peak": 0.330474853515625,
-    "rms": 0.04616865180464006
+    "peak": 0.3809814453125,
+    "rms": 0.10070805975110964
   },
   {
     "file": "1-Death.wav",
-    "sha256": "e07f6b005deeea41936598207100e0dba4c5808ceff0878159fc3bb5ff4fe1b1",
-    "seconds": 0.710023,
+    "sha256": "80f03f391c061fcb9f2f4d06d32b7a9470897cf0777ac39a9a4cdb0f9330715a",
+    "seconds": 0.427007,
     "sampleRate": 44100,
-    "peak": 0.3360595703125,
-    "rms": 0.03640541478277922
+    "peak": 0.42999267578125,
+    "rms": 0.061227506221665805
   },
   {
     "file": "1-Skid.wav",
-    "sha256": "c5479c37c34757a0806417ba466d95653c1d42bfba89f34bf6cbc35b5d868a0e",
-    "seconds": 0.640023,
+    "sha256": "e3da72c1849136d38c0dd8f81671afdc4bb306ca0e385484b6293f05036e51d5",
+    "seconds": 0.307007,
     "sampleRate": 44100,
-    "peak": 0.342803955078125,
-    "rms": 0.041814126543247135
+    "peak": 0.430023193359375,
+    "rms": 0.09112930026899604
   },
   {
     "file": "2-Shot.wav",
-    "sha256": "e66d165f3afbfa4aecfff630d266b9558cfda32f920f0d0c82d75c4414bc5628",
-    "seconds": 0.165011,
+    "sha256": "648f4fbfd5c650d48ee4a68a9aad1dfcf4c9f1325b45d70188e8e49d511a60f3",
+    "seconds": 0.137007,
     "sampleRate": 44100,
-    "peak": 0.416290283203125,
-    "rms": 0.06748404263243188
+    "peak": 0.430023193359375,
+    "rms": 0.047314480106620406
   },
   {
     "file": "2-Radial.wav",
-    "sha256": "2fdc81dac8ecd7a5b52cc0d492308c08ee39b61d290bc01f277b60d0124df87c",
-    "seconds": 0.280023,
+    "sha256": "5f4ba9cc1945b3273fdbfced92d6fa72e75fd037e7828901a4f4954bf569c401",
+    "seconds": 0.257007,
     "sampleRate": 44100,
-    "peak": 0.242462158203125,
-    "rms": 0.038215683342620065
+    "peak": 0.430023193359375,
+    "rms": 0.07209865731282573
   },
   {
     "file": "2-Dash.wav",
-    "sha256": "db8df217c14b7f3ab0070953c5ef3ca18509641965da5ebdf240b8e1bceb6dc1",
-    "seconds": 0.385011,
+    "sha256": "183306be37a9447751b6aef63537ccc35e3bc9a3a191dba3fc30f761db0d0dbc",
+    "seconds": 0.337007,
     "sampleRate": 44100,
-    "peak": 0.29443359375,
-    "rms": 0.03208779628684045
+    "peak": 0.430023193359375,
+    "rms": 0.08699699401475489
   },
   {
     "file": "2-Land.wav",
-    "sha256": "5f26d1642279933aabb33e721f429c48623444b774c6858521fab3c677b562d1",
-    "seconds": 0.300023,
+    "sha256": "ab8496eaae0a855e9d72a4ddbd9322e926f9ec53376bb722904e7f58bfabbf7e",
+    "seconds": 0.227007,
     "sampleRate": 44100,
-    "peak": 0.326202392578125,
-    "rms": 0.05077773929144858
+    "peak": 0.430023193359375,
+    "rms": 0.058136208757219116
   },
   {
     "file": "2-Skill1.wav",
-    "sha256": "8e64ab72c7296f7f8712462d5ec5fc2ca32b69ff86b500f230f98d918c9fc134",
-    "seconds": 0.360023,
+    "sha256": "aa17191695976d5f5d4dce1c608284f4415a96b069b56af944273c47a2b571c5",
+    "seconds": 0.242018,
     "sampleRate": 44100,
-    "peak": 0.2379150390625,
-    "rms": 0.04726166379718583
+    "peak": 0.430023193359375,
+    "rms": 0.05840614481604618
   },
   {
     "file": "2-Skill2.wav",
-    "sha256": "2025b8970b3dac1112add8920b4601612504951164e6fff711f28593343158b5",
-    "seconds": 0.840023,
+    "sha256": "d325227fc7318cacdb850a5b061ef3759e16ae5b2489144b7a654d239258cce7",
+    "seconds": 0.477007,
     "sampleRate": 44100,
-    "peak": 0.45001220703125,
-    "rms": 0.051024831185342234
+    "peak": 0.430023193359375,
+    "rms": 0.09327588954519207
   },
   {
     "file": "2-Recover.wav",
-    "sha256": "167dc8184982cad6f465159e28df0350509ea1236c3c80effcf87159c9043ff4",
-    "seconds": 0.365034,
+    "sha256": "8cb2e4e49f43308bc2ff34c218368db58fa3cacc3383f6474f6928ae8096252d",
+    "seconds": 0.222018,
     "sampleRate": 44100,
-    "peak": 0.266204833984375,
-    "rms": 0.03599094476596293
+    "peak": 0.42999267578125,
+    "rms": 0.053339207235746644
   },
   {
     "file": "2-Break.wav",
-    "sha256": "44ff4a57b97bc24a7d660a332ca3c2fa5cc1f1f945ac924537018a5df0b38c05",
-    "seconds": 0.300023,
+    "sha256": "5519bd7dc86e457d2a354e670cab6e05fb7358f2e44d02f45012be378227b99a",
+    "seconds": 0.237007,
     "sampleRate": 44100,
-    "peak": 0.27972412109375,
-    "rms": 0.0442512096787557
+    "peak": 0.430023193359375,
+    "rms": 0.06684973717783682
   },
   {
     "file": "2-Phase.wav",
-    "sha256": "6177099aea5a5ac45f40963bc53cbdf4b835f36e14a4ee0817f99ea83319f82a",
-    "seconds": 0.480023,
+    "sha256": "dc0ad1c6bc482bda731576b40507c8fc6e57024b528efcadc37d1f1711e74185",
+    "seconds": 0.527007,
     "sampleRate": 44100,
-    "peak": 0.36749267578125,
-    "rms": 0.046918743913929216
+    "peak": 0.408905029296875,
+    "rms": 0.10020781036994308
   },
   {
     "file": "2-Death.wav",
-    "sha256": "05dc6374debf688864e4f52cf1cbe1821a08aa80c79261ac54bc88a7afeac6e0",
-    "seconds": 0.780023,
+    "sha256": "46af478328914980b3dc241475940ba8f3c2d63806a8c4aac25eba9dfaef130b",
+    "seconds": 0.397007,
     "sampleRate": 44100,
-    "peak": 0.269622802734375,
-    "rms": 0.025723643620852683
+    "peak": 0.430023193359375,
+    "rms": 0.07435543767098884
   },
   {
     "file": "2-Skid.wav",
-    "sha256": "91aa899879c93e05dbf71c79c1e8e0aa31a3dfa6fd35430a3a39240c8f50a827",
-    "seconds": 0.500023,
+    "sha256": "cbf18a58058e47430b7426f1235f29932b701a627821476849f11cf5d1bd1514",
+    "seconds": 0.267007,
     "sampleRate": 44100,
-    "peak": 0.449981689453125,
-    "rms": 0.041891953774012294
+    "peak": 0.430023193359375,
+    "rms": 0.07589880988580748
   },
   {
     "file": "3-Shot.wav",
-    "sha256": "1dd80b5bc0270145b55bddcc9ae3379222c8d5368d17488d47d751791c9beb12",
-    "seconds": 0.202018,
+    "sha256": "97cf67ba5bba64b93794b9366796dcbac18da0542056dd086c78bedfdcfc9aaa",
+    "seconds": 0.177007,
     "sampleRate": 44100,
-    "peak": 0.2906494140625,
-    "rms": 0.04128633893955698
+    "peak": 0.42999267578125,
+    "rms": 0.07836204636509075
   },
   {
     "file": "3-Radial.wav",
-    "sha256": "2863f05fab35e058ba6995ef8e07a90053723677bc6e5ec4ea54293f1abcb79b",
-    "seconds": 0.460023,
+    "sha256": "cbe37045cd871a9a8fd6fc51b8d2de8f4c793c2a7b819c0d021ae090e7c115cb",
+    "seconds": 0.307007,
     "sampleRate": 44100,
-    "peak": 0.45001220703125,
-    "rms": 0.030378619679495948
+    "peak": 0.388397216796875,
+    "rms": 0.09662781074952484
   },
   {
     "file": "3-Dash.wav",
-    "sha256": "0285c7464d8ba719e9a96f0c4e28deed42a807ccb5ff9f3dae0d806253218de6",
-    "seconds": 3.6,
+    "sha256": "2690434b13b70b779e138d034c597c887226fd1f13d4accc683d540af8bd8885",
+    "seconds": 1.132018,
     "sampleRate": 44100,
-    "peak": 0.79815673828125,
-    "rms": 0.14524248002828907
+    "peak": 0.42999267578125,
+    "rms": 0.07482464762680889
   },
   {
     "file": "3-Land.wav",
-    "sha256": "0863a02d94a83f14e014e19f478d838d30f7e6c57d46c8f6e7592f109164acc9",
-    "seconds": 0.420023,
+    "sha256": "65f235e95d557844f18876838e4954710a5cd48787b15de4e64b696e03566a26",
+    "seconds": 0.277007,
     "sampleRate": 44100,
-    "peak": 0.404876708984375,
-    "rms": 0.03461704794583001
+    "peak": 0.42999267578125,
+    "rms": 0.08785798527010714
   },
   {
     "file": "3-Skill1.wav",
-    "sha256": "9438e3e81259cb9222c68a65e6e4ad5ae4435a63becf0c64b9b3558fc63fa3d3",
-    "seconds": 1.815011,
+    "sha256": "6cb021263a791cc5f665e2bae9535c54d413317e6089290e1155f88d3be1dae8",
+    "seconds": 1.797007,
     "sampleRate": 44100,
-    "peak": 0.160247802734375,
-    "rms": 0.02001953384100547
+    "peak": 0.3837890625,
+    "rms": 0.08388093271480104
   },
   {
     "file": "3-Skill2.wav",
-    "sha256": "2e28ee4d5083b92d633abba5320534372b85aab33fd640eeb795414acaec0bcb",
-    "seconds": 0.580023,
+    "sha256": "cf3b03b3d4421c85a9d91dba06fb4bcf0c143638fdc203174dea2a60ad642421",
+    "seconds": 0.281995,
     "sampleRate": 44100,
-    "peak": 0.27001953125,
-    "rms": 0.01854481314805239
+    "peak": 0.42999267578125,
+    "rms": 0.09432556125767831
   },
   {
     "file": "3-Recover.wav",
-    "sha256": "f5efdc05c64529628a40f27744503ec8b84d06be4bf6744ae043387191ef462d",
-    "seconds": 1.350023,
+    "sha256": "26fbe0f1f5e1735391ae9a424a19e48b1c6f5e0a51427d07ba62a8b9017b560b",
+    "seconds": 0.547007,
     "sampleRate": 44100,
-    "peak": 0.29248046875,
-    "rms": 0.027802159410599072
+    "peak": 0.307403564453125,
+    "rms": 0.1003871023980699
   },
   {
     "file": "3-Break.wav",
-    "sha256": "3fc6b13dddf4256a6fda940a623a039aadfed6f6ad51e5de8978a5a378e8950e",
-    "seconds": 0.370023,
+    "sha256": "5add57fb638d91b73d53c561a0ba3d537e1ff67d0deffcc9e59f3980613138ab",
+    "seconds": 0.317007,
     "sampleRate": 44100,
-    "peak": 0.45001220703125,
-    "rms": 0.04346896526075289
+    "peak": 0.42999267578125,
+    "rms": 0.08539645455663586
   },
   {
     "file": "3-Phase.wav",
-    "sha256": "5044342b522235d5d6e82864548f5a30d12a99821f7f8205519119fa7c6ac3b3",
-    "seconds": 0.900023,
+    "sha256": "77b98d6fd9f305ecb25faa2e92d4a260092f8c39dd78bc9d4c93f315e274917b",
+    "seconds": 0.667007,
     "sampleRate": 44100,
-    "peak": 0.3123779296875,
-    "rms": 0.018971616865579074
+    "peak": 0.29388427734375,
+    "rms": 0.10123242766699035
   },
   {
     "file": "3-Death.wav",
-    "sha256": "d8d14a62c2b03ed866b13cd4bf4d1be2312c76f594efb441c7a368566f5882bf",
-    "seconds": 0.860023,
+    "sha256": "38d9ca076168064a95bce7c4865a8bbc794c858e80c29c065f9120fe87985bf5",
+    "seconds": 0.467007,
     "sampleRate": 44100,
-    "peak": 0.29248046875,
-    "rms": 0.029478456679176247
+    "peak": 0.396697998046875,
+    "rms": 0.09957555993749143
   },
   {
     "file": "3-Skid.wav",
-    "sha256": "3965144bb8c49554204e4e8ed560e25962167a0e0df94667e47f168c5b752189",
-    "seconds": 0.880023,
+    "sha256": "664acc6f79f9c7d8f83605ce0bad5f4100a28bab1166c8e9488d367dc29ca438",
+    "seconds": 0.347007,
     "sampleRate": 44100,
-    "peak": 0.45001220703125,
-    "rms": 0.02582196141722485
+    "peak": 0.393157958984375,
+    "rms": 0.09762941819463493
   },
   {
     "file": "3-Beam.wav",
-    "sha256": "52e73712acabf2069b46c99edd9f7beda67bb961f5ef967a47220a25e60bb92a",
-    "seconds": 0.835011,
+    "sha256": "c9b5cf0c5c49b6f8b0f1edc7844a78f936058484ce64e30835616765d1d222b9",
+    "seconds": 0.637007,
     "sampleRate": 44100,
-    "peak": 0.542083740234375,
-    "rms": 0.03948743768298774
+    "peak": 0.318359375,
+    "rms": 0.10105153191891361
   },
   {
     "file": "4-Shot.wav",
-    "sha256": "44ab51b16b97743c0dd77a72da8036c72510f9038b7676badf66f8bb52490e36",
-    "seconds": 0.240023,
+    "sha256": "7d21c58ae80210020f4488295c3f852a326134532440281294227dec9ec6a913",
+    "seconds": 0.237007,
     "sampleRate": 44100,
-    "peak": 0.45001220703125,
-    "rms": 0.06630048337803544
+    "peak": 0.411895751953125,
+    "rms": 0.09401266697424876
   },
   {
     "file": "4-Radial.wav",
-    "sha256": "532c80b84dec62afc8efb4cbe0a9179dc2f66598a8a8d07d4e38ff8fbc59cb84",
-    "seconds": 0.400045,
+    "sha256": "81925ea4cb2fc6699029de32ed1fdd22324abe281e4002543cd8aaf936913c43",
+    "seconds": 0.489637,
     "sampleRate": 44100,
-    "peak": 0.337493896484375,
-    "rms": 0.037602402376264735
+    "peak": 0.430023193359375,
+    "rms": 0.08977912072618995
   },
   {
     "file": "4-Dash.wav",
-    "sha256": "e08785b1e3c20625ae7618189e0aed5b885cc122ae55c05ef8c2180995d0977c",
-    "seconds": 0.500023,
+    "sha256": "3f0e562937d2bf350abf45d8d8de05ad4c4892fa97a04dad8806c3ff1b47c436",
+    "seconds": 0.452381,
     "sampleRate": 44100,
-    "peak": 0.3375244140625,
-    "rms": 0.02879037620652846
+    "peak": 0.379119873046875,
+    "rms": 0.0993951342989155
   },
   {
     "file": "4-Land.wav",
-    "sha256": "bc8b708e64a63861dd2fab8de35afbaa3af87df20c7b82bcdc57048e9b16cdcb",
-    "seconds": 0.545057,
+    "sha256": "6f25baca5f2b1cdfd6b5ff135f6a5f0f57b37542200a62431f23a540c6df8815",
+    "seconds": 0.29,
     "sampleRate": 44100,
-    "peak": 0.382476806640625,
-    "rms": 0.027703364514822852
+    "peak": 0.42999267578125,
+    "rms": 0.09006124011475239
   },
   {
     "file": "4-Skill1.wav",
-    "sha256": "3f27515809eab8eb2890f0448c33de137b92e661d250902abd9ca3a114a9c883",
-    "seconds": 3.305011,
+    "sha256": "214d14a076da7da74f977422c6e74fde04db3011cf6c3bd248a02ba588bad882",
+    "seconds": 2.756395,
     "sampleRate": 44100,
-    "peak": 0.34930419921875,
-    "rms": 0.026799962527355066
+    "peak": 0.430023193359375,
+    "rms": 0.06466706221685165
   },
   {
     "file": "4-Skill2.wav",
-    "sha256": "9f46e33780ef296c54942df03ede6913fbc7c21b07375a9543827645b64f6ac5",
-    "seconds": 1.35,
+    "sha256": "d5b9550b8fe7b8b77b9713b6c36338b54c18bccd94ce50ef1c6051f9231cd292",
+    "seconds": 0.28644,
     "sampleRate": 44100,
-    "peak": 0.629974365234375,
-    "rms": 0.038796455435942
+    "peak": 0.430023193359375,
+    "rms": 0.09305731824387074
   },
   {
     "file": "4-Recover.wav",
-    "sha256": "939836b254cfb7f58237f76f0202c39cbefd73995838448170bfde49a630c276",
-    "seconds": 0.680023,
+    "sha256": "529eb4e4c75145c1401a170cb562d6acccf97ecb375ebb9556248a9302cf7f7c",
+    "seconds": 0.623696,
     "sampleRate": 44100,
-    "peak": 0.31500244140625,
-    "rms": 0.02500789059328928
+    "peak": 0.430023193359375,
+    "rms": 0.10065057004008668
   },
   {
     "file": "4-Break.wav",
-    "sha256": "2abefa881ecbef8ec64a64775195dd23a4f78a2dea6ca8e2cd830409037d94ea",
-    "seconds": 0.540023,
+    "sha256": "1ad701d91f6beeb60f2c7d813ee614d23296186c7b9c0f40647946d9b756248c",
+    "seconds": 0.53873,
     "sampleRate": 44100,
-    "peak": 0.24749755859375,
-    "rms": 0.021598477493420264
+    "peak": 0.430023193359375,
+    "rms": 0.06685624768532523
   },
   {
     "file": "4-Phase.wav",
-    "sha256": "672d84a5c5bde7faebf72e90db57c4d8b0feb582b22e41204287801b17e8e112",
-    "seconds": 1.160023,
+    "sha256": "2f91bc8f032f7eea5d37a84037f405747656f6baadf2a108cf33e5dbe3bc9ddb",
+    "seconds": 0.537007,
     "sampleRate": 44100,
-    "peak": 0.292510986328125,
-    "rms": 0.030404101459335194
+    "peak": 0.356903076171875,
+    "rms": 0.10029916076247794
   },
   {
     "file": "4-Death.wav",
-    "sha256": "ad5ff76382484df886143f1c8e57194d38240eae73323663bfc0379eee8cf1fd",
-    "seconds": 0.930023,
+    "sha256": "42741d37dae2d43bfb220061ecf9b63009560922252199d7f8f46cfba2f7d6de",
+    "seconds": 0.797007,
     "sampleRate": 44100,
-    "peak": 0.29248046875,
-    "rms": 0.020501118103903773
+    "peak": 0.430023193359375,
+    "rms": 0.0736571602119904
   },
   {
     "file": "4-Skid.wav",
-    "sha256": "1543eacb38c35f0236722764c39c64db1fdb53370473a06fdb7d49a53c09ad29",
-    "seconds": 0.700023,
+    "sha256": "5c61bdb818f72be669ef1b5960349ac40d841b8e165778e1780edd5c636c32d8",
+    "seconds": 0.526417,
     "sampleRate": 44100,
-    "peak": 0.27093505859375,
-    "rms": 0.030890481619382616
+    "peak": 0.4049072265625,
+    "rms": 0.10020242071908676
+  },
+  {
+    "file": "0-HurtCry.wav",
+    "sha256": "f84823aa7aaeb688909501ce8395e06fe7c6b8e117f639e7b71d6b011f6a2d3f",
+    "seconds": 0.231995,
+    "sampleRate": 44100,
+    "peak": 0.310882568359375,
+    "rms": 0.09689219516777274
+  },
+  {
+    "file": "0-ChaseCry.wav",
+    "sha256": "fed424e4b95801185bd3ff76530786f57321c274fa0ae81a547163330911c788",
+    "seconds": 0.511995,
+    "sampleRate": 44100,
+    "peak": 0.3302001953125,
+    "rms": 0.10426506564553115
+  },
+  {
+    "file": "1-HurtCry.wav",
+    "sha256": "f1a1972bbea82e8b5cc0d25a380e50f857b404d04fdff87b10996f2631ea7666",
+    "seconds": 0.211995,
+    "sampleRate": 44100,
+    "peak": 0.350006103515625,
+    "rms": 0.08839829072764915
+  },
+  {
+    "file": "1-ChaseCry.wav",
+    "sha256": "ad2621301a053fa283dd93583009744732fca13787757431de421a6aaae1ce72",
+    "seconds": 0.421995,
+    "sampleRate": 44100,
+    "peak": 0.350006103515625,
+    "rms": 0.09293911224272186
+  },
+  {
+    "file": "2-HurtCry.wav",
+    "sha256": "5daf6cb2ae5e199bea7cf4647b46960fea815791de38bb0afb1db64a46377e7a",
+    "seconds": 0.196984,
+    "sampleRate": 44100,
+    "peak": 0.313507080078125,
+    "rms": 0.09437227031035046
+  },
+  {
+    "file": "2-ChaseCry.wav",
+    "sha256": "f40db5dea4d5ddaab05ebf66cbab0ee82d18839b52151cb649515b9da971f061",
+    "seconds": 0.391995,
+    "sampleRate": 44100,
+    "peak": 0.307403564453125,
+    "rms": 0.10244518442066662
+  },
+  {
+    "file": "3-HurtCry.wav",
+    "sha256": "0e6593f861f1ab1f9f2d490a39ad08a09556dce5549fc3e0493086ff4297fef8",
+    "seconds": 0.221995,
+    "sampleRate": 44100,
+    "peak": 0.34796142578125,
+    "rms": 0.09625979186649632
+  },
+  {
+    "file": "3-ChaseCry.wav",
+    "sha256": "0e246a2fd98cb275971a5b60722e5a2525e529b02d4fdfa4352297c08ce5241c",
+    "seconds": 0.481995,
+    "sampleRate": 44100,
+    "peak": 0.341400146484375,
+    "rms": 0.10389750546407225
+  },
+  {
+    "file": "4-HurtCry.wav",
+    "sha256": "456daf8ca6f8f157462a84963f341205c1b4925c3d39f7eaf7a521a33f873bf2",
+    "seconds": 0.236984,
+    "sampleRate": 44100,
+    "peak": 0.254486083984375,
+    "rms": 0.09718648270337439
+  },
+  {
+    "file": "4-ChaseCry.wav",
+    "sha256": "019fc3e82899253bf9705b3d7ca9c8f976c432cc913f6b5a936226a06c601dac",
+    "seconds": 0.501995,
+    "sampleRate": 44100,
+    "peak": 0.27978515625,
+    "rms": 0.10414766516228588
   }
 ]

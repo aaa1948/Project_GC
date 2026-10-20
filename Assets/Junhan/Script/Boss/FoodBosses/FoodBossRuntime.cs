@@ -47,8 +47,9 @@ namespace Vampire
             if(Paused)return;age+=Time.deltaTime;
             if(Busy||Transitioning)return;
             Vector2 delta=(Vector2)Player.transform.position-(Vector2)transform.position;Visual.Face(delta);
-            Moving=delta.magnitude>4.5f;
-            if(Moving)MoveToward((Vector2)transform.position+delta.normalized*.7f*Time.deltaTime);
+            Vector2 beforeMove=transform.position;
+            if(delta.magnitude>4.5f)MoveToward(beforeMove+delta.normalized*.7f*Time.deltaTime);
+            SetChasing(((Vector2)transform.position-beforeMove).sqrMagnitude>1e-10f);
             nextAction-=Time.deltaTime;
             if(AutoPatterns&&nextAction<=0)
             {
@@ -57,10 +58,16 @@ namespace Vampire
                 Play(order[sequence++%order.Length]);
             }
         }
+        void SetChasing(bool moving)
+        {
+            bool starting=moving&&!Moving;Moving=moving;
+            // One chance per actual movement start, never once per moving frame.
+            if(starting)Audio.TryChaseCry();
+        }
         public bool Play(FoodBossAttack attack)
         {
             if(Dead||Busy||Transitioning||Paused||attack==FoodBossAttack.Recovery&&PhaseTwo)return false;
-            CurrentAttack=attack;Moving=false;body.velocity=Vector2.zero;action=StartCoroutine(Execute(attack));return true;
+            CurrentAttack=attack;SetChasing(false);Audio.FadeCries();body.velocity=Vector2.zero;action=StartCoroutine(Execute(attack));return true;
         }
         IEnumerator Execute(FoodBossAttack attack)
         {
@@ -100,6 +107,7 @@ namespace Vampire
             float old=Health;Health=Mathf.Max(0,Health-damage);damageReceived+=old-Health;
             if(Health<=0){Cancel();Dead=true;hitbox.enabled=false;ClearEffects();GetComponent<FoodBossCombatStatus>()?.Defeated();RunScore.Current?.BossKill();StartCoroutine(Death());}
             else if(!PhaseTwo&&Health<=MaxHealth*.5f){Cancel();ClearEffects();action=StartCoroutine(Transition());}
+            else if(Health<old)Audio.TryHurtCry();
         }
         public override void Knockback(Vector2 knockback){}
         public void SetPhaseTwoForTest(){if(PhaseTwo)return;TakeDamage(Mathf.Max(1,Health-MaxHealth*.49f));}
