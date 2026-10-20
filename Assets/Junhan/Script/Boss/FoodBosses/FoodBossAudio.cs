@@ -4,6 +4,7 @@ namespace Vampire
     public enum FoodBossSound { Shot,Radial,Dash,Land,Skill1,Skill2,Recover,Break,Phase,Death,Skid,Beam,Consume,HurtCry,ChaseCry }
     public sealed class FoodBossAudio:MonoBehaviour
     {
+        readonly System.Collections.Generic.Dictionary<string,AudioClip> transitionClips=new System.Collections.Generic.Dictionary<string,AudioClip>();
         AudioSource[] voices;AudioClip[] clips;float[] gains,fadeLeft,fadeLength,started;
         FoodBossSound[] playing;FoodBossRuntime boss;float lastShot=-10,lastBreak=-10,lastConsume=-10;bool paused;float nextHurtCry;
         public const float HurtCryChance=.19f,HurtCryInterval=2f,ChaseCryChance=.35f;
@@ -53,18 +54,29 @@ namespace Vampire
             if(sound==FoodBossSound.Break&&Time.time-lastBreak<.09f)return;if(sound==FoodBossSound.Break)lastBreak=Time.time;
             if(sound==FoodBossSound.Consume&&Time.time-lastConsume<.12f)return;if(sound==FoodBossSound.Consume)lastConsume=Time.time;
             if(IsCry(sound)){if(!CanCry())return;}else FadeCries();
+            PlayClip(sound,clips[id],gain);
+        }
+        public bool PlayTransition(string name,float gain=1)
+        {
+            if(voices==null||FoodBossRuntime.Paused)return false;
+            if(!transitionClips.TryGetValue(name,out var clip)){clip=Resources.Load<AudioClip>($"FoodBosses/Audio/Transitions/{(int)boss.Kind}-{name}");transitionClips[name]=clip;}
+            if(clip==null)return false;
+            FadeCries();return PlayClip(FoodBossSound.Phase,clip,gain);
+        }
+        bool PlayClip(FoodBossSound sound,AudioClip clip,float gain)
+        {
             int slot=System.Array.FindIndex(voices,s=>!s.isPlaying);
             if(slot<0)
             {
                 for(int i=0;i<voices.Length;i++)
                     if(Priority(playing[i])<=Priority(sound)&&(slot<0||Priority(playing[i])<Priority(playing[slot])
                         ||Priority(playing[i])==Priority(playing[slot])&&started[i]<started[slot]))slot=i;
-                if(slot<0)return;
+                if(slot<0)return false;
             }
-            var v=voices[slot];v.Stop();v.clip=clips[id];
+            var v=voices[slot];v.Stop();v.clip=clip;
             // Keep approved material and flight pitch intact. Variation is in the assets.
             v.pitch=1;playing[slot]=sound;started[slot]=Time.time;fadeLength[slot]=fadeLeft[slot]=0;
-            gains[slot]=Mathf.Max(0,gain)*(IsCry(sound)?.32f:sound==FoodBossSound.Shot?.35f:sound==FoodBossSound.Land?.75f:.6f);Apply(slot);v.Play();PlayedCount++;
+            gains[slot]=Mathf.Max(0,gain)*(IsCry(sound)?.32f:sound==FoodBossSound.Shot?.35f:sound==FoodBossSound.Land?.75f:.6f);Apply(slot);v.Play();PlayedCount++;return true;
         }
         void Apply(int i)
         {

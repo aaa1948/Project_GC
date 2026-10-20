@@ -15,6 +15,7 @@ namespace Vampire
         public bool Recovering {get;private set;}public int Reversals {get;private set;}
         public FoodBossAttack CurrentAttack {get;private set;}public FoodBossVisual Visual {get;private set;}
         public FoodBossAudio Audio {get;private set;}
+        public FoodBossPhaseVisual PhaseVisual {get;private set;}
         public Transform Effects {get;private set;}public Color Warning=>FoodBossArt.Warnings[(int)Kind];
         public static bool Paused=>Time.timeScale<=0||MiniStageRuntimeState.IsInsideMiniStage;
         public const float BasicSpeed=1.8f,BasicGap=.55f;public const int RingCount=12;
@@ -35,6 +36,7 @@ namespace Vampire
             StomachSlopeBody.Ensure(gameObject);Effects=new GameObject(name+" patterns").transform;
             Visual=new GameObject("Boss articulated visual").AddComponent<FoodBossVisual>();Visual.transform.SetParent(transform,false);Visual.Initialize(this);
             Audio=gameObject.AddComponent<FoodBossAudio>();Audio.Initialize(this);
+            PhaseVisual=gameObject.AddComponent<FoodBossPhaseVisual>();PhaseVisual.Initialize(this);
             gameObject.AddComponent<MapMarker>().Configure(MapMarkerKind.Boss,name,true);
             gameObject.AddComponent<FoodBossHealthHud>().Initialize(this);
         }
@@ -111,8 +113,15 @@ namespace Vampire
         }
         public override void Knockback(Vector2 knockback){}
         public void SetPhaseTwoForTest(){if(PhaseTwo)return;TakeDamage(Mathf.Max(1,Health-MaxHealth*.49f));}
-        IEnumerator Transition(){Transitioning=true;Audio.Play(FoodBossSound.Phase);yield return Wait(.65f);PhaseTwo=true;Visual.ResetPose();yield return Wait(.65f);Transitioning=false;action=null;nextAction=1.2f;}
-        void Cancel(){if(action!=null)StopCoroutine(action);action=null;if(Audio!=null)Audio.Stop();Recovering=false;Transitioning=false;Moving=false;if(body!=null)body.velocity=Vector2.zero;if(hitbox!=null)hitbox.enabled=true;if(Visual!=null)Visual.ResetPose();if(Player!=null)Player.GetComponent<SnailSlowStatus>()?.Exit(GetInstanceID(),0);}
+        IEnumerator Transition()
+        {
+            Transitioning=true;PhaseVisual.Begin();
+            float duration=FoodBossPhaseVisual.Duration(Kind);
+            for(float t=0;t<duration;){if(!Paused){t+=Time.deltaTime;PhaseVisual.SetProgress(t/duration);}yield return null;}
+            PhaseTwo=true;Visual.ResetPose();PhaseVisual.End();
+            Transitioning=false;action=null;nextAction=.5f;
+        }
+        void Cancel(){if(action!=null)StopCoroutine(action);action=null;if(Audio!=null)Audio.Stop();if(PhaseVisual!=null)PhaseVisual.End();Recovering=false;Transitioning=false;Moving=false;if(body!=null)body.velocity=Vector2.zero;if(hitbox!=null)hitbox.enabled=true;if(Visual!=null)Visual.ResetPose();if(Player!=null)Player.GetComponent<SnailSlowStatus>()?.Exit(GetInstanceID(),0);}
         void ClearEffects(){weakpoints.Clear();if(Effects!=null)for(int i=Effects.childCount-1;i>=0;i--){var g=Effects.GetChild(i).gameObject;g.SetActive(false);Destroy(g);}}
         IEnumerator Death()
         {

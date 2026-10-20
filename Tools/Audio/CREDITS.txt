@@ -9,3 +9,5 @@ Older Approved/*.wav masters are historical references; the active pinned master
 No claim that source analysis is subjective listening verification.
 
 10 approved creature cries added 2026-10-21: original synthesized character voices, no Pokemon recordings, existing game jingles, or noise beds. Current total: 67 cues.
+
+18 original synthesized phase-transition material cues added 2026-10-21 in Audio/Transitions. Dry short gestures, no external recordings, game jingles or ambient noise beds. Generator: build_food_boss_transitions.py. Existing 67 approved WAVs unchanged.

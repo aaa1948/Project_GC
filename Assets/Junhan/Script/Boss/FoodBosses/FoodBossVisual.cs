@@ -9,6 +9,7 @@ namespace Vampire
         FoodBossRuntime boss;SpriteRenderer[] claws,arms;SpriteRenderer shadow;Transform rig;float clock,clawBlend;int facing=-1;
         SpriteRenderer suctionMouth;LineRenderer[] suction;
         Material articulatedMaterial,flightMaterial,bodyMaterial;MaterialPropertyBlock bodyProperties;
+        public int Facing=>facing;
         public Vector2 SnailMouth=>(Vector2)transform.position+new Vector2(facing*1.35f,.70f);
         // Anatomical sockets are authored against the original, left-facing art.
         public Vector2 HornTip=>(Vector2)transform.position+new Vector2(facing*(boss.PhaseTwo?2.02f:1.66f),boss.PhaseTwo?2.02f:1.53f);
