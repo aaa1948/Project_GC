@@ -72,14 +72,14 @@ namespace Vampire
         public static Vector2 Dir(float a)=>new Vector2(Mathf.Cos(a*Mathf.Deg2Rad),Mathf.Sin(a*Mathf.Deg2Rad));
         public static Vector2 Rotate(Vector2 v,float angle)=>(Vector2)(Quaternion.Euler(0,0,angle)*v);
         public Vector2 Aim=>Player!=null?((Vector2)Player.transform.position-(Vector2)transform.position).normalized:Vector2.down;
-        public Vector2 Mouth=>(Vector2)transform.position+Vector2.up*.65f+Aim*.8f;
+        public Vector2 Mouth=>Visual!=null?Visual.ShotOrigin:(Vector2)transform.position+Vector2.up*.65f;
         public Vector2 FireAim=>Player!=null?((Vector2)Player.transform.position-Mouth).normalized:Aim;
         public IEnumerator Wait(float seconds){for(float t=0;t<seconds;){if(!Paused)t+=Time.deltaTime;yield return null;}}
         void MoveToward(Vector2 target){var at=(Vector2)transform.position;float factor=GetComponent<StomachSlopeBody>().MovementMultiplier(target-at);factor*=GetComponent<IceChillStatus>()?.SpeedMultiplier??1;factor*=GetComponent<FoodBossCombatStatus>()?.SpeedMultiplier??1;target=at+(target-at)*factor;target=FiniteStomachMap.ClampDash(at,target,1.25f);body.position=target;transform.position=target;}
         IEnumerator Basic()
         {
             yield return Wait(.45f);
-            for(int i=0;i<(PhaseTwo?5:3);i++){var dir=FireAim;Visual.Face(Aim);Visual.Recoil=-.10f;Audio.Play(FoodBossSound.Shot);FoodBossBullet.Fire(this,Mouth,dir,BasicSpeed,8);yield return Wait(.12f);Visual.Recoil=0;yield return Wait(BasicGap-.12f);}
+            for(int i=0;i<(PhaseTwo?5:3);i++){Visual.Face(Aim);var dir=FireAim;Visual.Recoil=-.10f;Audio.Play(FoodBossSound.Shot);FoodBossBullet.Fire(this,Mouth,dir,BasicSpeed,8);yield return Wait(.12f);Visual.Recoil=0;yield return Wait(BasicGap-.12f);}
         }
         IEnumerator Radial()
         {
@@ -104,7 +104,7 @@ namespace Vampire
         public override void Knockback(Vector2 knockback){}
         public void SetPhaseTwoForTest(){if(PhaseTwo)return;TakeDamage(Mathf.Max(1,Health-MaxHealth*.49f));}
         IEnumerator Transition(){Transitioning=true;Audio.Play(FoodBossSound.Phase);yield return Wait(.65f);PhaseTwo=true;Visual.ResetPose();yield return Wait(.65f);Transitioning=false;action=null;nextAction=1.2f;}
-        void Cancel(){if(action!=null)StopCoroutine(action);action=null;Audio?.Stop();Recovering=false;Transitioning=false;Moving=false;if(body!=null)body.velocity=Vector2.zero;if(hitbox!=null)hitbox.enabled=true;if(Visual!=null)Visual.ResetPose();Player?.GetComponent<SnailSlowStatus>()?.Exit(GetInstanceID(),0);}
+        void Cancel(){if(action!=null)StopCoroutine(action);action=null;if(Audio!=null)Audio.Stop();Recovering=false;Transitioning=false;Moving=false;if(body!=null)body.velocity=Vector2.zero;if(hitbox!=null)hitbox.enabled=true;if(Visual!=null)Visual.ResetPose();if(Player!=null)Player.GetComponent<SnailSlowStatus>()?.Exit(GetInstanceID(),0);}
         void ClearEffects(){weakpoints.Clear();if(Effects!=null)for(int i=Effects.childCount-1;i>=0;i--){var g=Effects.GetChild(i).gameObject;g.SetActive(false);Destroy(g);}}
         IEnumerator Death()
         {

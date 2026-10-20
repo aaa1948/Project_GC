@@ -20,6 +20,7 @@ for(let boss=0;boss<5;boss++)for(let event=0;event<events.length;event++){
   else if(event===7){v=(high*.45*(1-wet)+low*2*wet+wave(t,620*(1-u*.7))*.2)*Math.exp(-u*7)*onset;if(boss===3)v+=(wave(t,2400)+wave(t,3500)*.4)*.15*Math.exp(-u*12);}
   else if(event===8){const env=Math.sin(Math.PI*u);v=(wave(t,75+55*u)*.4+wave(t,pitch*(.5+u*.6))*.15+low*.7)*env;}
   else if(event===9){const env=Math.sin(Math.PI*u)*(1-u);v=(wave(t,pitch*(1-.8*u))*.38+low*1.2*wet+high*.09*(1-wet))*env;}
+  else if(boss===3){const env=Math.pow(Math.sin(Math.PI*u),.7);const brake=Math.sin(2*Math.PI*(1250*t-450*t*t/len)+.5*Math.sin(t*2*Math.PI*34));v=(brake*.25+Math.sin(2*Math.PI*(1870*t-650*t*t/len))*.08+low*1.7+high*.13)*env;}
   else {v=(low*2.2+high*.24)*Math.sin(Math.PI*u)*(.7+.3*wave(t,24));}
   v*=onset*release;const dc=v-last*.995;last=v;samples[i]=v;
  }

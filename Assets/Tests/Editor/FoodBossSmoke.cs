@@ -72,7 +72,7 @@ namespace Vampire.Tests.Editor
             Set(player,"isInvincible",true);Time.timeScale=1;
             RunScore.Exclude("보스 자동 검증");
             if(SessionState.GetBool(Key+"Visual",false)){yield return VisualProof(player,origin);SessionState.SetBool(Key+"Done",true);yield break;}
-            if(SessionState.GetBool(Key+"Review",false)){yield return FinalReview(player,origin);yield return Integration(player,origin);SessionState.SetBool(Key+"Done",true);yield break;}
+            if(SessionState.GetBool(Key+"Review",false)){yield return FinalReview(player,origin);yield return Integration(player,origin);yield return Presentation(player,origin);SessionState.SetBool(Key+"Done",true);yield break;}
             var altar=Object.FindObjectOfType<FinalBossSummonInteractable>();
             Check(altar.OpenBossChoice(player),"altar opens temporary choice panel");Check(Time.timeScale==0&&Object.FindObjectOfType<FoodBossRuntime>()==null,"choice pauses and does not spawn early");Capture("00-boss-choice");ApothecaryUI.Instance.CloseBossChoice();Check(Time.timeScale==1&&!FinalBossSummonInteractable.IsSummoning,"cancel resumes and releases summon lock");
             Check(altar.OpenBossChoice(player),"cancelled altar reusable");ApothecaryUI.Instance.CloseBossChoice(FoodBossKind.Denikani);
@@ -123,9 +123,38 @@ namespace Vampire.Tests.Editor
             }
             yield return Avoidance(player,origin);
             yield return Fanta(player,origin);
-            yield return Integration(player,origin);
+            yield return Integration(player,origin);yield return Presentation(player,origin);
             Position(player,origin);SessionState.SetBool(Key+"Done",true);
         }
+
+        static IEnumerator Presentation(Character player,Vector2 origin)
+        {
+            Position(player,origin+Vector2.right*3.4f);
+            var boss=FoodBossRuntime.Spawn(FoodBossKind.Maribi,player,origin);boss.AutoPatterns=false;yield return null;
+            boss.Play(FoodBossAttack.Recovery);yield return new WaitForSeconds(.2f);
+            var tongue=boss.Effects.GetComponentInChildren<FoodBossWeakpoint>();Vector2 anchored=tongue.transform.position;
+            Position(player,origin+Vector2.left*3.4f);yield return new WaitForSeconds(.1f);
+            Check(Vector2.Distance(anchored,tongue.transform.position)<.01f,"tongue hitbox stays with closed shell when player crosses behind");
+            Check(Vector2.Distance(tongue.transform.position,boss.Visual.TongueSocket)<.01f,"tongue hitbox matches artwork socket");Object.Destroy(boss.gameObject);yield return null;
+            Position(player,origin+Vector2.right*3.4f);boss=FoodBossRuntime.Spawn(FoodBossKind.Tangdengi,player,origin);boss.AutoPatterns=false;yield return null;
+            boss.Play(FoodBossAttack.UniqueOne);yield return new WaitForSeconds(1.5f);
+            var beam=boss.Effects.GetComponentInChildren<FoodBossEnergyBeam>();Check(beam!=null,"continuous horn beam exists after charge");
+            Check(Vector2.Distance((Vector2)Field(beam,"origin").GetValue(beam),boss.Visual.HornTip)<.01f,"beam starts between horn tips");
+            boss.SetPhaseTwoForTest();yield return null;Check(boss.Effects.GetComponentsInChildren<FoodBossEnergyBeam>().Length==0,"phase change removes active beam");Object.Destroy(boss.gameObject);yield return null;
+            boss=FoodBossRuntime.Spawn(FoodBossKind.Hurumi,player,origin);boss.AutoPatterns=false;yield return null;
+            boss.Play(FoodBossAttack.UniqueTwo);yield return new WaitForSeconds(.4f);
+            Check(boss.Visual.Whipping&&boss.Visual.Body.sharedMaterial.shader.name=="FoodBosses/ArticulatedBody","only raised noodle switches to articulated rig");
+            var noodle=boss.Effects.GetComponentInChildren<FoodBossNoodle>();Check(noodle!=null&&Vector2.Distance(noodle.Points[0],boss.Visual.NoodleTip)<.01f,"whip root stays on original noodle socket");
+            boss.SetPhaseTwoForTest();yield return null;
+            Check(!boss.Visual.Whipping&&boss.Visual.Body.sharedMaterial.shader.name!="FoodBosses/ArticulatedBody","interrupted whip restores original body art");
+            Check(boss.Effects.GetComponentsInChildren<FoodBossNoodle>().Length==0,"interrupted whip removes extended noodle");Object.Destroy(boss.gameObject);yield return null;
+            boss=FoodBossRuntime.Spawn(FoodBossKind.Rolpangi,player,origin);boss.AutoPatterns=false;boss.TakeDamage(boss.MaxHealth*.3f);yield return null;
+            boss.Play(FoodBossAttack.Recovery);yield return new WaitForSeconds(.2f);
+            var mini=boss.Effects.GetComponentsInChildren<FoodBossWeakpoint>()[0];Set(mini,"routeIndex",int.MaxValue);mini.transform.position=boss.Mouth+Vector2.right*.38f;
+            float hp=boss.Health;yield return new WaitForSeconds(.4f);
+            Check(mini==null&&Mathf.Approximately(boss.Health,hp+boss.MaxHealth*.02f),"mouth absorption consumes once and restores exactly two percent");Object.Destroy(boss.gameObject);yield return null;
+        }
+
         static IEnumerator Integration(Character player,Vector2 origin)
         {
             Position(player,origin);var boss=FoodBossRuntime.Spawn(FoodBossKind.Maribi,player,origin+Vector2.right*2.8f);boss.AutoPatterns=false;yield return null;Physics2D.SyncTransforms();
