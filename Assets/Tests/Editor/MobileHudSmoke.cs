@@ -79,7 +79,7 @@ namespace Vampire.Tests.Editor
             var character=level.PlayerCharacter;
             RunScore.Exclude("Mobile HUD and map zoom verification");
             character.AddMaxHealthBonus(10000);character.GainHealth(10000);
-            Check(!Object.FindObjectsOfType<Button>().Any(b=>b.name=="Active skill R"),"desktop active skill remains keyboard only");
+            Check(!Object.FindObjectsOfType<Button>().Any(b=>b.name=="Active skill R"||b.name=="HUD dash"),"desktop skills remain keyboard only");
             var mobile=character.GetComponent<MobileGameplayControls>()??character.gameObject.AddComponent<MobileGameplayControls>();
             typeof(MobileGameplayControls).GetField("simulateInEditor",BindingFlags.Instance|BindingFlags.NonPublic).SetValue(mobile,true);
             yield return null;yield return null;
@@ -93,7 +93,22 @@ namespace Vampire.Tests.Editor
             move.OnPointerDown(Touch(move,11,new Vector2(move.Radius,0)));
             Check(move.Knob.anchoredPosition.x>move.Radius*.99f,"handle follows right drag");
             Check(MobileGameplayInput.ChargeHeld&&MobileGameplayInput.Aim.x>.99f,"single stick preserves charge and movement aim");
-            Check(!Object.FindObjectsOfType<Button>().Any(b=>b.name=="HUD dash"||b.name=="HUD interact"||b.name=="Passive skill status"),"only mobile active icon restored");
+            Check(!Object.FindObjectsOfType<Button>().Any(b=>b.name=="HUD interact"||b.name=="Passive skill status"),"interaction and passive HUD remain hidden");
+            var dash=Object.FindObjectsOfType<Button>().Single(b=>b.name=="HUD dash");
+            Check(dash.GetComponentInChildren<SharedDashIcon>()!=null,"original shared dash icon restored");
+            int charges=character.CurrentDashCharges;
+            var beforeDash=character.transform.position;
+            dash.onClick.Invoke();yield return null;
+            Check(character.CurrentDashCharges==charges-1&&character.IsDashing,"mobile tap consumes one charge and starts actual dash");
+            Check(!dash.interactable,"dash button disabled during dash");
+            yield return new WaitForSecondsRealtime(character.DashDuration+.1f);
+            Check(Vector3.Distance(beforeDash,character.transform.position)>.1f,"dash moves character while joystick is held");
+            Check(move.Knob.anchoredPosition.x>0,"dash touch preserves joystick gesture");
+            charges=character.CurrentDashCharges;Time.timeScale=0;yield return null;
+            dash.onClick.Invoke();
+            Check(character.CurrentDashCharges==charges&&!dash.interactable,"paused dash cannot consume charges");
+            Time.timeScale=1;yield return null;
+            move.OnPointerDown(Touch(move,11,new Vector2(move.Radius,0)));
             var active=Object.FindObjectsOfType<Button>().Single(b=>b.name=="Active skill R");
             Check(active.GetComponent<ShiniSkillButton>()!=null,"Shini hold handler retained");
             active.onClick.Invoke();yield return null;
@@ -123,6 +138,10 @@ namespace Vampire.Tests.Editor
                 var activeBounds=Bounds((RectTransform)active.transform);
                 Check(activeBounds.xMax<=Screen.safeArea.xMax&&activeBounds.yMin>=Screen.safeArea.yMin,"active skill inside safe area");
                 Check(!bounds.Overlaps(activeBounds)&&!activeBounds.Overlaps(Bounds((RectTransform)move.transform)),"active skill clears inventory and joystick");
+                var dashBounds=Bounds((RectTransform)dash.transform);
+                Check(dashBounds.xMax<=Screen.safeArea.xMax&&dashBounds.yMin>=Screen.safeArea.yMin,"dash inside safe area");
+                Check(activeBounds.xMax<dashBounds.xMin&&Mathf.Abs(activeBounds.yMin-dashBounds.yMin)<1,"active left of dash on same row with a gap");
+                Check(!bounds.Overlaps(dashBounds)&&!dashBounds.Overlaps(Bounds((RectTransform)move.transform)),"dash clears inventory and joystick");
                 Capture("layout-"+Screen.width+"x"+Screen.height);
             }
             gear.onClick.Invoke();yield return null;Canvas.ForceUpdateCanvases();

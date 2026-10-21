@@ -11,6 +11,7 @@ namespace Vampire
         Button dashHudButton, interactionHudButton;
         GameObject cutinPanel, skillDetails;
         RectTransform skillHudRoot;
+        const float SkillHudButtonSize = 110f, SkillHudButtonGap = 14f;
         CharacterSkillRuntime CurrentSkills => level!=null && level.PlayerCharacter!=null ? level.PlayerCharacter.Skills : null;
         void ClearSkillUI()
         {
@@ -58,7 +59,8 @@ namespace Vampire
         void BuildSkillHud()
         {
             skillHudRoot=Rect("Skill HUD",content,1,0,1,0);
-            skillHudRoot.pivot=new Vector2(1,0);skillHudRoot.sizeDelta=new Vector2(110,110);
+            skillHudRoot.pivot=new Vector2(1,0);
+            skillHudRoot.sizeDelta=new Vector2(SkillHudButtonSize*2+SkillHudButtonGap,SkillHudButtonSize);
             skillHudRoot.anchoredPosition=new Vector2(-24,48);
             var d=character!=null?character.skills:null;
             for(int i=1;i<2;i++)
@@ -87,6 +89,17 @@ namespace Vampire
                 }
                 else {passiveDuration=mask;passiveSeconds=seconds;}
             }
+            // Keep the right slot in the former active-skill position. The
+            // active skill now occupies the matching slot to its left.
+            float dashX=(SkillHudButtonSize+SkillHudButtonGap)/skillHudRoot.sizeDelta.x;
+            dashHudButton=HudIconButton("대쉬",dashX,0,()=>
+            {
+                if(Time.timeScale>0&&level!=null&&level.PlayerCharacter!=null)
+                    level.PlayerCharacter.TryDash();
+            });
+            dashHudButton.name="HUD dash";
+            var dash=Rect("Shared dash HUD icon",dashHudButton.transform.Find("Visual"),.17f,.28f,.83f,.88f).gameObject.AddComponent<SharedDashIcon>();
+            dash.color=new Color(.12f,.65f,.63f);dash.raycastTarget=false;
             var band=Rect("Sprint cut-in",content,0,.27f,1,.73f);cutinPanel=band.gameObject;
             var shade=band.gameObject.AddComponent<Image>();shade.color=new Color(0,0,0,.76f);shade.raycastTarget=true;
             cutinPortrait=ImageAt(band,null,.33f,0,.67f,1);
@@ -97,7 +110,7 @@ namespace Vampire
         }
         Button HudIconButton(string text,float x,float y,System.Action action)
         {
-            var button=ActionButton(skillHudRoot,"",x,y,x+1,y+1,action);
+            var button=ActionButton(skillHudRoot,"",x,y,x+SkillHudButtonSize/skillHudRoot.sizeDelta.x,y+1,action);
             var visual=button.transform.Find("Visual");
             var body=visual.GetComponent<Image>();body.sprite=LightWoodHud.Art(3);body.type=Image.Type.Simple;
             button.GetComponent<ApothecaryButtonFeedback>().useThemeStates=false;
@@ -124,7 +137,7 @@ namespace Vampire
             bool playing=Time.timeScale>0&&level!=null&&level.PlayerCharacter!=null&&level.PlayerCharacter.CurrentHealth>0;
             activeSkillButton.interactable=playing&&skill!=null&&(skill.CanActivate||skill.IsShini&&skill.Breath!=null&&skill.Breath.Busy);
             var feedback=activeSkillButton.GetComponent<ApothecaryButtonFeedback>();if(feedback!=null)feedback.chosen=skill!=null&&skill.Active;
-            if(dashHudButton!=null)dashHudButton.interactable=playing;
+            if(dashHudButton!=null)dashHudButton.interactable=playing&&level.PlayerCharacter.CurrentDashCharges>0&&!level.PlayerCharacter.IsDashing;
             if(interactionHudButton!=null)interactionHudButton.interactable=playing;
             if(passiveLevelLabel!=null)passiveLevelLabel.text=$"패시브 Lv.{(skill!=null?skill.PassiveLevel:1)}";
             if(activeLevelLabel!=null)activeLevelLabel.text=$"{((GamePlatform.UsesTouchControls||MobileGameplayInput.Active)?"":"R · ")}액티브 Lv.{(skill!=null?skill.ActiveLevel:1)}";
