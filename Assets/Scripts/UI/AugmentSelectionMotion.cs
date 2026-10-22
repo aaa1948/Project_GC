@@ -10,14 +10,17 @@ namespace Vampire
     // its 254 x 412 card space, independent of the actual UI/device resolution.
     public sealed class AugmentSelectionMotion : MonoBehaviour
     {
-        public const float OrbitStart = .55f, OrbitEnd = 2.15f, TurnDuration = 1.12f;
-        public const float Duration = OrbitEnd + TurnDuration;
+        public const float Duration = 1.5f;
+        // Uniformly retime the approved 3.27-second motion, including both fades.
+        const float TimingScale = Duration / 3.27f;
+        public const float OrbitStart = .55f * TimingScale, OrbitEnd = 2.15f * TimingScale,
+            TurnDuration = 1.12f * TimingScale;
         public const int NeedleCount = 8;
         public float Age { get; private set; }
         public float Turn => Mathf.Clamp01((Age - OrbitEnd) / TurnDuration);
         public float Yaw => Mathf.PI * Smooth(Turn);
         public float CardOpacity => 1 - Smooth((Turn - .42f) / .58f);
-        public float WindOpacity => Smooth((Age - OrbitStart) / .16f) * (1 - Smooth(Turn / .60f));
+        public float WindOpacity => Smooth((Age - OrbitStart) / (.16f * TimingScale)) * (1 - Smooth(Turn / .60f));
         public float Spin => Mathf.PI * 2 * Mathf.Clamp01((Age - OrbitStart) / (OrbitEnd - OrbitStart));
         public bool ShowingBack => Mathf.Cos(Yaw) < 0;
         public RectTransform Root { get; private set; }
@@ -137,7 +140,7 @@ namespace Vampire
             Age = Mathf.Clamp(time, 0, Duration);
             foreach (var saved in groups)
                 if (saved.group != null) saved.group.alpha = saved.group == selectedGroup ?
-                    (ShowingBack ? 0 : CardOpacity) : saved.alpha * (1 - Smooth(Age / .22f));
+                    (ShowingBack ? 0 : CardOpacity) : saved.alpha * (1 - Smooth(Age / (.22f * TimingScale)));
             foreach (var p in projections) if (p != null) p.Refresh();
             foreach (var p in textProjections) if (p != null) p.Refresh();
             foreach (var g in effects) if (g != null) g.SetVerticesDirty();

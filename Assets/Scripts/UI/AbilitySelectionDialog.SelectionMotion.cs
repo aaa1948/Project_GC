@@ -9,7 +9,7 @@ namespace Vampire
 
         public void SelectWithMotion(AbilityCard card, Ability selectedAbility)
         {
-            if (!menuOpen || SelectionAnimating || !CanSelectRevealedCard || selectedAbility == null) return;
+            if (!menuOpen || SelectionAnimating || selectedAbility == null) return;
             SelectionAnimating = true; // Lock before Select: double clicks/touches cannot grant twice.
             selectedAbility.Select();
             GameAudioManager.PlaySfx(GameAudioManager.GameSfxId.AugmentSelect);
