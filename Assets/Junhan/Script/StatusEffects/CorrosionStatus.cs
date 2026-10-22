@@ -52,6 +52,7 @@ namespace Vampire
             int maxStacks,
             bool isBossTarget)
         {
+            if (MonsterNeedleBarrier.Blocks(this)) return;
             this.normalBonusPerStack = Mathf.Max(0f, normalBonusPerStack);
             this.bossBonusPerStack = Mathf.Max(0f, bossBonusPerStack);
             this.maxStacks = Mathf.Max(1, maxStacks);

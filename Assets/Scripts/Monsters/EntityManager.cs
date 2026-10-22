@@ -61,6 +61,7 @@ namespace Vampire
         public Inventory Inventory { get => inventory; }
         public AbilitySelectionDialog AbilitySelectionDialog { get; private set; }
         private LevelBlueprint remakeLevel;
+        private LevelManager barrierRunLevel;
         public SpatialHashGrid Grid { get => grid; }
 
         public Monster SpawnOverchargeElite(Vector2 position)
@@ -75,6 +76,7 @@ namespace Vampire
         public void Init(LevelBlueprint levelBlueprint, Character character, Inventory inventory, StatsManager statsManager, InfiniteBackground infiniteBackground, AbilitySelectionDialog abilitySelectionDialog)
         {
             remakeLevel = levelBlueprint;
+            barrierRunLevel = GetComponent<LevelManager>() ?? FindObjectOfType<LevelManager>();
             this.playerCharacter = character;
             this.inventory = inventory;
             this.infiniteBackground = infiniteBackground;
@@ -345,6 +347,7 @@ namespace Vampire
             var spawnBody=newMonster.GetComponent<Rigidbody2D>();
             if(spawnBody!=null)spawnBody.position=safePosition;
 
+            MonsterNeedleBarrier.ConfigureSpawn(newMonster, barrierRunLevel != null ? barrierRunLevel.CurrentLevelTime : 0);
             grid.InsertClient(newMonster);
 
             if (!allowDuringMiniStage)

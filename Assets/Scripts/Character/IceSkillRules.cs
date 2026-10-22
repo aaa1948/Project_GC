@@ -11,6 +11,7 @@ namespace Vampire
         public const float BlizzardFreezeDelay = 1.65f;
         public static void Freeze(Component target)
         {
+            if (MonsterNeedleBarrier.Blocks(target)) return;
             if (target == null || Ver4HitEffects.Health(target) <= 0) return;
             target.GetComponent<IceChillStatus>()?.Clear();
             // Preserve the existing boss resistance: chill instead of a complete stun.

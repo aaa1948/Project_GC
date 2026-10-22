@@ -7,6 +7,7 @@ namespace Vampire
     {
         public static float BeforeHit(Component target, SyringeSpecialRuntime runtime)
         {
+            if (MonsterNeedleBarrier.Blocks(target)) return 1f;
             if (runtime.ver4 == null || target == null) return 1f;
             float multiplier=1;
             var bacteria=target.GetComponent<GutBacteriaStatus>() ?? target.GetComponentInParent<GutBacteriaStatus>();
@@ -24,6 +25,7 @@ namespace Vampire
         }
         public static void AfterHit(Component target,SyringeSpecialRuntime runtime,Character source,LayerMask layer,bool markConsumed)
         {
+            if (MonsterNeedleBarrier.Blocks(target)) return;
             FoodBossCombatStatus.Apply(target,runtime,source,markConsumed);
             var snapshot=runtime.ver4;
             if(snapshot==null || target==null || source==null) return;
@@ -93,6 +95,7 @@ namespace Vampire
         }
         public static bool Damage(Component target,float amount,Vector2 knockback,Character source,string label,bool periodic=false,CombatStatusTag? statusBeforeHit=null)
         {
+            if(MonsterNeedleBarrier.Blocks(target)) return false;
             if(target is CurrencyJar jar){if(source==null||amount<=0||!jar.CanBreak)return false;jar.TakeDamage(amount);return jar.Broken;}
             if(target==null || !(target is IDamageable damageable) || Health(target)<=0) return false;
             amount*=statusBeforeHit.HasValue ? CombatStatusRules.DamageMultiplier(source,statusBeforeHit.Value) : CombatStatusRules.DamageMultiplier(source,target);

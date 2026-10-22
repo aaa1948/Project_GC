@@ -221,6 +221,7 @@ namespace Vampire
         /// </summary>
         public void PrepareForSpawnRuntime(bool isMiniStageOwned)
         {
+            GetComponent<MonsterNeedleBarrier>()?.ResetBarrier();
             StomachSlopeBody.Ensure(gameObject);
             // A pool return can interrupt the .06s hit coroutine before it restores the
             // material. The next spawn must not inherit a white silhouette or hidden body.
@@ -540,6 +541,7 @@ namespace Vampire
 
         public override void Knockback(Vector2 knockback)
         {
+            if (MonsterNeedleBarrier.Blocks(this)) return;
             if (fieldRuntimeSuspended || rb == null)
             {
                 return;
@@ -559,6 +561,7 @@ namespace Vampire
     Vector2 knockback = default(Vector2),
     bool isCritical = false)
         {
+            if (MonsterNeedleBarrier.Blocks(this)) return;
             if (!alive || fieldRuntimeSuspended)
 
             {

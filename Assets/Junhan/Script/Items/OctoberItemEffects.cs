@@ -15,8 +15,10 @@ namespace Vampire
         OctoberItemRuntime owner;
         Component target;
         void Awake(){target=GetComponent<IDamageable>();}
-        public void Poison(OctoberItemRuntime source,float duration,float damage){owner=source;PoisonUntil=Time.time+duration;poisonDamage=damage;}
-        public void Burn(OctoberItemRuntime source,float duration,float damage){owner=source;BurnUntil=Time.time+duration;burnDamage=damage;}
+        public void Poison(OctoberItemRuntime source,float duration,float damage){
+            if (MonsterNeedleBarrier.Blocks(this)) return;owner=source;PoisonUntil=Time.time+duration;poisonDamage=damage;}
+        public void Burn(OctoberItemRuntime source,float duration,float damage){
+            if (MonsterNeedleBarrier.Blocks(this)) return;owner=source;BurnUntil=Time.time+duration;burnDamage=damage;}
         void Update()
         {
             if(target is Monster m&&m.IsFieldRuntimeSuspended){VulnerableUntil+=Time.deltaTime;PoisonUntil+=Time.deltaTime;BurnUntil+=Time.deltaTime;return;}
@@ -46,6 +48,7 @@ namespace Vampire
             if(Time.timeScale<=0||Time.time<nextTick)return;nextTick=Time.time+.25f;
             foreach(var target in owner.Nearby(transform.position,radius))
             {
+                if(MonsterNeedleBarrier.Blocks(target))continue;
                 if(dps>0)Ver4HitEffects.Damage(target,dps*.25f,Vector2.zero,owner.Player,OctoberItemRuntime.Name(item),true);
                 if(item==16)(target.GetComponent<OctoberItemTargetStatus>()??target.gameObject.AddComponent<OctoberItemTargetStatus>()).Burn(owner,.5f,0);
                 if(!pull||Ver4HitEffects.IsBoss(target))continue;

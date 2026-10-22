@@ -100,6 +100,7 @@ namespace Vampire
         IEnumerator Echo(float delay,float strength){yield return new WaitForSeconds(delay);if(Player!=null&&Player.IsAlive&&weapon!=null){weapon.FireItemEcho(facing,strength);Flash(transform.position,strength>.5f?7:19);}}
         public float BeforeHit(Component target,float raw,bool secondary,ref bool critical,ref float knockback)
         {
+            if (MonsterNeedleBarrier.Blocks(target)) return 0;
             if(target==null)return raw;
             if(!secondary)LastBaseDamage=Mathf.Max(1,raw/(critical?2:1));float multiplier=1;
             float distance=Vector2.Distance(transform.position,target.transform.position);
@@ -127,6 +128,7 @@ namespace Vampire
         }
         public void AfterHit(Component target,float damage,bool critical,bool secondary,float healthBefore)
         {
+            if (MonsterNeedleBarrier.Blocks(target)) return;
             if(target==null||secondary)return;
             bool killed=healthBefore>0&&Ver4HitEffects.Health(target)<=0;
             if(killed&&Has(16))
