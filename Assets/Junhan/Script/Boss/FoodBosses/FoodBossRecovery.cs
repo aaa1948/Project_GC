@@ -26,12 +26,12 @@ namespace Vampire
             }
             Recovering=false;hitbox.enabled=true;Visual.ResetPose();Audio.Play(FoodBossSound.Break);FoodBossEffects.Burst(this,transform.position,2);yield return Wait(.8f);
         }
-        public void ConsumeMini(FoodBossWeakpoint mini){if(!Recovering||mini==null)return;Heal(.02f);mini.Consume();}
+        public void ConsumeMini(FoodBossWeakpoint mini){if(!Recovering||mini==null||mini.Health<=0)return;Heal(.02f);Audio.Play(FoodBossSound.Consume,.5f);mini.Consume();}
     }
     public sealed class FoodBossWeakpoint:IDamageable
     {
         public float Health {get;private set;}public float MaxHealth {get;private set;}public FoodBossRuntime Owner {get;private set;}
-        int index;float age;Vector2 anchor;SpriteRenderer art;LineRenderer thread;float width;
+        int index,routeIndex;float age;Vector2 anchor;SpriteRenderer art;LineRenderer thread;float width;Vector2[] approach;
         public static FoodBossWeakpoint Create(FoodBossRuntime boss,Vector2 point,int index)
         {
             var go=new GameObject(boss.Kind+" recovery target "+index);go.transform.SetParent(boss.Effects,true);go.transform.position=point;go.layer=boss.gameObject.layer;
@@ -47,6 +47,15 @@ namespace Vampire
                 case FoodBossKind.Tangdengi:w.art.sprite=FoodBossArt.Get("SugarMound");w.width=1.2f;w.thread=FoodBossEffects.Line(boss.Effects,new[]{point,(Vector2)boss.transform.position+Vector2.up*1.6f},.08f,new Color(1,.93f,.72f),false,506);break;
                 default:w.art.sprite=FoodBossArt.Get("SushiFish");w.width=1.0f;break;
             }
+            if(boss.Kind==FoodBossKind.Rolpangi)
+            {
+                Vector2 center=(Vector2)boss.transform.position+Vector2.up*.6f;
+                float angle=Mathf.Atan2(point.y-center.y,point.x-center.x)*Mathf.Rad2Deg;
+                float end=boss.Visual.SnailMouth.x>center.x?0:180,turn=Mathf.DeltaAngle(angle,end);
+                int steps=Mathf.Max(1,Mathf.CeilToInt(Mathf.Abs(turn)/20));w.approach=new Vector2[steps+2];
+                for(int k=0;k<=steps;k++){Vector2 direction=FoodBossRuntime.Dir(angle+turn*k/steps);w.approach[k]=FiniteStomachMap.SafeSpawn(center+new Vector2(direction.x*3.25f,direction.y*2.65f),.5f);}
+                w.approach[steps+1]=boss.Visual.SnailMouth+Vector2.right*(end==0?1.5f:-1.5f);
+            }
             w.Scale();return w;
         }
         void Scale(){if(art.sprite!=null)art.transform.localScale=Vector3.one*(width/art.sprite.bounds.size.x);}
@@ -55,13 +64,21 @@ namespace Vampire
             if(Owner==null||Owner.Dead||!Owner.Recovering||Owner.PhaseTwo){Destroy(gameObject);return;}if(FoodBossRuntime.Paused)return;age+=Time.deltaTime;
             if(Owner.Kind==FoodBossKind.Rolpangi)
             {
-                art.sprite=FoodBossArt.Walk(FoodBossKind.Rolpangi,false,Mathf.FloorToInt(age*8)%8);Scale();Vector2 delta=Owner.Mouth-(Vector2)transform.position;art.flipX=delta.x>0;
-                transform.position=Vector2.MoveTowards(transform.position,Owner.Mouth,1.15f*Time.deltaTime);if(delta.magnitude<.45f)Owner.ConsumeMini(this);
+                art.sprite=FoodBossArt.Walk(FoodBossKind.Rolpangi,false,Mathf.FloorToInt(age*8)%8);Scale();
+                if(approach!=null&&routeIndex<approach.Length){Vector2 at=approach[routeIndex],step=at-(Vector2)transform.position;art.flipX=step.x>0;transform.position=Vector2.MoveTowards(transform.position,at,1.5f*Time.deltaTime);if(step.magnitude<.10f)routeIndex++;return;}
+                Vector2 delta=Owner.Mouth-(Vector2)transform.position;art.flipX=delta.x>0;
+                float pull=Mathf.Clamp01(1-delta.magnitude/2.3f);
+                transform.position=Vector2.MoveTowards(transform.position,Owner.Mouth,(1.15f+pull*5)*Time.deltaTime);
+                // Accelerate and shrink continuously into the mouth instead of disappearing at a radius check.
+                float shrink=Mathf.Clamp01(delta.magnitude/.85f);art.transform.localScale*=Mathf.Lerp(.08f,1,shrink);
+                art.transform.localPosition=Vector3.up*(Mathf.Sin(age*12)*.08f*pull);
+                art.transform.localRotation=Quaternion.Euler(0,0,Mathf.Sin(age*14)*8*pull);
+                if(delta.magnitude<.07f)Owner.ConsumeMini(this);
             }
             else if(Owner.Kind==FoodBossKind.Hurumi)
-            {var offset=FoodBossRuntime.Dir(index*120+age*55);transform.position=Owner.transform.position+(Vector3)(new Vector2(offset.x*1.7f,offset.y*.65f+.8f));art.flipX=offset.y<0;}
-            else if(Owner.Kind==FoodBossKind.Maribi)transform.position=Owner.transform.position+new Vector3(Owner.Aim.x>=0?.6f:-.6f,.5f,0);
-            if(thread!=null){thread.SetPosition(0,transform.position);thread.SetPosition(1,Owner.transform.position+Vector3.up*1.6f);}
+            {var offset=FoodBossRuntime.Dir(index*120+age*55);transform.position=Owner.transform.position+(Vector3)(new Vector2(offset.x*1.7f,offset.y*.65f+.8f));art.flipX=offset.y<0;art.sortingOrder=offset.y>.15f?507:516;}
+            else if(Owner.Kind==FoodBossKind.Maribi)transform.position=Owner.Visual.TongueSocket;
+            if(thread!=null){thread.positionCount=12;Vector2 start=transform.position,end=Owner.transform.position+Vector3.up*(1.7f+Owner.Visual.Lift);for(int j=0;j<12;j++){float u=j/11f;thread.SetPosition(j,Vector2.Lerp(start,end,u)+Vector2.down*(Mathf.Sin(u*Mathf.PI)*.18f));}}
         }
         public override void TakeDamage(float damage,Vector2 knockback=default,bool isCritical=false)
         {if(FoodBossRuntime.Paused||Owner==null||!Owner.Recovering||Health<=0||damage<=0||float.IsNaN(damage)||float.IsInfinity(damage))return;Health=Mathf.Max(0,Health-damage);if(Health<=0){GetComponent<FoodBossCombatStatus>()?.Defeated();Owner.Audio.Play(FoodBossSound.Break,.7f);FoodBossEffects.Burst(Owner,transform.position,.65f);Destroy(gameObject);}else if(Owner.Kind==FoodBossKind.Tangdengi&&Health<MaxHealth*.5f){art.sprite=FoodBossArt.Get("SugarMoundCracked");Scale();}}

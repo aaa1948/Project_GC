@@ -179,6 +179,7 @@ namespace Vampire
             {
                 BuildPrescriptionHud();
                 BuildHudNavigation();
+                if(GamePlatform.UsesTouchControls||MobileGameplayInput.Active)BuildSkillHud();
                 return;
             }
             var blocker=content.gameObject.AddComponent<Image>();blocker.color=Color.clear;blocker.raycastTarget=true;

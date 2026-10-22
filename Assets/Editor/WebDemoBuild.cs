@@ -23,7 +23,7 @@ namespace Vampire.Editor
             int oldMemory = PlayerSettings.WebGL.initialMemorySize;
             var oldSubtarget = EditorUserBuildSettings.webGLBuildSubtarget;
             bool mobile = Environment.GetEnvironmentVariable("PROJECT_GC_WEB_MOBILE") == "1";
-            bool stageOneOnly = Environment.GetEnvironmentVariable("PROJECT_GC_STAGE_ONE_ONLY") == "1";
+            bool stageOneOnly = true; // Only Stage 1 remains in this project.
             WebDemoTextureScope textures = null;
             WebDemoStageScope stages = null;
             try
@@ -83,7 +83,7 @@ namespace Vampire.Editor
                     sourceCommit = Environment.GetEnvironmentVariable("PROJECT_GC_SOURCE_COMMIT") ?? "unknown",
                     localChangesIncluded = true, sessionMinimumSilver = WebDemoStartup.StartingSilver,
                     compressedTextureCount = textures.TextureCount, nonBlockAlignedTextureCount = textures.NonBlockAlignedCount,
-                    profile = mobile ? "mobile-web-astc-qa" : "desktop-web-dxt", textureCompression = mobile ? "ASTC 4x4" : "DXT",
+                    profile = mobile ? "mobile-web-astc-qa" : "desktop-web-dxt", textureCompression = mobile ? "ASTC 4x4" : "DXT Crunch",
                     stageCount = stageOneOnly ? 1 : 2, stageTwoAssetsExcluded = stageOneOnly
                 }, true));
                 Debug.Log("[WebDemoBuild] PASS bytes=" + report.summary.totalSize + " path=" + folder);

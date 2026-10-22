@@ -12,15 +12,26 @@ namespace Vampire
             if(lineMaterial==null)lineMaterial=new Material(Shader.Find("Sprites/Default"));
             r.sharedMaterial=lineMaterial;r.useWorldSpace=true;r.positionCount=points.Length;r.loop=loop;r.startWidth=r.endWidth=width;r.numCornerVertices=5;r.numCapVertices=5;r.sortingOrder=order;r.startColor=r.endColor=color;
             for(int i=0;i<points.Length;i++)r.SetPosition(i,points[i]);
+            if(order==480&&!liquid)
+            {
+                var shader=Resources.Load<Shader>("FoodBosses/Hazard");
+                if(shader!=null){var material=new Material(shader);r.sharedMaterial=material;r.gameObject.AddComponent<FoodBossMaterialLifetime>().Owned=material;}
+                if(points.Length>3&&Vector2.Distance(points[0],points[points.Length-1])<.01f)FoodBossHazardFill.Add(r,points,color);
+            }
             if(liquid){var shader=Resources.Load<Shader>("FoodBosses/LiquidFlow");if(shader!=null){r.material=new Material(shader);r.gameObject.AddComponent<FoodBossMaterialLifetime>().Owned=r.material;}}
             return r;
         }
         public static Vector2[] Arc(Vector2 origin,float radius,float start=0,float sweep=360,int count=64)
         {var p=new Vector2[count+1];for(int i=0;i<=count;i++)p[i]=origin+FoodBossRuntime.Dir(start+sweep*i/count)*radius;return p;}
         public static LineRenderer Ring(FoodBossRuntime b,Vector2 at,float radius,float start=0,float sweep=360)
-        {return Line(b.Effects,Arc(at,radius,start,sweep),.12f,b.Warning);}
+        {
+            Vector2[] p;
+            if(sweep>=359)p=Arc(at,radius,start,sweep);
+            else {var arc=Arc(at,radius,start,sweep);p=new Vector2[arc.Length+2];p[0]=at;System.Array.Copy(arc,0,p,1,arc.Length);p[p.Length-1]=at;}
+            return Line(b.Effects,p,.10f,b.Warning);
+        }
         public static void Burst(FoodBossRuntime b,Vector2 point,float radius)
-        {var r=Ring(b,point,radius);var f=r.gameObject.AddComponent<FoodBossFade>();f.Lifetime=.32f;}
+        {var r=Line(b.Effects,Arc(point,radius),.11f,b.Warning,false,488);var f=r.gameObject.AddComponent<FoodBossFade>();f.Lifetime=.32f;}
         public static FoodBossZone Path(FoodBossRuntime b,Vector2[] points,float width,float seconds,float damage=0,bool cream=false)
         {
             Color c=cream?new Color(1,.9f,.7f,.95f):b.Kind==FoodBossKind.Maribi?new Color(1,.86f,.12f,.85f):b.Kind==FoodBossKind.Tangdengi?new Color(.63f,.95f,.28f,.9f):new Color(1,.9f,.7f);
@@ -36,7 +47,7 @@ namespace Vampire
     }
     public sealed class FoodBossFade:MonoBehaviour
     {
-        public float Lifetime=.3f;float age;void Update(){if(FoodBossRuntime.Paused)return;age+=Time.deltaTime;if(age>=Lifetime){Destroy(gameObject);return;}var r=GetComponent<LineRenderer>();if(r!=null){var c=r.startColor;c.a=1-age/Lifetime;r.startColor=r.endColor=c;}}
+        public float Lifetime=.3f;float age,alpha;void Start(){var r=GetComponent<LineRenderer>();alpha=r!=null?r.startColor.a:1;}void Update(){if(FoodBossRuntime.Paused)return;age+=Time.deltaTime;if(age>=Lifetime){Destroy(gameObject);return;}var r=GetComponent<LineRenderer>();if(r!=null){var c=r.startColor;c.a=alpha*(1-age/Lifetime);r.startColor=r.endColor=c;}foreach(var f in GetComponentsInChildren<FoodBossHazardFill>())f.Fade(1-age/Lifetime);}
     }
     public sealed class FoodBossMaterialLifetime:MonoBehaviour{public Material Owned;void OnDestroy(){if(Owned!=null)Destroy(Owned);}}
     public sealed class FoodBossZone:MonoBehaviour

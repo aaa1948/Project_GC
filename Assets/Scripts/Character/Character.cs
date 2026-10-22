@@ -394,6 +394,7 @@ namespace Vampire
             UpdateThermometerDisplay();
             MobileGameplayControls.Ensure(this);
             if (Skills == null) { Skills=gameObject.AddComponent<CharacterSkillRuntime>(); Skills.Initialize(this); }
+            CharacterMotionTrail.Bind(this, spriteRenderer, dustParticles);
             if (GetComponent<PrescriptionRuntime>() == null) gameObject.AddComponent<PrescriptionRuntime>().Initialize(this);
             if (GetComponent<PlayerCombatBars>() == null) gameObject.AddComponent<PlayerCombatBars>().Bind(this,healthBar);
         }

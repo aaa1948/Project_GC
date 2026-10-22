@@ -21,6 +21,7 @@ namespace Vampire.Tests.Editor
         public static void Run()=>Start(false);
         public static void RunFinalReview()=>Start(true);
         public static void RunVisualProof(){SessionState.SetBool(Key+"Visual",true);Start(true);}
+        public static void RunPhaseProof(){SessionState.SetBool(Key+"Phase",true);Start(true);}
         static void Start(bool review)
         {
             SessionState.SetBool(Key+"Review",review);
@@ -42,7 +43,7 @@ namespace Vampire.Tests.Editor
             if(!SessionState.GetBool(Key,false))return;
             if(EditorApplication.timeSinceStartup>deadline){File.AppendAllText(Output+"/errors.txt","Deadline reached\n");SessionState.SetBool(Key+"Failed",true);SessionState.SetBool(Key+"Done",true);}
             if(SessionState.GetBool(Key+"Done",false))
-            {if(EditorApplication.isPlaying){EditorApplication.ExitPlaymode();return;}if(EditorApplication.isPlayingOrWillChangePlaymode)return;Restore();SessionState.SetBool(Key,false);SessionState.SetBool(Key+"Visual",false);bool failed=SessionState.GetBool(Key+"Failed",false);File.WriteAllText(Output+"/result.txt",failed?"FAIL":"PASS");EditorApplication.Exit(failed?1:0);return;}
+            {if(EditorApplication.isPlaying){EditorApplication.ExitPlaymode();return;}if(EditorApplication.isPlayingOrWillChangePlaymode)return;Restore();SessionState.SetBool(Key,false);SessionState.SetBool(Key+"Visual",false);SessionState.SetBool(Key+"Phase",false);bool failed=SessionState.GetBool(Key+"Failed",false);File.WriteAllText(Output+"/result.txt",failed?"FAIL":"PASS");EditorApplication.Exit(failed?1:0);return;}
             if(!started&&EditorApplication.isPlaying&&ApothecaryUI.Instance!=null){started=true;var go=new GameObject("Food boss QA");Object.DontDestroyOnLoad(go);go.AddComponent<StageEntryLoadingTestHost>().StartCoroutine(Checks());}
         }
         static void Restore(){string p=Output+"/prefs-backup.json";if(!File.Exists(p))return;foreach(var s in JsonUtility.FromJson<Backup>(File.ReadAllText(p)).values)if(s.exists)PlayerPrefs.SetInt(s.key,s.value);else PlayerPrefs.DeleteKey(s.key);PlayerPrefs.Save();File.Move(p,Output+"/restored-"+DateTime.UtcNow.Ticks+".json");}
@@ -71,8 +72,9 @@ namespace Vampire.Tests.Editor
             foreach(var m in level.EntityManager.LivingMonsters.ToArray())m.DespawnForStageTransfer();
             Set(player,"isInvincible",true);Time.timeScale=1;
             RunScore.Exclude("보스 자동 검증");
+            if(SessionState.GetBool(Key+"Phase",false)){yield return PhaseProof(player,origin);SessionState.SetBool(Key+"Done",true);yield break;}
             if(SessionState.GetBool(Key+"Visual",false)){yield return VisualProof(player,origin);SessionState.SetBool(Key+"Done",true);yield break;}
-            if(SessionState.GetBool(Key+"Review",false)){yield return FinalReview(player,origin);yield return Integration(player,origin);SessionState.SetBool(Key+"Done",true);yield break;}
+            if(SessionState.GetBool(Key+"Review",false)){yield return FinalReview(player,origin);yield return Integration(player,origin);yield return Presentation(player,origin);SessionState.SetBool(Key+"Done",true);yield break;}
             var altar=Object.FindObjectOfType<FinalBossSummonInteractable>();
             Check(altar.OpenBossChoice(player),"altar opens temporary choice panel");Check(Time.timeScale==0&&Object.FindObjectOfType<FoodBossRuntime>()==null,"choice pauses and does not spawn early");Capture("00-boss-choice");ApothecaryUI.Instance.CloseBossChoice();Check(Time.timeScale==1&&!FinalBossSummonInteractable.IsSummoning,"cancel resumes and releases summon lock");
             Check(altar.OpenBossChoice(player),"cancelled altar reusable");ApothecaryUI.Instance.CloseBossChoice(FoodBossKind.Denikani);
@@ -123,9 +125,79 @@ namespace Vampire.Tests.Editor
             }
             yield return Avoidance(player,origin);
             yield return Fanta(player,origin);
-            yield return Integration(player,origin);
+            yield return Integration(player,origin);yield return Presentation(player,origin);
             Position(player,origin);SessionState.SetBool(Key+"Done",true);
         }
+
+        static IEnumerator PhaseProof(Character player,Vector2 origin)
+        {
+            foreach(var tooltip in Object.FindObjectsOfType<HudTooltip>())tooltip.enabled=false;
+            Time.captureDeltaTime=.04f;
+            var arguments=Environment.GetCommandLineArgs();int selected=-1;
+            int selector=Array.IndexOf(arguments,"-phaseBoss");
+            if(selector>=0&&selector+1<arguments.Length)int.TryParse(arguments[selector+1],out selected);
+            foreach(FoodBossKind kind in Enum.GetValues(typeof(FoodBossKind)))
+            {
+                if(selected>=0&&(int)kind!=selected)continue;
+                Position(player,origin+new Vector2(3.2f,1.75f));
+                var boss=FoodBossRuntime.Spawn(kind,player,origin);boss.AutoPatterns=false;
+                yield return new WaitForSeconds(.4f);
+                boss.TakeDamage(boss.MaxHealth*.35f);
+                for(int f=0;f<185;f++)
+                {
+                    if(f==18)boss.SetPhaseTwoForTest();
+                                        if(boss.Transitioning){float hp=boss.Health;boss.TakeDamage(boss.MaxHealth*2);boss.TakePeriodicDamage(boss.MaxHealth*2,Vector2.zero);if(boss.Health!=hp)throw new Exception("Transition invulnerability failed "+kind);}
+                    // Actual Level1 render, actual update/animation clock, no composited sprites.
+                    yield return null;
+                    Capture($"phase-{(int)kind}-{f:D3}");
+                }
+                Check(boss.PhaseTwo&&!boss.Transitioning&&!boss.Busy,"phase finishes and releases action "+kind);
+                Check(Mathf.Abs(boss.Health/boss.MaxHealth-.49f)<.001f,"transition preserves remaining health "+kind);
+                Check(boss.Visual.Body.enabled,"original phase-two art restored "+kind);
+                Check(boss.PhaseVisual.EmittedCues==FoodBossPhaseCues.For(kind).Length,"all timed transition audio cues played "+kind);
+                Check(FoodBossPhaseVisual.Duration(kind)<=5.5f,"transition within 5.5 seconds "+kind);
+                Check(!boss.Play(FoodBossAttack.Recovery),"phase two recovery remains disabled "+kind);
+                // Interruption and pause should never leave the replacement renderer on screen.
+                Object.Destroy(boss.gameObject);yield return null;
+            }
+            var pausedBoss=FoodBossRuntime.Spawn(FoodBossKind.Maribi,player,origin);pausedBoss.AutoPatterns=false;
+            pausedBoss.SetPhaseTwoForTest();yield return new WaitForSeconds(.3f);
+            Time.timeScale=0;float progress=pausedBoss.PhaseVisual.Progress;
+            yield return new WaitForSecondsRealtime(.15f);
+            Check(Mathf.Approximately(progress,pausedBoss.PhaseVisual.Progress),"phase animation respects pause");
+            Time.timeScale=1;Call(pausedBoss,"Cancel");yield return null;
+            Check(!pausedBoss.Busy&&pausedBoss.Visual.Body.enabled&&!pausedBoss.Transitioning,"interruption restores original rig");
+            Object.Destroy(pausedBoss.gameObject);Time.captureDeltaTime=0;
+        }
+
+        static IEnumerator Presentation(Character player,Vector2 origin)
+        {
+            Position(player,origin+Vector2.right*3.4f);
+            var boss=FoodBossRuntime.Spawn(FoodBossKind.Maribi,player,origin);boss.AutoPatterns=false;yield return null;
+            boss.Play(FoodBossAttack.Recovery);yield return new WaitForSeconds(.2f);
+            var tongue=boss.Effects.GetComponentInChildren<FoodBossWeakpoint>();Vector2 anchored=tongue.transform.position;
+            Position(player,origin+Vector2.left*3.4f);yield return new WaitForSeconds(.1f);
+            Check(Vector2.Distance(anchored,tongue.transform.position)<.01f,"tongue hitbox stays with closed shell when player crosses behind");
+            Check(Vector2.Distance(tongue.transform.position,boss.Visual.TongueSocket)<.01f,"tongue hitbox matches artwork socket");Object.Destroy(boss.gameObject);yield return null;
+            Position(player,origin+Vector2.right*3.4f);boss=FoodBossRuntime.Spawn(FoodBossKind.Tangdengi,player,origin);boss.AutoPatterns=false;yield return null;
+            boss.Play(FoodBossAttack.UniqueOne);yield return new WaitForSeconds(1.5f);
+            var beam=boss.Effects.GetComponentInChildren<FoodBossEnergyBeam>();Check(beam!=null,"continuous horn beam exists after charge");
+            Check(Vector2.Distance((Vector2)Field(beam,"origin").GetValue(beam),boss.Visual.HornTip)<.01f,"beam starts between horn tips");
+            boss.SetPhaseTwoForTest();yield return null;Check(boss.Effects.GetComponentsInChildren<FoodBossEnergyBeam>().Length==0,"phase change removes active beam");Object.Destroy(boss.gameObject);yield return null;
+            boss=FoodBossRuntime.Spawn(FoodBossKind.Hurumi,player,origin);boss.AutoPatterns=false;yield return null;
+            boss.Play(FoodBossAttack.UniqueTwo);yield return new WaitForSeconds(.4f);
+            Check(boss.Visual.Whipping&&boss.Visual.Body.sharedMaterial.shader.name=="FoodBosses/ArticulatedBody","only raised noodle switches to articulated rig");
+            var noodle=boss.Effects.GetComponentInChildren<FoodBossNoodle>();Check(noodle!=null&&Vector2.Distance(noodle.Points[0],boss.Visual.NoodleTip)<.01f,"whip root stays on original noodle socket");
+            boss.SetPhaseTwoForTest();yield return null;
+            Check(!boss.Visual.Whipping&&boss.Visual.Body.sharedMaterial.shader.name!="FoodBosses/ArticulatedBody","interrupted whip restores original body art");
+            Check(boss.Effects.GetComponentsInChildren<FoodBossNoodle>().Length==0,"interrupted whip removes extended noodle");Object.Destroy(boss.gameObject);yield return null;
+            boss=FoodBossRuntime.Spawn(FoodBossKind.Rolpangi,player,origin);boss.AutoPatterns=false;boss.TakeDamage(boss.MaxHealth*.3f);yield return null;
+            boss.Play(FoodBossAttack.Recovery);yield return new WaitForSeconds(.2f);
+            var mini=boss.Effects.GetComponentsInChildren<FoodBossWeakpoint>()[0];Set(mini,"routeIndex",int.MaxValue);mini.transform.position=boss.Mouth+Vector2.right*.38f;
+            float hp=boss.Health;yield return new WaitForSeconds(.4f);
+            Check(mini==null&&Mathf.Approximately(boss.Health,hp+boss.MaxHealth*.02f),"mouth absorption consumes once and restores exactly two percent");Object.Destroy(boss.gameObject);yield return null;
+        }
+
         static IEnumerator Integration(Character player,Vector2 origin)
         {
             Position(player,origin);var boss=FoodBossRuntime.Spawn(FoodBossKind.Maribi,player,origin+Vector2.right*2.8f);boss.AutoPatterns=false;yield return null;Physics2D.SyncTransforms();
