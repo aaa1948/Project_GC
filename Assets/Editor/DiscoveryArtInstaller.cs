@@ -79,7 +79,7 @@ namespace Vampire.Editor
             return PrefabIcon("Assets/Prefabs/Chest/"+name+".prefab");
         }
         static float Cross(Vector2 o,Vector2 a,Vector2 b)=>(a.x-o.x)*(b.y-o.y)-(a.y-o.y)*(b.x-o.x);
-        static Vector2[] Hull(List<Vector2> input)
+        internal static Vector2[] Hull(List<Vector2> input)
         {
             var p=input.Distinct().OrderBy(v=>v.x).ThenBy(v=>v.y).ToArray();if(p.Length<3)return p;
             var hull=new List<Vector2>();

@@ -34,6 +34,7 @@ namespace Vampire
 
         public void Apply(float duration, float slowMultiplier, bool showHoneyTrail = true)
         {
+            if (MonsterNeedleBarrier.Blocks(this)) return;
             if (targetRigidbody == null)
             {
                 targetRigidbody = GetComponent<Rigidbody2D>();

@@ -98,7 +98,7 @@ namespace Vampire.Tests.Editor
                 var example = new GameObject("Back grade preview").AddComponent<Ver4AugmentOffer>();
                 example.Configure(manager.Ver4, Ver4RewardKind.NewSpecial, grade, source, 0, 0, "색상 확인", "테두리만 등급 색상으로 변경");
                 cards[1].Init(dialog, example, 0); cards[1].SettleForSelection();
-                motion = AugmentSelectionMotion.Create(parent, cards[1], cards, null); motion.ManualPreview = true; motion.Sample(2.92f);
+                motion = AugmentSelectionMotion.Create(parent, cards[1], cards, null); motion.ManualPreview = true; motion.Sample(AugmentSelectionMotion.Duration * (2.92f / 3.27f));
                 var back = motion.GetComponentInChildren<AugmentBackGraphic>();
                 Check(back.material.GetColor("_Accent") == StitchPatchTheme.CardAccent(grade), "Grade border " + grade);
                 Canvas.ForceUpdateCanvases(); Capture("back-" + grade);
@@ -118,9 +118,25 @@ namespace Vampire.Tests.Editor
             // Mobile landscape has the same relative orbit, independent of screen size.
             EditorWindow.GetWindow(typeof(UnityEditor.Editor).Assembly.GetType("UnityEditor.GameView")).position = new Rect(0, 0, 960, 581);
             yield return new WaitForSecondsRealtime(.5f);
-            motion = AugmentSelectionMotion.Create(parent, cards[0], cards, null); motion.ManualPreview = true; motion.Sample(1.2f);
+            motion = AugmentSelectionMotion.Create(parent, cards[0], cards, null); motion.ManualPreview = true; motion.Sample(AugmentSelectionMotion.Duration * (1.2f / 3.27f));
             Canvas.ForceUpdateCanvases(); Capture("mobile-layout"); motion.Cancel(); yield return null;
-            dialog.Close(); SessionState.SetBool(Key + "Done", true);
+            dialog.Close();
+            Check(AugmentSelectionMotion.Duration == 1.5f, "Approved total selection duration is 1.5 seconds");
+            dialog.OpenLegendary();
+            yield return new WaitForSecondsRealtime(.6f);
+            cards = (List<AbilityCard>)Get(dialog, "abilityCards");
+            Check(cards.All(c => c.UsesNoblePanel && c.transform.Find("Noble scroll seal") == null), "Noble panels appear without scroll covers");
+            Check(cards.All(c => ((Image)Get(c, "abilityImage")).enabled), "Noble art is visible before the first click");
+            cards[0].Selected();
+            float selectedAt = Time.realtimeSinceStartup;
+            Check(dialog.SelectionAnimating && dialog.MenuOpen && Time.timeScale == 0, "First noble click starts shared motion while paused");
+            cards[0].Selected(); cards[1].Selected(); dialog.Close();
+            Check(Object.FindObjectsOfType<AugmentSelectionMotion>().Length == 1, "Noble selection also rejects duplicate inputs");
+            while (dialog.SelectionAnimating && Time.realtimeSinceStartup - selectedAt < 2.5f) yield return null;
+            float elapsed = Time.realtimeSinceStartup - selectedAt;
+            Check(elapsed >= 1.45f && elapsed < 1.7f, "Noble motion finishes in 1.5 seconds within frame tolerance: " + elapsed);
+            Check(!dialog.MenuOpen && Time.timeScale == 1, "Noble motion resumes gameplay after completion");
+            SessionState.SetBool(Key + "Done", true);
         }
     }
 }

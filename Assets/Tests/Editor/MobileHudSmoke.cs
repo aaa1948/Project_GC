@@ -163,9 +163,9 @@ namespace Vampire.Tests.Editor
             Check(move.Knob.anchoredPosition==Vector2.zero&&!move.gameObject.activeInHierarchy,"pause clears gesture and hides controls");
             Time.timeScale=1;level.SetRunFlowPaused(false);
             var progression=StageProgression.Ensure(level);
-            Check(!StageProgression.StageTwoEnabled,"retired stage two disabled");
+            Check(StageProgression.StageTwoEnabled,"new colon stage enabled");
             Check(progression.FinalBossDefeated(character.transform.position,100)&&progression.Portal!=null,"stage one boss leaves escape portal");
-            Check(progression.TryEnter(character,progression.Portal)&&level.IsLevelEnded&&progression.StageNumber==1,"escape completes stage one without entering stage two");
+            Check(!progression.TryEnter(character,progression.Portal)&&!level.IsLevelEnded&&progression.Capsule!=null,"stage one leaves pursuit hole and amphibious capsule");
             SessionState.SetBool(Key+"Done",true);
         }
     }

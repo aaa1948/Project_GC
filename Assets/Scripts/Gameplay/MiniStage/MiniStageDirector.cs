@@ -220,7 +220,8 @@ namespace Vampire
             var destination=currentRoom.ReturnInteractable;
             destination.SetTravelVisual(true,CurrentEnhanced);
             var landing=BloodClotTravel.LeftLanding(destination.transform,playerCharacter);
-            if(currentRoom.PlayerStartPoint!=currentRoom.transform)currentRoom.PlayerStartPoint.position=landing;
+            // Some rooms reuse the return portal as their start marker. Keep that portal fixed.
+            if(currentRoom.PlayerStartPoint!=currentRoom.transform && currentRoom.PlayerStartPoint!=destination.transform && !destination.transform.IsChildOf(currentRoom.PlayerStartPoint))currentRoom.PlayerStartPoint.position=landing;
             MovePlayer(destination.transform.position);
             isInsideMiniStage = true;
             yield return travel.Eject(destination.transform,landing);

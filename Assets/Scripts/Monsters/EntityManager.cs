@@ -61,6 +61,7 @@ namespace Vampire
         public Inventory Inventory { get => inventory; }
         public AbilitySelectionDialog AbilitySelectionDialog { get; private set; }
         private LevelBlueprint remakeLevel;
+        private LevelManager barrierRunLevel;
         public SpatialHashGrid Grid { get => grid; }
 
         public Monster SpawnOverchargeElite(Vector2 position)
@@ -75,6 +76,7 @@ namespace Vampire
         public void Init(LevelBlueprint levelBlueprint, Character character, Inventory inventory, StatsManager statsManager, InfiniteBackground infiniteBackground, AbilitySelectionDialog abilitySelectionDialog)
         {
             remakeLevel = levelBlueprint;
+            barrierRunLevel = GetComponent<LevelManager>() ?? FindObjectOfType<LevelManager>();
             this.playerCharacter = character;
             this.inventory = inventory;
             this.infiniteBackground = infiniteBackground;
@@ -127,15 +129,15 @@ namespace Vampire
         {
             int oldCount = monsterPools.Length - 1;
             // Keep pool indices referenced by special events. Append the new normal pool before the boss pool.
-            if (next.monsters.Length != oldCount + 1) throw new System.InvalidOperationException("Expected one additional stage monster pool.");
+            if (next.monsters.Length != oldCount && next.monsters.Length != oldCount + 1) throw new System.InvalidOperationException("Incompatible stage monster pools.");
             foreach (var monster in monsterPoolParent.GetComponentsInChildren<Monster>())
                 if (monster.gameObject.activeSelf) monster.DespawnForStageTransfer();
             foreach (var projectile in OctoberEnemyProjectile.Active.ToArray())
                 if (projectile != null && projectile.IsHostile) projectile.Remove();
             var pools = new MonsterPool[next.monsters.Length + 1];
             System.Array.Copy(monsterPools, pools, oldCount);
-            pools[oldCount] = monsterPoolParent.AddComponent<MonsterPool>();
-            pools[oldCount].Init(this, playerCharacter, next.monsters[oldCount].monstersPrefab);
+            if(next.monsters.Length>oldCount){pools[oldCount] = monsterPoolParent.AddComponent<MonsterPool>();
+            pools[oldCount].Init(this, playerCharacter, next.monsters[oldCount].monstersPrefab);}
             pools[pools.Length - 1] = monsterPools[monsterPools.Length - 1];
             monsterPools = pools; remakeLevel = next;
         }
@@ -216,7 +218,7 @@ namespace Vampire
             GameObject prefab = blueprint.finalBoss.bossPrefab;
             position = FiniteStomachMap.SafeSpawn(position, 2f);
             var level = GetComponent<LevelManager>() ?? FindObjectOfType<LevelManager>();
-            if (prefab.GetComponent<SnailBossRuntime>() != null && (level == null || StageProgression.Ensure(level).StageNumber == 1))
+            if (prefab.GetComponent<SnailBossRuntime>() != null)
                 return FoodBossRuntime.Spawn(selectedBoss ?? (FoodBossKind)Random.Range(0,5), playerCharacter, position, transform).gameObject;
             if (prefab.GetComponent<Monster>() != null)
             {
@@ -345,6 +347,7 @@ namespace Vampire
             var spawnBody=newMonster.GetComponent<Rigidbody2D>();
             if(spawnBody!=null)spawnBody.position=safePosition;
 
+            MonsterNeedleBarrier.ConfigureSpawn(newMonster, barrierRunLevel != null ? barrierRunLevel.CurrentLevelTime : 0);
             grid.InsertClient(newMonster);
 
             if (!allowDuringMiniStage)
@@ -359,7 +362,9 @@ namespace Vampire
                 return false;
             }
 
-            return MiniStageRuntimeState.IsInsideMiniStage || (playerCharacter != null && playerCharacter.IsPortalTravelling && FindObjectOfType<LevelManager>()?.IsRunFlowPaused == true);
+            var level=barrierRunLevel ?? FindObjectOfType<LevelManager>();
+            bool placing=level!=null&&level.GetComponent<FieldObjectLayout>()?.IsPlacing==true;
+            return MiniStageRuntimeState.IsInsideMiniStage || (!placing&&playerCharacter != null && playerCharacter.IsPortalTravelling && level?.IsRunFlowPaused == true);
         }
         /// <summary>
         /// 현재 살아있는 메인 필드 몬스터들의 행동을

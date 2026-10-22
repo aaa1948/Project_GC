@@ -23,6 +23,7 @@ namespace Vampire
         private Transform ver4HomingTarget;
         private SyringeAugmentVfx bipolarVisual;
         private bool heavyImpactVisual;
+        private bool absorbedByBarrier;
         public Vector2 VisualFlightDirection => direction;
 
         protected override IEnumerator DestroyProjectileAnimation()
@@ -31,7 +32,7 @@ namespace Vampire
             // detached world-space glint survives this projectile's pool return.
             if (destructionParticleSystem != null)
                 destructionParticleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
-            MotionVfx.PlayNeedleEnd(transform.position, projectileSpriteRenderer);
+            if (!absorbedByBarrier) MotionVfx.PlayNeedleEnd(transform.position, projectileSpriteRenderer);
             if (projectileSpriteRenderer != null) projectileSpriteRenderer.gameObject.SetActive(false);
             yield return new WaitForSeconds(MotionVfx.NeedleLifetime);
             if (projectileSpriteRenderer != null) projectileSpriteRenderer.gameObject.SetActive(true);
@@ -63,6 +64,7 @@ namespace Vampire
         {
             SyringeAugmentVfx.ReleaseOwned(ref bipolarVisual);
             heavyImpactVisual = false;
+            absorbedByBarrier = false;
         }
         [SerializeField, Tooltip("Minimum seconds between homing trail pulses.")]
         private float homingVfxInterval = 0.16f;
@@ -929,7 +931,9 @@ namespace Vampire
                     out monsterTarget
                 );
             // Solid feet are movement contacts, not projectile anatomy.
-            if (monsterTarget != null && monsterTarget.BodyHitbox != null && collider != monsterTarget.BodyHitbox) return;
+            var barrier = monsterTarget != null ? monsterTarget.GetComponent<MonsterNeedleBarrier>() : null;
+            if (monsterTarget != null && monsterTarget.BodyHitbox != null && collider != monsterTarget.BodyHitbox &&
+                (barrier == null || collider != barrier.Surface)) return;
 
             if (!isValidMonsterTarget)
             {
@@ -1004,6 +1008,12 @@ namespace Vampire
             }
 
             hitTargetIds.Add(targetId);
+            if (barrier != null && barrier.AbsorbNeedle(projectileSpriteRenderer, direction, GetProjectileVisualWorldPosition()))
+            {
+                absorbedByBarrier = true;
+                DestroyProjectile();
+                return;
+            }
 
             if (damageable is CurrencyJar resourceJar)
             {

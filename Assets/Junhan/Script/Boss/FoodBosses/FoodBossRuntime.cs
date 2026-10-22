@@ -20,7 +20,7 @@ namespace Vampire
         public static bool Paused=>Time.timeScale<=0||MiniStageRuntimeState.IsInsideMiniStage;
         public const float BasicSpeed=1.8f,BasicGap=.55f;public const int RingCount=12;
         Rigidbody2D body;Collider2D hitbox;Coroutine action;float nextAction=2,age,damageReceived,nextContact,recoveryHealed,nextReverse;
-        int sequence;bool recoveryUsed,suspended;Vector2 recoveryDirection;LevelManager level;
+        int sequence,basicSequence;bool recoveryUsed,suspended;Vector2 recoveryDirection;LevelManager level;
         readonly List<FoodBossWeakpoint> weakpoints=new List<FoodBossWeakpoint>();
         public static FoodBossRuntime Spawn(FoodBossKind kind,Character player,Vector2 point,Transform parent=null)
         {
@@ -87,8 +87,28 @@ namespace Vampire
         void MoveToward(Vector2 target){var at=(Vector2)transform.position;float factor=GetComponent<StomachSlopeBody>().MovementMultiplier(target-at);factor*=GetComponent<IceChillStatus>()?.SpeedMultiplier??1;factor*=GetComponent<FoodBossCombatStatus>()?.SpeedMultiplier??1;target=at+(target-at)*factor;target=FiniteStomachMap.ClampDash(at,target,1.25f);body.position=target;transform.position=target;}
         IEnumerator Basic()
         {
+            bool signature=(basicSequence++%2)==1;
+            Visual.Face(Aim);
             yield return Wait(.45f);
-            for(int i=0;i<(PhaseTwo?5:3);i++){Visual.Face(Aim);var dir=FireAim;Visual.Recoil=-.10f;Audio.Play(FoodBossSound.Shot);FoodBossBullet.Fire(this,Mouth,dir,BasicSpeed,8);yield return Wait(.12f);Visual.Recoil=0;yield return Wait(BasicGap-.12f);}
+            if(!signature)
+            {
+                // Familiar aimed bursts alternate with the boss-specific pattern.
+                for(int i=0;i<(PhaseTwo?5:3);i++)
+                {
+                    Visual.Face(Aim);Vector2 dir=FireAim;Visual.Recoil=-.10f;
+                    Audio.Play(FoodBossSound.Shot);FoodBossBullet.Fire(this,Mouth,dir,BasicSpeed,8);
+                    yield return Wait(.12f);Visual.Recoil=0;yield return Wait(BasicGap-.12f);
+                }
+                yield break;
+            }
+            switch(Kind)
+            {
+                case FoodBossKind.Rolpangi:yield return SpiralBasic();break;
+                case FoodBossKind.Denikani:yield return ClawBasic();break;
+                case FoodBossKind.Maribi:yield return RhythmBasic();break;
+                case FoodBossKind.Tangdengi:yield return SkewerBasic();break;
+                case FoodBossKind.Hurumi:yield return WaveBasic();break;
+            }
         }
         IEnumerator Radial()
         {
@@ -118,7 +138,7 @@ namespace Vampire
             Transitioning=true;PhaseVisual.Begin();
             float duration=FoodBossPhaseVisual.Duration(Kind);
             for(float t=0;t<duration;){if(!Paused){t+=Time.deltaTime;PhaseVisual.SetProgress(t/duration);}yield return null;}
-            PhaseTwo=true;Visual.ResetPose();PhaseVisual.End();
+            PhaseTwo=true;basicSequence=0;Visual.ResetPose();PhaseVisual.End();
             Transitioning=false;action=null;nextAction=.5f;
         }
         void Cancel(){if(action!=null)StopCoroutine(action);action=null;if(Audio!=null)Audio.Stop();if(PhaseVisual!=null)PhaseVisual.End();Recovering=false;Transitioning=false;Moving=false;if(body!=null)body.velocity=Vector2.zero;if(hitbox!=null)hitbox.enabled=true;if(Visual!=null)Visual.ResetPose();if(Player!=null)Player.GetComponent<SnailSlowStatus>()?.Exit(GetInstanceID(),0);}
@@ -126,8 +146,10 @@ namespace Vampire
         IEnumerator Death()
         {
             Audio.Play(FoodBossSound.Death);
-            for(float t=0;t<.9f;t+=Time.deltaTime){if(Visual!=null)Visual.Body.color=new Color(1,1,1,1-t/.9f);yield return null;}
-            if(level!=null&&!level.IsLevelEnded&&!StageProgression.Ensure(level).FinalBossDefeated(transform.position,damageReceived/Mathf.Max(20,age)))level.LevelPassed(null);
+            body.velocity=Vector2.zero;body.simulated=false;
+            Visual.enabled=false;
+            if(level!=null&&!level.IsLevelEnded)yield return BossEscapePresentation.Play(level,Kind,Visual.transform,transform.position);
+            if(level!=null&&!level.IsLevelEnded&&!StageProgression.Ensure(level).FinalBossDefeated(transform.position,damageReceived/Mathf.Max(20,age),Kind))level.LevelPassed(null);
             Destroy(gameObject);
         }
         void OnTriggerStay2D(Collider2D other){if(Dead||Paused||Recovering||Transitioning||Visual.Airborne||Time.time<nextContact)return;var p=other.GetComponentInParent<Character>();if(p==null)return;p.TakeDamage(12);nextContact=Time.time+.9f;}

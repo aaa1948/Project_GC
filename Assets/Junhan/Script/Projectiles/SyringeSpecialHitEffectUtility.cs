@@ -157,6 +157,7 @@ namespace Vampire
             bool consumedNeedleMark,
             float appliedNeedleDamage = -1f)
         {
+            if (MonsterNeedleBarrier.Blocks(damageableComponent)) return;
             if (damageableComponent == null)
             {
                 return;

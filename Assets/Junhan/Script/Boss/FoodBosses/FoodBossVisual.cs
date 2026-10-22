@@ -17,6 +17,12 @@ namespace Vampire
         public Vector2 TongueSocket=>(Vector2)transform.position+new Vector2(facing*.57f,.48f);
         public Vector2 ShotOrigin=>boss.Kind==FoodBossKind.Rolpangi?SnailMouth:(Vector2)transform.position+(boss.Kind==FoodBossKind.Denikani?new Vector2(facing*.95f,1.05f):boss.Kind==FoodBossKind.Maribi?new Vector2(facing*.28f,.85f):boss.Kind==FoodBossKind.Tangdengi?new Vector2(facing*1.35f,.9f):new Vector2(0,1.05f));
         public Vector2 RestClaw(int i)=>new Vector2(facing*(i==0?1.35f:1.40f),i==0?.42f:1.15f);
+        public Vector2 ClawShotOrigin(int i)
+        {
+            // Read the displayed claw transform so the muzzle stays attached throughout blending.
+            var claw=claws[i];
+            return (Vector2)claw.transform.TransformPoint(Vector3.left*(claw.sprite!=null?claw.sprite.bounds.size.x*.32f:0));
+        }
         public void Initialize(FoodBossRuntime owner)
         {
             boss=owner;rig=new GameObject("Fixed-size art rig").transform;rig.SetParent(transform,false);
