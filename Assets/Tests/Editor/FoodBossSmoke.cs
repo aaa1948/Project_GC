@@ -11,7 +11,7 @@ using Object=UnityEngine.Object;
 namespace Vampire.Tests.Editor
 {
     [InitializeOnLoad]
-    public static class FoodBossSmoke
+    public static partial class FoodBossSmoke
     {
         const string Key="FoodBossSmoke",Output="Library/FoodBossProof";
         static bool started;static double deadline;
@@ -19,6 +19,7 @@ namespace Vampire.Tests.Editor
         [Serializable] class Saved{public string key;public bool exists;public int value;}[Serializable] class Backup{public Saved[] values;}
         static FoodBossSmoke(){if(SessionState.GetBool(Key,false))Attach();}
         public static void Run()=>Start(false);
+        public static void RunBasicReview(){SessionState.SetBool(Key+"Basic",true);Start(false);}
         public static void RunFinalReview()=>Start(true);
         public static void RunVisualProof(){SessionState.SetBool(Key+"Visual",true);Start(true);}
         public static void RunPhaseProof(){SessionState.SetBool(Key+"Phase",true);Start(true);}
@@ -72,6 +73,7 @@ namespace Vampire.Tests.Editor
             foreach(var m in level.EntityManager.LivingMonsters.ToArray())m.DespawnForStageTransfer();
             Set(player,"isInvincible",true);Time.timeScale=1;
             RunScore.Exclude("보스 자동 검증");
+            if(SessionState.GetBool(Key+"Basic",false)){SessionState.SetBool(Key+"Basic",false);yield return BasicReview(player,origin);SessionState.SetBool(Key+"Done",true);yield break;}
             if(SessionState.GetBool(Key+"Phase",false)){yield return PhaseProof(player,origin);SessionState.SetBool(Key+"Done",true);yield break;}
             if(SessionState.GetBool(Key+"Visual",false)){yield return VisualProof(player,origin);SessionState.SetBool(Key+"Done",true);yield break;}
             if(SessionState.GetBool(Key+"Review",false)){yield return FinalReview(player,origin);yield return Integration(player,origin);yield return Presentation(player,origin);SessionState.SetBool(Key+"Done",true);yield break;}

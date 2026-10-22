@@ -93,7 +93,7 @@ namespace Vampire
     public sealed class FoodBossBullet:MonoBehaviour
     {
         public Vector2 Velocity {get;private set;}public FoodBossRuntime Owner {get;private set;}public bool Sugar;
-        float age,damage,travel;SpriteRenderer art;
+        float age,damage,travel,waveAmplitude,waveLength,forwardSpeed;Vector2 launch,forward;SpriteRenderer art;
         public static FoodBossBullet Fire(FoodBossRuntime b,Vector2 start,Vector2 direction,float speed=1.8f,float hit=8,bool sugar=false,Sprite sprite=null)
         {
             var go=new GameObject("Food boss bullet");go.transform.SetParent(b.Effects,true);go.transform.position=start;
@@ -102,10 +102,25 @@ namespace Vampire
             if(p.art.sprite!=null)go.transform.localScale=Vector3.one*((sugar?.5f:.28f)/p.art.sprite.bounds.size.x);
             OctoberEnemyProjectile.Register(go,true);return p;
         }
+        public void SetWave(float amplitude,float wavelength)
+        {
+            launch=transform.position;forward=Velocity.normalized;forwardSpeed=Velocity.magnitude;
+            waveAmplitude=amplitude;waveLength=Mathf.Max(.5f,wavelength);
+        }
         void Update()
         {
             if(Owner==null||Owner.Dead){Destroy(gameObject);return;}if(FoodBossRuntime.Paused)return;
-            age+=Time.deltaTime;if(age>10){Destroy(gameObject);return;}Vector2 before=transform.position;transform.position+=(Vector3)Velocity*Time.deltaTime;travel+=Velocity.magnitude*Time.deltaTime;
+            float dt=Time.deltaTime;if(dt<=0)return;
+            age+=dt;if(age>10){Destroy(gameObject);return;}Vector2 before=transform.position;
+            if(waveLength>0)
+            {
+                travel+=forwardSpeed*dt;
+                // Ease the lateral movement in at the muzzle, then evaluate in world space.
+                float offset=waveAmplitude*Mathf.Sin(travel*Mathf.PI*2/waveLength)*Mathf.SmoothStep(0,1,travel/.8f);
+                Vector2 at=launch+forward*travel+FoodBossRuntime.Rotate(forward,90)*offset;
+                transform.position=at;Velocity=(at-before)/dt;
+            }
+            else {transform.position+=(Vector3)Velocity*dt;travel+=Velocity.magnitude*dt;}
             if(Sugar&&travel>=3.3f){Owner.Audio.Play(FoodBossSound.Break,.25f);for(int i=-1;i<=1;i++)Fire(Owner,transform.position,FoodBossRuntime.Rotate(Velocity,i*25),1.9f,6,false,FoodBossArt.Get("StrawberrySeed"));Destroy(gameObject);return;}
             var p=Owner.Player;if(p!=null&&p.IsAlive&&SnailBossProjectile.SegmentDistance(p.transform.position,before,transform.position)<(Sugar?.34f:.24f)){p.TakeDamage(damage);Destroy(gameObject);}
         }
