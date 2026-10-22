@@ -99,6 +99,12 @@ namespace Vampire
             Visual.flipX=true;Visual.color=Color.white;
         }
 
+        public void CapsulePose(Vector3 position,float alpha)
+        {
+            SwimPose(position,0);Visual.transform.rotation=Quaternion.identity;Visual.color=new Color(1,1,1,alpha);
+            Visual.sortingLayerName="Monster Full";Visual.sortingOrder=32011;
+        }
+
         public IEnumerator Eject(Transform portal, Vector3 landing)
         {
             if (!Busy) Begin();

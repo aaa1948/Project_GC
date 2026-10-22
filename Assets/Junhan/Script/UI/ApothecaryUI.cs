@@ -136,7 +136,7 @@ namespace Vampire
                 if (frames != null && frames.Length > 0)
                     portrait.sprite = frames[(int)(Time.unscaledTime / Mathf.Max(.05f, previewCharacter.idleFrameTime)) % frames.Length];
             }
-            if (TutorialGuide.BlocksMenuInput || StageEntryLoading.IsLoading) return;
+            if (TutorialGuide.BlocksMenuInput || StageEntryLoading.IsLoading || level!=null && StageProgression.Ensure(level).Travelling) return;
             if (level != null && GameInput.GetKeyDown(KeyCode.Tab))
             {
                 if (Page == "hud") OpenRunBook();
@@ -391,7 +391,7 @@ namespace Vampire
         public void OpenRunBook()
         {
             var reward=level!=null ? level.EntityManager?.AbilitySelectionDialog : null;
-            if(level==null || level.IsLevelEnded || (Time.timeScale==0 && (reward==null || !reward.MenuOpen)) || Page!="hud" || (level.PlayerCharacter != null && level.PlayerCharacter.Skills != null && level.PlayerCharacter.Skills.IsCutin))return;
+            if(level==null || StageProgression.Ensure(level).Travelling || level.IsLevelEnded || (Time.timeScale==0 && (reward==null || !reward.MenuOpen)) || Page!="hud" || (level.PlayerCharacter != null && level.PlayerCharacter.Skills != null && level.PlayerCharacter.Skills.IsCutin))return;
             if(reward!=null && reward.MenuOpen)reward.SetCoveredByRunBook(true);
             previousTime=Time.timeScale;ownsPause=true;Time.timeScale=0;Show("run");
         }

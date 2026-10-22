@@ -9,14 +9,16 @@ namespace Vampire
         public int StageNumber {get;private set;}=1;
         public bool FirstBossDefeated {get;private set;}
         public bool Travelling {get;private set;}
-        public bool SuitEquipped {get;private set;}
+        public bool CapsuleBoarded {get;private set;}
+        public bool SuitEquipped=>false; // Retired remnant API, kept for old editor tooling.
         public bool AtOutlet {get;private set;}
         public StageExitPortal Portal {get;private set;}
-        public BossRemnantPickup Remnant {get;private set;}
+        public BossRemnantPickup Remnant=>null;
+        public AmphibiousCapsule Capsule {get;private set;}
         public FoodBossKind DefeatedKind {get;private set;}
         public string TransitionPhase {get;private set;}="field";
         LevelManager level;StageExitDefinition definition;Transform escapeHole;
-        BossDivingSuit suit;bool entering;LevelBlueprint stageTwo;
+        bool entering;LevelBlueprint stageTwo;SpiralStageTransition iris;SpriteRenderer[] hiddenPassenger;bool[] hiddenStates;
         string altarSettings;Sprite altarSprite;Material altarMaterial;Vector3 altarScale;int altarLayer,altarOrder;
         public static StageProgression Ensure(LevelManager owner){var p=owner.GetComponent<StageProgression>()??owner.gameObject.AddComponent<StageProgression>();p.level=owner;return p;}
         void Awake()
@@ -54,7 +56,7 @@ namespace Vampire
             var hole=escapeHole??BeginEscape(kind,position);var sr=hole.GetComponent<SpriteRenderer>();hole.localScale=Vector3.one*(4.8f/sr.sprite.bounds.size.x);
             hole.gameObject.AddComponent<CircleCollider2D>().radius=.9f;Portal=hole.gameObject.AddComponent<StageExitPortal>();Portal.Configure(this);
             hole.gameObject.AddComponent<MapMarker>().Configure(MapMarkerKind.Event,StageNumber==1?"보스 추격 구멍 · 스페셜 스테이지 준비 중":"탈출구 · 탐험 완료");
-            if(StageNumber==1)Remnant=BossRemnantPickup.Create(this,kind,FiniteStomachMap.SafeSpawn((Vector2)position+Vector2.right*3.5f,.6f));
+            if(StageNumber==1)StartCoroutine(DeliverCapsule());
             GameAudioManager.FinishStageBossAudio();return true;
         }
         public bool CanEnter(Character p)=>FirstBossDefeated&&!Travelling&&level!=null&&!level.IsLevelEnded&&!level.IsRunFlowPaused&&!MiniStageRuntimeState.IsInsideMiniStage&&BloodClotTravel.CanTravel(p)&&Time.timeScale>0;
@@ -63,39 +65,62 @@ namespace Vampire
             if(StageNumber==1||portal==null||portal!=Portal||AcidLakeEvent.Contains(portal.transform.position)||!CanEnter(player))return false;
             Travelling=true;level.LevelPassed(null);return true;
         }
-        public bool TryEquip(Character player,BossRemnantPickup pickup)
+        // Old remnants never spawn or initiate travel anymore.
+        public bool TryEquip(Character player,BossRemnantPickup pickup)=>false;
+        public bool CanUseOutlet(StomachOpening o)=>false;
+        public bool TryUseOutlet(Character player,StomachOpening o)=>false;
+        IEnumerator DeliverCapsule()
         {
-            if(pickup!=Remnant||StageNumber!=1||SuitEquipped||!CanEnter(player))return false;
-            Travelling=true;SuitEquipped=true;level.SetRunFlowPaused(true);level.EntityManager.SetFieldMonsterRuntimeSuspended(true);StartCoroutine(EquipAndSwim(player,pickup));return true;
+            while(!BloodClotTravel.CanTravel(level.PlayerCharacter)||Time.timeScale<=0||level.IsRunFlowPaused)yield return null;
+            var player=level.PlayerCharacter;Travelling=true;level.SetRunFlowPaused(true);level.EntityManager.SetFieldMonsterRuntimeSuspended(true);
+            var travel=BloodClotTravel.Ensure(player);travel.Begin();travel.CapsulePose(player.transform.position,1);
+            var point=FiniteStomachMap.SafeSpawn((Vector2)player.transform.position+new Vector2(-2.4f,.35f),2f);
+            var lake=AcidLakeEvent.Instance;if(lake!=null&&lake.Flooding)point=lake.NearestDryLand(point,1.8f);
+            Capsule=AmphibiousCapsule.Create(this,point);TransitionPhase="capsule-descent";yield return Capsule.Descend();
+            if(!CapsuleDoctorDialogue.Seen)
+            {
+                TransitionPhase="doctor";var dialogue=CapsuleDoctorDialogue.Show(player);
+                while(dialogue!=null&&!dialogue.Finished)yield return null;
+                if(dialogue!=null)Destroy(dialogue.gameObject);
+            }
+            travel.Cancel();Travelling=false;TransitionPhase="capsule-ready";Capsule.Ready=true;
+            level.EntityManager.SetFieldMonsterRuntimeSuspended(false);level.SetRunFlowPaused(false);
         }
-        IEnumerator EquipAndSwim(Character player,BossRemnantPickup pickup)
+        public bool TryBoard(Character player,AmphibiousCapsule capsule)
         {
-            TransitionPhase="equip";var travel=BloodClotTravel.Ensure(player);travel.Begin();suit=BossDivingSuit.Attach(player,DefeatedKind);
-            Vector3 start=pickup.transform.position;pickup.GetComponent<Collider2D>().enabled=false;pickup.GetComponent<SpriteRenderer>().enabled=false;
-            for(float t=0;t<.65f;t+=Time.deltaTime){travel.SwimPose(player.transform.position,0);suit.Assemble(start,Mathf.SmoothStep(0,1,t/.65f));yield return null;}
-            Destroy(pickup.gameObject);Remnant=null;var outlet=StomachOpening.Find(false);outlet.SetOpened(0);
-            Vector3 from=player.transform.position,to=(Vector3)(outlet.FrontLip+outlet.Inward*.9f);TransitionPhase="swim";
-            for(float t=0;t<4.5f;t+=Time.deltaTime){travel.SwimPose(Vector3.Lerp(from,to,Mathf.SmoothStep(0,1,t/4.5f)),t);suit.Kick(t,false);yield return null;}
-            travel.SwimPose(to,0);TransitionPhase="paddle";
-            for(float t=0;t<1.25f;t+=Time.deltaTime){travel.SwimPose(to,t);suit.Kick(t,true);outlet.SetOpened(Mathf.SmoothStep(0,1,t/1.1f));yield return null;}
-            outlet.SetOpened(1);travel.HoldForInteraction();AtOutlet=true;TransitionPhase="outlet-ready";
-            // Keep the travel lock / acid protection; only the reserved outlet can be interacted with.
-            level.SetRunFlowPaused(false);level.EntityManager.SetFieldMonsterRuntimeSuspended(false);
+            if(capsule!=Capsule||!capsule.Ready||StageNumber!=1||!CanEnter(player))return false;
+            capsule.Ready=false;Travelling=true;CapsuleBoarded=true;level.SetRunFlowPaused(true);level.EntityManager.SetFieldMonsterRuntimeSuspended(true);StartCoroutine(BoardAndTravel(player));return true;
         }
-        public bool CanUseOutlet(StomachOpening o)=>o!=null&&!o.Upper&&StageNumber==1&&SuitEquipped&&AtOutlet&&!entering&&!level.IsLevelEnded;
-        public bool TryUseOutlet(Character player,StomachOpening o)
-        {if(!CanUseOutlet(o)||player!=level.PlayerCharacter)return false;entering=true;AtOutlet=false;level.SetRunFlowPaused(true);level.EntityManager.SetFieldMonsterRuntimeSuspended(true);StartCoroutine(EnterColon(player,o));return true;}
+        IEnumerator BoardAndTravel(Character player)
+        {
+            var travel=BloodClotTravel.Ensure(player);travel.Begin();Vector3 start=player.transform.position;
+            TransitionPhase="hatch-open";for(float t=0;t<.7f;t+=Time.deltaTime){Capsule.SetHatch(Mathf.SmoothStep(0,1,t/.7f));travel.CapsulePose(start,1);yield return null;}Capsule.SetHatch(1);
+            TransitionPhase="boarding";Vector3 door=Capsule.BoardingPoint-Vector3.up*travel.ReferenceHeight*.5f;
+            for(float t=0;t<1.1f;t+=Time.deltaTime){float p=Mathf.SmoothStep(0,1,t/1.1f);travel.CapsulePose(Vector3.Lerp(start,door,p),1-Mathf.SmoothStep(0,1,Mathf.InverseLerp(.65f,1,p)));yield return null;}
+            hiddenPassenger=player.GetComponentsInChildren<SpriteRenderer>(true);hiddenStates=new bool[hiddenPassenger.Length];for(int i=0;i<hiddenPassenger.Length;i++){hiddenStates[i]=hiddenPassenger[i].forceRenderingOff;hiddenPassenger[i].forceRenderingOff=true;}
+            TransitionPhase="hatch-close";for(float t=0;t<.65f;t+=Time.deltaTime){Capsule.SetHatch(1-Mathf.SmoothStep(0,1,t/.65f));yield return null;}Capsule.SetHatch(0);
+            var outlet=StomachOpening.Find(false);outlet.SetOpened(0);
+            Vector3 from=Capsule.transform.position,to=(Vector3)(outlet.FrontLip+outlet.Inward*1.25f);
+            TransitionPhase="capsule-travel";
+            for(float t=0;t<8;t+=Time.deltaTime){Capsule.transform.position=Vector3.Lerp(from,to,Mathf.SmoothStep(0,1,t/8));travel.CapsulePose(Capsule.transform.position,0);yield return null;}
+            Capsule.transform.position=to;travel.CapsulePose(to,0);AtOutlet=true;TransitionPhase="outlet-open";
+            CapsuleOutletReveal.Create(outlet);var exitShot=StageTravelCamera.Begin(outlet,to);
+            yield return new WaitForSeconds(.35f);
+            for(float t=0;t<1.25f;t+=Time.deltaTime){outlet.SetOpened(Mathf.SmoothStep(0,1,t/1.25f));yield return null;}outlet.SetOpened(1);
+            iris=SpiralStageTransition.Create();TransitionPhase="iris-close";yield return iris.Animate(true);if(exitShot!=null)Destroy(exitShot);
+            AtOutlet=false;entering=true;yield return EnterColon(player,outlet);
+        }
         IEnumerator EnterColon(Character player,StomachOpening outlet)
         {
-            TransitionPhase="dive";var travel=BloodClotTravel.Ensure(player);var anchor=new GameObject("Outlet travel anchor").transform;anchor.position=outlet.Center;
-            yield return travel.Dive(anchor);Destroy(anchor.gameObject);if(suit!=null){Destroy(suit.gameObject);suit=null;}
-            TransitionPhase="loading";var loading=StageEntryLoading.CreateStageTransfer(player.Blueprint);yield return null;yield return null;
+            var travel=BloodClotTravel.Ensure(player);Transform anchor;
+            TransitionPhase="loading";var loading=StageEntryLoading.CreateStageTransfer(player.Blueprint);yield return null;if(iris!=null)iris.SetVisible(false);yield return null;
+            if(Capsule!=null){Destroy(Capsule.gameObject);Capsule=null;}
             foreach(var chest in FindObjectsOfType<Chest>())level.EntityManager.DespawnChest(chest);
             foreach(var p in FindObjectsOfType<Collectable>())p.DissolveInAcidLake();
             foreach(var p in FindObjectsOfType<SupplyRelicOrb>())Destroy(p.gameObject);
             foreach(var p in FindObjectsOfType<SupplyCapsule>())Destroy(p.gameObject);
             if(Portal!=null){Portal.gameObject.SetActive(false);Destroy(Portal.gameObject);}Portal=null;escapeHole=null;
-            StageNumber=2;FirstBossDefeated=false;SuitEquipped=false;
+            StageNumber=2;FirstBossDefeated=false;CapsuleBoarded=false;
             var map=FiniteStomachMap.Instance;var nextMap=Resources.Load<StomachMapDefinition>("ColonMap/Stage2");
             if(nextMap==null)throw new System.InvalidOperationException("ColonMap/Stage2 is missing");
             map.ChangeDefinition(nextMap);loading.SetProgress(.4f);yield return null;
@@ -109,13 +134,18 @@ namespace Vampire
             if(!level.InitialFieldObjectsReady)throw new System.InvalidOperationException("Stage 2 field placement failed");
             for(float t=0;t<.7f;t+=Time.unscaledDeltaTime){loading.SetProgress(Mathf.Lerp(.7f,1,t/.7f));yield return null;}
             var shot=StageTravelCamera.Begin(inlet,landing);
-            loading.CompleteStageTransfer();yield return null;TransitionPhase="opening";
+            if(iris!=null){iris.SetClosed(1);iris.SetVisible(true);}
+            loading.CompleteStageTransfer();yield return null;TransitionPhase="iris-open";
+            if(iris!=null){yield return iris.Animate(false);Destroy(iris.gameObject);iris=null;}
+            TransitionPhase="opening";
             for(float t=0;t<1.2f;t+=Time.deltaTime){inlet.SetOpened(t/1.2f);yield return null;}inlet.SetOpened(1);
+            RestorePassenger();
             anchor=new GameObject("Colon inlet ejection anchor").transform;anchor.position=inlet.Center;
             TransitionPhase="eject";yield return travel.Eject(anchor,landing);Destroy(anchor.gameObject);
             travel.HoldForInteraction();if(shot!=null)shot.Release();TransitionPhase="settle";yield return new WaitForSeconds(1);
             travel.ReleasePose();Travelling=false;entering=false;TransitionPhase="field";level.EntityManager.SetFieldMonsterRuntimeSuspended(false);level.SetRunFlowPaused(false);GameAudioManager.ExitMiniStageAudio();
         }
-        void OnDestroy(){if(stageTwo!=null)Destroy(stageTwo);}
+        void RestorePassenger(){if(hiddenPassenger==null)return;for(int i=0;i<hiddenPassenger.Length;i++)if(hiddenPassenger[i]!=null)hiddenPassenger[i].forceRenderingOff=hiddenStates[i];hiddenPassenger=null;}
+        void OnDestroy(){RestorePassenger();if(stageTwo!=null)Destroy(stageTwo);if(Capsule!=null)Destroy(Capsule.gameObject);if(iris!=null)Destroy(iris.gameObject);}
     }
 }

@@ -165,7 +165,7 @@ namespace Vampire.Tests.Editor
             var progression=StageProgression.Ensure(level);
             Check(StageProgression.StageTwoEnabled,"new colon stage enabled");
             Check(progression.FinalBossDefeated(character.transform.position,100)&&progression.Portal!=null,"stage one boss leaves escape portal");
-            Check(!progression.TryEnter(character,progression.Portal)&&!level.IsLevelEnded&&progression.Remnant!=null,"stage one leaves pursuit hole and wearable next-stage remnant");
+            Check(!progression.TryEnter(character,progression.Portal)&&!level.IsLevelEnded&&progression.Capsule!=null,"stage one leaves pursuit hole and amphibious capsule");
             SessionState.SetBool(Key+"Done",true);
         }
     }
