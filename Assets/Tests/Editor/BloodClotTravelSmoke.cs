@@ -163,7 +163,7 @@ namespace Vampire.Tests.Editor
             while(director.IsTransitioning&&Time.realtimeSinceStartup<limit)yield return null;
             Check(director.CurrentRoom.RoomStarted&&director.IsInsideMiniStage,"Room begins only after eject");
             Protected(player,"real mini-stage entry landing");
-            Check(player.transform.position.x<director.CurrentRoom.ReturnInteractable.transform.position.x,"Mini stage spawn left of clot");
+            Check(player.transform.position.x<director.CurrentRoom.ReturnInteractable.transform.position.x,"Mini stage spawn left of clot player="+player.transform.position+" portal="+director.CurrentRoom.ReturnInteractable.transform.position+" start="+director.CurrentRoom.PlayerStartPoint.position);
             var room=director.CurrentRoom;Set(room,"optionalReturnUnlocked",true);room.ReturnInteractable.SetUnlocked(true);
             director.ReturnToFieldFromInteractable(room.ReturnInteractable);
             Check(director.IsTransitioning,"Return uses dive");

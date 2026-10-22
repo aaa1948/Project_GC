@@ -155,7 +155,7 @@ static IEnumerator Checks(LevelManager level){
  end=Time.realtimeSinceStartup+15;while(director.IsTransitioning&&Time.realtimeSinceStartup<end)yield return null;
  Check(!director.IsInsideMiniStage&&rt.CaptureRunSceneConditionalAugmentIds().SequenceEqual(saved)&&player.DamageMultiplier==damage,"mini-stage return preserves balance state");
  var progression=StageProgression.Ensure(level);progression.FinalBossDefeated(player.transform.position+Vector3.right*4,100);
- Check(!StageProgression.StageTwoEnabled&&progression.StageNumber==1&&progression.Portal!=null,"stage one exit replaces retired stage two");
+ Check(StageProgression.StageTwoEnabled&&progression.StageNumber==1&&progression.Portal!=null&&progression.Remnant!=null,"stage one leaves pursuit hole and colon-travel remnant");
  // A fresh runtime restores legacy retired history without reactivating either parent.
  var legacy=saved.Concat(new[]{"{\"version\":4,\"parent\":\"Honey\",\"original\":true,\"option\":0,\"grade\":3,\"amount\":0}","{\"version\":4,\"parent\":\"WoodNeedle\",\"original\":false,\"option\":0,\"grade\":4,\"amount\":0.24}"}).ToList();
  var copy=new GameObject("Migration runtime").AddComponent<Ver4AugmentRuntime>();copy.Configure(rt.Balance,manager,level.EntityManager,player);

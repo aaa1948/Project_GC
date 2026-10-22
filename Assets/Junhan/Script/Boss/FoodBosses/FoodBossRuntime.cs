@@ -146,8 +146,10 @@ namespace Vampire
         IEnumerator Death()
         {
             Audio.Play(FoodBossSound.Death);
-            for(float t=0;t<.9f;t+=Time.deltaTime){if(Visual!=null)Visual.Body.color=new Color(1,1,1,1-t/.9f);yield return null;}
-            if(level!=null&&!level.IsLevelEnded&&!StageProgression.Ensure(level).FinalBossDefeated(transform.position,damageReceived/Mathf.Max(20,age)))level.LevelPassed(null);
+            body.velocity=Vector2.zero;body.simulated=false;
+            Visual.enabled=false;
+            if(level!=null&&!level.IsLevelEnded)yield return BossEscapePresentation.Play(level,Kind,Visual.transform,transform.position);
+            if(level!=null&&!level.IsLevelEnded&&!StageProgression.Ensure(level).FinalBossDefeated(transform.position,damageReceived/Mathf.Max(20,age),Kind))level.LevelPassed(null);
             Destroy(gameObject);
         }
         void OnTriggerStay2D(Collider2D other){if(Dead||Paused||Recovering||Transitioning||Visual.Airborne||Time.time<nextContact)return;var p=other.GetComponentInParent<Character>();if(p==null)return;p.TakeDamage(12);nextContact=Time.time+.9f;}

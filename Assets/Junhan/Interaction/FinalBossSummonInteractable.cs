@@ -167,7 +167,7 @@ namespace Vampire
 
             pendingSummon = this;
             summoning = true;
-            foodRoster=StageProgression.Ensure(levelManager).StageNumber==1;
+            foodRoster=StageProgression.Ensure(levelManager).StageNumber<=2;
             StartCoroutine(SummonSequence(player, levelBlueprint));
             return true;
         }

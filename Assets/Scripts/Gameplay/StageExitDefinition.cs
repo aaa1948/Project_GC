@@ -1,7 +1,7 @@
 using UnityEngine;
 namespace Vampire
 {
-    // Stage-one exit visuals and rewards; no next-stage content is referenced.
+    // Shared boss-hole fallback and chest rewards. Colon travel has its own small resource definition.
     public sealed class StageExitDefinition:ScriptableObject
     {
         public Sprite crater;

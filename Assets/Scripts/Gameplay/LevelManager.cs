@@ -49,7 +49,7 @@ namespace Vampire
         public bool InitialFieldObjectsReady => !UsesInitialFieldLayout || GetComponent<FieldObjectLayout>()?.Ready == true;
         public bool IsRunFlowPaused => runFlowPaused || !InitialFieldObjectsReady;
         public bool IsLevelEnded => levelEnded;
-        public bool UsesInitialFieldLayout => stomachMap != null && (GetComponent<StageProgression>() == null || GetComponent<StageProgression>().StageNumber == 1);
+        public bool UsesInitialFieldLayout => stomachMap != null;
 
         public void Init(LevelBlueprint levelBlueprint)
         {
@@ -123,11 +123,13 @@ namespace Vampire
             entityManager.ContinueInStage(next);
             levelBlueprint = next;
             levelTime = 0f;
+            NormalMonstersSpawned = 0;
             timeSinceLastMonsterSpawned = timeSinceLastChestSpawned = 0f;
             if (gameTimer != null) gameTimer.SetTime(next.levelTime);
             infiniteBackground.SetStageTexture(next.backgroundTexture);
             if (fieldSpawns != null) fieldSpawns.RestartForStage(this);
             foreach (var director in FindObjectsOfType<StageEventDirector>()) director.RestartForStage();
+            foreach (var toast in FindObjectsOfType<StageEventToastUI>()) toast.ResetForStage();
             foreach (var toad in FindObjectsOfType<AcidToadSpawn>()) toad.ResetForStage();
             foreach (var minis in FindObjectsOfType<SnailBossDebugSpawn>()) minis.ResetForStage();
             foreach (var altar in FindObjectsOfType<FinalBossSummonInteractable>()) altar.ResetForNextStage();

@@ -18,6 +18,8 @@ namespace Vampire
         // Separate from the movement lock: landing protection must not prevent movement.
         public bool IsDamageProtected => isActiveAndEnabled && (Busy || Time.time < protectedUntil);
         float protectedUntil = -1f;
+        bool reservedPose;
+        public void HoldForInteraction(){RestorePhysics();Busy=false;HoldingPose=true;reservedPose=true;protectedUntil=float.PositiveInfinity;}
         public string CharacterKey { get; private set; }
         public SpriteRenderer Visual { get; private set; }
         public float ReferenceHeight => height;
@@ -26,6 +28,7 @@ namespace Vampire
         Rigidbody2D body;
         bool simulated, originalHidden;
         Sprite[] frames;
+        Sprite swimSprite;
         float height, scale;
         Vector3 footOffset;
         SpriteRenderer[] chicks;
@@ -53,6 +56,11 @@ namespace Vampire
             // Use one baked idle silhouette for the whole journey; never renormalize each pose.
             var idle = owner.Blueprint?.idleSpriteSequence?.FirstOrDefault(s => s != null) ?? original.sprite;
             var visible = VisibleBodyGeometry.Bounds(idle);
+            if(swimSprite!=null)Destroy(swimSprite);
+            float ppu=idle.pixelsPerUnit;
+            var crop=new Rect(idle.rect.x+idle.pivot.x+visible.xMin*ppu,idle.rect.y+idle.pivot.y+visible.yMin*ppu,visible.width*ppu,visible.height*ppu);
+            crop.xMin=Mathf.Max(idle.rect.xMin,crop.xMin);crop.yMin=Mathf.Max(idle.rect.yMin,crop.yMin);crop.xMax=Mathf.Min(idle.rect.xMax,crop.xMax);crop.yMax=Mathf.Min(idle.rect.yMax,crop.yMax);
+            swimSprite=Sprite.Create(idle.texture,crop,Vector2.one*.5f,ppu,0,SpriteMeshType.FullRect);
             height = original.transform.TransformVector(Vector3.up * visible.height).magnitude;
             var foot = new Vector3(visible.center.x, visible.yMin, 0);
             if (original.flipX) foot.x = -foot.x;
@@ -81,6 +89,15 @@ namespace Vampire
             Vector3 start = transform.position, end = portal != null ? portal.position : start;
             yield return Animate(false, start, end, portal);
         }
+        public void SwimPose(Vector3 position,float time)
+        {
+            if(!Busy)Begin();SetPosition(position);
+            Visual.sprite=swimSprite;
+            Visual.transform.localScale=Vector3.one*(height/swimSprite.bounds.size.y);
+            Visual.transform.position=position+footOffset+Vector3.up*height*.5f;
+            Visual.transform.rotation=Quaternion.Euler(0,0,Mathf.Sin(time*7)*4-12);
+            Visual.flipX=true;Visual.color=Color.white;
+        }
 
         public IEnumerator Eject(Transform portal, Vector3 landing)
         {
@@ -90,6 +107,9 @@ namespace Vampire
             if(!Busy)yield break;
             SetPosition(landing);
             RestorePhysics();
+            // Reactivating a simulated body can restore its previous physics pose this frame.
+            // Commit the landing again before room logic / collision callbacks observe it.
+            SetPosition(landing);Physics2D.SyncTransforms();
             protectedUntil = Time.time + ExitInvincibilityDuration;
             Busy = false;
             HoldingPose = true;
@@ -238,6 +258,7 @@ namespace Vampire
         {
             if ((Busy || HoldingPose) && original != null) original.forceRenderingOff=true;
             if (!HoldingPose) return;
+            if(reservedPose)return;
             if (owner == null || !owner.IsAlive || owner.EffectiveMoveDirection.sqrMagnitude > .0001f) { ReleasePose(); return; }
             Visual.transform.position=transform.position+footOffset+Vector3.up*(Visual.sprite.bounds.size.y*scale*.5f);
             // Last frame stays frozen, but the orbiting dizziness indicator remains alive.
@@ -247,6 +268,7 @@ namespace Vampire
         void RestorePortal() { if (animatedPortal != null) animatedPortal.localScale = portalScale; animatedPortal = null; }
         public void ReleasePose()
         {
+            reservedPose=false;if(float.IsPositiveInfinity(protectedUntil))protectedUntil=Time.time+ExitInvincibilityDuration;
             HoldingPose = false;
             if (original != null) original.forceRenderingOff = originalHidden;
             if (Visual != null) Visual.gameObject.SetActive(false);
@@ -259,7 +281,7 @@ namespace Vampire
             Busy = false; ReleasePose();
         }
         void OnDisable() { Cancel(); protectedUntil = -1f; }
-        void OnDestroy() { if (Visual != null) Destroy(Visual.gameObject); }
+        void OnDestroy() { if (Visual != null) Destroy(Visual.gameObject);if(swimSprite!=null)Destroy(swimSprite); }
 
         public static Vector3 LeftLanding(Transform portal, Character actor)
         {

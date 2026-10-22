@@ -73,6 +73,8 @@ namespace Vampire
             if (sweepDelay <= 0) { sweepDelay = .15f; RemoveSubmergedObjects(); }
             if (level.IsLevelEnded) return;
             var player = level.PlayerCharacter;
+            var progression=level.GetComponent<StageProgression>();
+            if(progression!=null&&progression.SuitEquipped&&progression.Travelling){ErosionSeconds=0;return;}
             if (player == null || !player.IsAlive || player.IsPortalTravelling) return;
             if (!IsSubmerged(player.transform.position)) { ErosionSeconds = 0; return; }
             ErosionSeconds += dt;

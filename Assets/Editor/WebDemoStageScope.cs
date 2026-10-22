@@ -5,7 +5,7 @@ using UnityEditor.Build.Reporting;
 using UnityEngine;
 namespace Vampire.Editor
 {
-    // Stage 2 is retired from the project, rather than temporarily hidden for a build.
+    // The old cream/snail stage remains retired. The new colon stage is part of the current game.
     public sealed class WebDemoStageScope:IDisposable
     {
         public WebDemoStageScope()
@@ -17,7 +17,7 @@ namespace Vampire.Editor
         {
             var leaked=report.packedAssets.SelectMany(p=>p.contents).Where(c=>c.sourceAssetPath.Contains("/Stage2Snails/")||c.sourceAssetPath.EndsWith("/StageTwoDefinition.asset")).ToArray();
             if(leaked.Length>0)throw new InvalidOperationException("Stage 2 assets leaked into build.");
-            Debug.Log("[WebDemoStageScope] PASS: Stage 1 only; no retired Stage 2 content.");
+            Debug.Log("[WebDemoStageScope] PASS: no retired cream/snail Stage 2 content.");
         }
         public void Dispose(){}
     }
