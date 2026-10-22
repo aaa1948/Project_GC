@@ -4,8 +4,6 @@ namespace Vampire
 {
     public sealed class SnailBossDebugSpawn : MonoBehaviour
     {
-        float nextFieldWave=15;
-        public void ResetForStage(){nextFieldWave=15;}
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Install()
         {
@@ -19,11 +17,9 @@ namespace Vampire
         void Update()
         {
             if(GameInput.GetKeyDown(KeyCode.Insert)){RunScore.Exclude("보스 소환 테스트");TrySpawn();}
-            var level=FindObjectOfType<LevelManager>();
-            if(level==null||SnailBossRuntime.Paused||level.IsRunFlowPaused||level.IsLevelEnded)return;
-            if(level.CurrentLevelTime>=nextFieldWave)
-            {nextFieldWave=level.CurrentLevelTime+35;SpawnFieldMinis(level);}
         }
+#if UNITY_EDITOR
+        // Explicit art/test preview only; field mini roll cakes no longer spawn during gameplay.
         public static int SpawnFieldMinis(LevelManager level)
         {
             if(level==null||level.PlayerCharacter==null||FindObjectOfType<SnailBossRuntime>()!=null||FindObjectOfType<FoodBossRuntime>()!=null)return 0;
@@ -42,6 +38,7 @@ namespace Vampire
             }
             return 0;
         }
+#endif
         public static bool TrySpawn()
         {
             if(SnailBossRuntime.Paused||FindObjectOfType<SnailBossRuntime>()!=null||FindObjectOfType<FoodBossRuntime>()!=null||FinalBossSummonInteractable.IsSummoning)return false;

@@ -131,7 +131,6 @@ namespace Vampire
             foreach (var director in FindObjectsOfType<StageEventDirector>()) director.RestartForStage();
             foreach (var toast in FindObjectsOfType<StageEventToastUI>()) toast.ResetForStage();
             foreach (var toad in FindObjectsOfType<AcidToadSpawn>()) toad.ResetForStage();
-            foreach (var minis in FindObjectsOfType<SnailBossDebugSpawn>()) minis.ResetForStage();
             foreach (var altar in FindObjectsOfType<FinalBossSummonInteractable>()) altar.ResetForNextStage();
         }
 
@@ -274,7 +273,7 @@ namespace Vampire
 
             return levelBlueprint.monsterSpawnTable.GetSpawnRate(
                 GetNormalizedLevelTime()
-            );
+            ) * (levelTime >= 8f * 60f ? 1.3f : 1f);
         }
 
         public void SpawnMonsterByFlatIndex(int monsterIndex, float hpMultiplier = 1f)
