@@ -20,6 +20,8 @@ namespace Vampire.Tests.Editor
         {
             Directory.CreateDirectory(Output);File.WriteAllText(Output+"/checks.txt","");File.WriteAllText(Output+"/errors.txt","");
             SessionState.SetInt(Key+"Doctor",PlayerPrefs.GetInt(CapsuleDoctorDialogue.SeenKey,-1));
+            SessionState.SetBool(Key+"HadCoins",PlayerPrefs.HasKey("Coins"));
+            SessionState.SetInt(Key+"Coins",PlayerPrefs.GetInt("Coins",0));
             PlayerPrefs.SetInt(CapsuleDoctorDialogue.SeenKey,1);
             SessionState.SetBool(Key,true);SessionState.SetBool(Key+"Fail",false);SessionState.SetBool(Key+"Done",false);
             CrossSceneData.CharacterBlueprint=AssetDatabase.LoadAssetAtPath<CharacterBlueprint>("Assets/Blueprints/Characters/Main Character Blueprint.asset");
@@ -45,6 +47,7 @@ namespace Vampire.Tests.Editor
                 if(EditorApplication.isPlaying){EditorApplication.ExitPlaymode();return;}if(EditorApplication.isPlayingOrWillChangePlaymode)return;
                 StageProgression.PreviewWebDemoEnding=false;GamePlatform.PreviewTouchControls=false;
                 int seen=SessionState.GetInt(Key+"Doctor",-1);if(seen<0)PlayerPrefs.DeleteKey(CapsuleDoctorDialogue.SeenKey);else PlayerPrefs.SetInt(CapsuleDoctorDialogue.SeenKey,seen);PlayerPrefs.Save();
+                if(SessionState.GetBool(Key+"HadCoins",false))PlayerPrefs.SetInt("Coins",SessionState.GetInt(Key+"Coins",0));else PlayerPrefs.DeleteKey("Coins");PlayerPrefs.Save();
                 SessionState.SetBool(Key,false);bool fail=SessionState.GetBool(Key+"Fail",false);File.WriteAllText(Output+"/result.txt",fail?"FAIL":"PASS PC + mobile");EditorApplication.Exit(fail?1:0);return;
             }
             if(!EditorApplication.isPlaying)return;
@@ -72,6 +75,8 @@ namespace Vampire.Tests.Editor
             foreach(var a in Object.FindObjectsOfType<Ability>()){a.enabled=false;a.StopAllCoroutines();}
             foreach(var m in entity.LivingMonsters.ToArray())m.DespawnForStageTransfer();
             var p=StageProgression.Ensure(level);var original=FiniteStomachMap.Instance.Definition;
+            int oldCoins=PlayerPrefs.GetInt("Coins",0);var stats=Object.FindObjectOfType<StatsManager>();stats.IncreaseCoinsGained(7);
+            int expectedCoins=oldCoins+stats.CoinsGained;
             p.FinalBossDefeated(player.transform.position+Vector3.up*3,100);
             float end=Time.time+20;while((p.Capsule==null||!p.Capsule.Ready)&&Time.time<end)yield return null;
             Check(p.Capsule!=null&&p.Capsule.Ready,"capsule lands and is interactable");
@@ -86,6 +91,8 @@ namespace Vampire.Tests.Editor
             float clock=level.CurrentLevelTime;yield return new WaitForSeconds(1);
             Check(level.CurrentLevelTime==clock&&level.IsRunFlowPaused,"dialogue preserves frozen run");
             Check(RunScore.Current.Data.success,"completed demo records success");
+            Check(level.IsLevelEnded&&PlayerPrefs.GetInt("Coins")==expectedCoins,"demo marks run complete and saves collected coins");
+            level.CompleteWebDemo();Check(PlayerPrefs.GetInt("Coins")==expectedCoins,"completion cannot award coins twice");
             Canvas.ForceUpdateCanvases();
             typeof(Ver4PlaySmoke).GetMethod("CaptureView",BindingFlags.NonPublic|BindingFlags.Static).Invoke(null,new object[]{"web-demo-ending-proof/"+(pass==0?"pc":"mobile")+".png"});
             returnExpected=true;dialogue.ConfirmButton.onClick.Invoke();dialogue.ConfirmButton.onClick.Invoke();
