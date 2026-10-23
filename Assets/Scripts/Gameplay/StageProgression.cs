@@ -125,7 +125,7 @@ namespace Vampire
             if(nextMap==null)throw new System.InvalidOperationException("ColonMap/Stage2 is missing");
             map.ChangeDefinition(nextMap);loading.SetProgress(.4f);yield return null;
             RestoreBossAltar(map);
-            stageTwo=Instantiate(level.CurrentLevelBlueprint);stageTwo.name="Stage 2 · 대장 · Stage 1 spawn table";
+            stageTwo=ColonMonsterRoster.Create(level);
             level.BeginNextStage(stageTwo);level.SetRunFlowPaused(true);level.EntityManager.SetFieldMonsterRuntimeSuspended(true);level.GetComponent<SupplyCapsuleDirector>()?.RestartForStage();
             foreach(var altar in FindObjectsOfType<FinalBossSummonInteractable>())altar.transform.position=FiniteStomachMap.SafeSpawn(altar.transform.position,2);
             var inlet=StomachOpening.Find(true);inlet.SetOpened(0);var landing=map.ClampToField(inlet.FrontLip+Vector2.down*2,map.WallWidth+.6f);

@@ -256,6 +256,8 @@ namespace Vampire
             {
                 TimedSpawnEntry entry = spawnEntries[entryIndex];
 
+                if (ColonMonsterRoster.InColon && entry != null && entry.monsterBlueprint != null && !ColonMonsterRoster.Active.Allowed(entry.monsterBlueprint)) continue;
+
                 if (entry == null)
                 {
                     continue;

@@ -76,16 +76,19 @@ namespace Vampire
         }
         public void DespawnForStageTransfer()
         {
+            if (!gameObject.activeSelf) return;
             StopAllCoroutines();
             alive = false;
             OnKilled.RemoveAllListeners();
             if (entityManager != null)
             {
-                entityManager.LivingMonsters.Remove(this);
+                // A killed monster stays active until its death effect finishes, but is
+                // already absent from the living list. Stage transfer must reclaim both.
+                if (entityManager.LivingMonsters.Contains(this)) entityManager.LivingMonsters.Remove(this);
                 entityManager.DespawnMonster(monsterIndex, this, false);
             }
         }
-        public float SpawnMaxHealth { get; private set; }
+        public float SpawnMaxHealth { get; protected set; }
         // Environmental removal must not call derived Killed routines: blood clots would
         // open new portals, elites would drop chests, and player kill passives would proc.
         public void DissolveInAcidLake()
@@ -716,6 +719,7 @@ namespace Vampire
 
         protected virtual void RewardSilver()
         {
+            if (ColonMonsterRoster.InColon && ColonMonsterRoster.Active.RewardEliteSilver(monsterBlueprint)) return;
             EliteMonsterBlueprint eliteBlueprint = monsterBlueprint as EliteMonsterBlueprint;
 
             int rewardCalls = 1;

@@ -120,6 +120,7 @@ namespace Vampire
         // Preserve the actual player, abilities, inventory, relic runtimes, stats and loot pools.
         public void BeginNextStage(LevelBlueprint next)
         {
+            foreach (var mini in FindObjectsOfType<MiniStageDirector>()) mini.ResetForNextField();
             entityManager.ContinueInStage(next);
             levelBlueprint = next;
             levelTime = 0f;

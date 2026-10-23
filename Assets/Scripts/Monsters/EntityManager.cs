@@ -67,6 +67,14 @@ namespace Vampire
         public Monster SpawnOverchargeElite(Vector2 position)
         {
             if (remakeLevel == null || MiniStageRuntimeState.IsInsideMiniStage) return null;
+            if(ColonMonsterRoster.InColon)
+            {
+                var roster=ColonMonsterRoster.Active;
+                var owner=barrierRunLevel!=null?barrierRunLevel:FindObjectOfType<LevelManager>();
+                int normal=remakeLevel.monsterSpawnTable.SelectMonster(owner!=null?owner.GetNormalizedLevelTime():0);
+                if(roster.TryEliteIndex(normal,out int elite))
+                    return SpawnMonster(roster.PoolIndex,position,roster.Elites[elite-roster.NormalFlatStart-8].blueprint,0,false);
+            }
             for (int i=0;i<remakeLevel.monsters.Length;i++)
                 foreach(var blueprint in remakeLevel.monsters[i].monsterBlueprints)
                     if(blueprint is EliteMonsterBlueprint)
@@ -312,6 +320,12 @@ namespace Vampire
                 return null;
             }
 
+            var colon = ColonMonsterRoster.InColon && !allowDuringMiniStage ? ColonMonsterRoster.Active : null;
+            if (colon != null)
+            {
+                if (!colon.Allowed(monsterBlueprint)) return null;
+                monsterBlueprint = colon.Resolve(monsterBlueprint);
+            }
             if (monsterBlueprint is SniperMonsterBlueprint)
             {
                 int snipers=0;
@@ -320,6 +334,7 @@ namespace Vampire
                 if (snipers>=5) return null;
             }
             Monster newMonster = monsterPools[monsterPoolIndex].Get();
+            newMonster.GetComponent<ColonMonsterVisual>()?.ResetForPool();
             position = FiniteStomachMap.SafeSpawn(position, .8f, allowDuringMiniStage);
 
             // 중요:
@@ -336,6 +351,8 @@ namespace Vampire
                 monsterBlueprint,
                 hpBuff
             );
+            if (colon != null && colon.TryGet(monsterBlueprint, out var colonEntry))
+                (newMonster.GetComponent<ColonMonsterVisual>() ?? newMonster.gameObject.AddComponent<ColonMonsterVisual>()).Configure(newMonster, colonEntry);
             newMonster.ConfigureGroundShadow(monsterBlueprint);
             newMonster.FitVisibleBody();
 

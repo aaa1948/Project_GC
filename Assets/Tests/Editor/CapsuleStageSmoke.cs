@@ -148,7 +148,7 @@ namespace Vampire.Tests.Editor
             Check(player.DamageMultiplier==damage&&player.ReviveCount==revives,"combat upgrades and revival count retained");
             Check(bombSlot.Count==bombCount&&bomb!=null&&!bomb.gameObject.activeSelf,"stored consumable object and count retained");
             Check(map.IsColon&&map.WorldRect==originalRect&&map.Definition.pixelWorldSize==Resources.Load<StomachMapDefinition>("StomachMap/Stage1").pixelWorldSize,"same world bounds and pixel size");
-            Check(level.CurrentLevelBlueprint.monsters.Length==originalBlueprint.monsters.Length&&level.CurrentLevelBlueprint.levelTime==originalBlueprint.levelTime,"same spawn pools and duration");
+            Check(level.CurrentLevelBlueprint.monsters.Length==originalBlueprint.monsters.Length+1&&level.CurrentLevelBlueprint.levelTime==originalBlueprint.levelTime,"colon adds a dedicated ordinary and elite pool while preserving duration");
             for(int i=0;i<originalBlueprint.monsters.Length;i++)Check(level.CurrentLevelBlueprint.monsters[i].monstersPrefab==originalBlueprint.monsters[i].monstersPrefab,"same monster prefab "+i);
             Check(level.InitialFieldObjectsReady&&level.GetComponent<FieldObjectLayout>().SpawnedObjects.Count==86,"stage two initial layout completes before play");
             Check(!lake.Active&&!AcidLakeEvent.Contains(player.transform.position),"stage-one acid stops in colon");
