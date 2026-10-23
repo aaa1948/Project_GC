@@ -17,6 +17,17 @@ namespace Vampire
             monster = GetComponent<Monster>();
         }
 
+        private void OnDisable()
+        {
+            // Pool return interrupts BurnRoutine before its final cleanup.
+            // Do not carry the old burn tag, tint, or damage owner into a new spawn.
+            if (burnCoroutine != null) StopCoroutine(burnCoroutine);
+            burnCoroutine = null;
+            isBurning = false;
+            statusExpires = 0f;
+            sourceCharacter = null;
+        }
+
         public void Apply(float duration, float interval, float damagePerTick, Character source = null)
         {
             if (MonsterNeedleBarrier.Blocks(this)) return;
