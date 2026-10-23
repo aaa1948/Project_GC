@@ -23,7 +23,21 @@ namespace Vampire
         private Transform ver4HomingTarget;
         private SyringeAugmentVfx bipolarVisual;
         private bool heavyImpactVisual;
+        private bool absorbedByBarrier;
         public Vector2 VisualFlightDirection => direction;
+
+        protected override IEnumerator DestroyProjectileAnimation()
+        {
+            // Replace the template particle for all needle disappearances. The
+            // detached world-space glint survives this projectile's pool return.
+            if (destructionParticleSystem != null)
+                destructionParticleSystem.Stop(true, ParticleSystemStopBehavior.StopEmittingAndClear);
+            if (!absorbedByBarrier) MotionVfx.PlayNeedleEnd(transform.position, projectileSpriteRenderer);
+            if (projectileSpriteRenderer != null) projectileSpriteRenderer.gameObject.SetActive(false);
+            yield return new WaitForSeconds(MotionVfx.NeedleLifetime);
+            if (projectileSpriteRenderer != null) projectileSpriteRenderer.gameObject.SetActive(true);
+            entityManager.DespawnProjectile(projectileIndex, this);
+        }
 
         public void ConfigureFlightVfx(bool bipolar, bool heavy)
         {
@@ -50,6 +64,7 @@ namespace Vampire
         {
             SyringeAugmentVfx.ReleaseOwned(ref bipolarVisual);
             heavyImpactVisual = false;
+            absorbedByBarrier = false;
         }
         [SerializeField, Tooltip("Minimum seconds between homing trail pulses.")]
         private float homingVfxInterval = 0.16f;
@@ -391,8 +406,10 @@ namespace Vampire
         {
             Transform target = ver4HomingTarget;
             Monster monster = target != null ? target.GetComponentInParent<Monster>() : null;
-            if (!NeedleTargeting.IsValid(monster, targetLayer) || hitTargetIds.Contains(monster.gameObject.GetInstanceID()) ||
-                (NeedleTargeting.Position(monster) - (Vector2)transform.position).sqrMagnitude > specials.homingRange * specials.homingRange)
+            var targetDamageable=target!=null?target.GetComponentInParent<IDamageable>():null;
+            bool valid=NeedleTargeting.IsValid(monster,targetLayer)||NeedleTargeting.IsValidBossTarget(target,targetLayer);
+            if (!valid || targetDamageable==null || hitTargetIds.Contains(targetDamageable.gameObject.GetInstanceID()) ||
+                ((Vector2)target.position - (Vector2)transform.position).sqrMagnitude > specials.homingRange * specials.homingRange)
                 target = FindClosestTarget();
             ver4HomingTarget = target;
 
@@ -861,6 +878,12 @@ namespace Vampire
 
             foreach (Collider2D hit in hits)
             {
+                if(NeedleTargeting.IsValidBossTarget(hit,targetLayer))
+                {
+                    var bossTarget=hit.GetComponentInParent<IDamageable>();float bossDistance=Vector2.Distance(transform.position,hit.transform.position);
+                    if(!hitTargetIds.Contains(bossTarget.gameObject.GetInstanceID())&&bossDistance<closestDistance){closestDistance=bossDistance;closestTarget=hit.transform;}
+                    continue;
+                }
                 Monster monster;
                 if (!TryGetValidMonsterTarget(hit, out monster) || !NeedleTargeting.IsValid(monster, targetLayer)) continue;
 
@@ -908,7 +931,9 @@ namespace Vampire
                     out monsterTarget
                 );
             // Solid feet are movement contacts, not projectile anatomy.
-            if (monsterTarget != null && monsterTarget.BodyHitbox != null && collider != monsterTarget.BodyHitbox) return;
+            var barrier = monsterTarget != null ? monsterTarget.GetComponent<MonsterNeedleBarrier>() : null;
+            if (monsterTarget != null && monsterTarget.BodyHitbox != null && collider != monsterTarget.BodyHitbox &&
+                (barrier == null || collider != barrier.Surface)) return;
 
             if (!isValidMonsterTarget)
             {
@@ -983,6 +1008,12 @@ namespace Vampire
             }
 
             hitTargetIds.Add(targetId);
+            if (barrier != null && barrier.AbsorbNeedle(projectileSpriteRenderer, direction, GetProjectileVisualWorldPosition()))
+            {
+                absorbedByBarrier = true;
+                DestroyProjectile();
+                return;
+            }
 
             if (damageable is CurrencyJar resourceJar)
             {
@@ -1749,6 +1780,14 @@ namespace Vampire
 
             foreach (Collider2D hit in hits)
             {
+                if(NeedleTargeting.IsValidBossTarget(hit,targetLayer))
+                {
+                    var boss=hit.GetComponentInParent<IDamageable>();
+                    if(boss.gameObject==originalTarget||originalTarget.transform.IsChildOf(boss.transform)||!damagedIds.Add(boss.GetInstanceID()))continue;
+                    float amount=specials.explosionDamage*Ver4HitEffects.ExplosionCenterMultiplier(boss,transform.position,specials);bool critical;
+                    if(statRuntime!=null)amount=statRuntime.CalculateOffensiveDamage(playerCharacter,boss,amount,out critical);
+                    Ver4HitEffects.Damage(boss,amount,Vector2.zero,playerCharacter,"폭발침");continue;
+                }
                 Monster monster;
                 if (!TryGetValidMonsterTarget(hit, out monster)) continue;
                 if (IsSameTarget(originalTarget, monster)) continue;

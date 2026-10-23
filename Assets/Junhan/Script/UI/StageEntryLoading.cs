@@ -64,6 +64,15 @@ namespace Vampire
             view.SetProgress(0);
             return view;
         }
+        public static StageEntryLoading CreateStageTransfer(CharacterBlueprint character)
+        {
+            var view=Create(character);view.running=true;
+            view.heading.text="대장으로 이동 중…";
+            foreach(var label in view.GetComponentsInChildren<TextMeshProUGUI>())
+                if(label.name=="Stage")label.text="STAGE 02  ·  대장";
+            return view;
+        }
+        public void CompleteStageTransfer(){running=false;Destroy(gameObject);}
 
         IEnumerator Load()
         {

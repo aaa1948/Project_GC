@@ -19,6 +19,7 @@ namespace Vampire
 
         public void Apply(float duration, float interval, float damagePerTick, Character source = null)
         {
+            if (MonsterNeedleBarrier.Blocks(this)) return;
             sourceCharacter = source;
             if (monster == null) return;
 

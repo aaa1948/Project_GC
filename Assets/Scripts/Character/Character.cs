@@ -215,7 +215,8 @@ namespace Vampire
         public RelicRuntime Relics { get; private set; }
         public float RelicBonus(RelicBlueprint.RelicEffectType effect) => Relics != null ? Relics.Bonus(effect) : 0;
         public float DebuffDuration(float duration) => Relics != null ? Relics.DebuffDuration(duration) : duration;
-        public void GainPickupHealth(float amount) => GainHealth(Relics != null ? Relics.PickupHealing(amount) : amount);
+        public void GainPickupHealth(float amount)
+        {float before=currentHealth;GainHealth(Relics != null ? Relics.PickupHealing(amount) : amount);Relics?.PickupHealed(currentHealth-before);}
         public int SkillProjectileCount(int count) => Skills != null ? Skills.ProjectileCount(count) : Mathf.Max(1,count);
         public bool IsSkillIdle => alive && !IsPortalTravelling && !IsPortalPoseHeld && !IsDashing && !IsTrapBound && moveDirection.sqrMagnitude < .0001f && visualState == CharacterVisualState.Idle;
         public float CurrentMoveSpeed => (movementSpeed != null ? movementSpeed.Value + (Relics != null ? Relics.MoveSpeedBonus : 0) : 0f) * (Skills != null ? Skills.MovementMultiplier : 1) * SnailSlowMultiplier;
@@ -394,6 +395,7 @@ namespace Vampire
             UpdateThermometerDisplay();
             MobileGameplayControls.Ensure(this);
             if (Skills == null) { Skills=gameObject.AddComponent<CharacterSkillRuntime>(); Skills.Initialize(this); }
+            CharacterMotionTrail.Bind(this, spriteRenderer, dustParticles);
             if (GetComponent<PrescriptionRuntime>() == null) gameObject.AddComponent<PrescriptionRuntime>().Initialize(this);
             if (GetComponent<PlayerCombatBars>() == null) gameObject.AddComponent<PlayerCombatBars>().Bind(this,healthBar);
         }
@@ -1250,7 +1252,8 @@ namespace Vampire
 
         private void Revive()
         {
-            if (Relics == null || !Relics.ConsumeRevival()) reviveCount--;
+            bool relicRevival = Relics != null && Relics.ConsumeRevival();
+            if (!relicRevival) reviveCount--;
             currentHealth = GetMaxHealth() * 0.5f;
             healthBar.Setup(currentHealth, 0, GetMaxHealth());
 
@@ -1260,6 +1263,7 @@ namespace Vampire
             }
 
             AcidLakeEvent.Instance?.RelocateRevivedPlayer(this);
+            if (relicRevival) ItemFeedback.For(this).Show(ItemFeedbackKind.Revival, transform.position, 1.2f, 1.1f, transform);
             hitAnimationCoroutine = StartCoroutine(HitAnimation());
         }
 

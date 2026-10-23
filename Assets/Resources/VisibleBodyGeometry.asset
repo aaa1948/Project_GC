@@ -13199,14 +13199,6 @@ MonoBehaviour:
     - {x: 0.31253138, y: 0.34471893}
     - {x: -0.34208518, y: -0.31137532}
     - {x: 0.31253138, y: -0.31137532}
-  - sprite: {fileID: 21300000, guid: 1592977b0b3166e419aa7bdfbc02e186, type: 3}
-    bounds:
-      serializedVersion: 2
-      x: -0.60058653
-      y: 0
-      width: 1.2011731
-      height: 0.58044446
-    outline: []
   - sprite: {fileID: 21300000, guid: 3be1555adb1c1094eb3b216041ef347f, type: 3}
     bounds:
       serializedVersion: 2
@@ -13215,75 +13207,47 @@ MonoBehaviour:
       width: 4.803632
       height: 2.061972
     outline: []
-  - sprite: {fileID: 21300000, guid: a615395df8867be479d06e90516700f6, type: 3}
+  - sprite: {fileID: 21300000, guid: 9b662b30a49435643b5e4645acb300ae, type: 3}
     bounds:
       serializedVersion: 2
-      x: -0.4204105
-      y: 0
-      width: 0.84082115
-      height: 0.80377823
-    outline: []
-  - sprite: {fileID: 21300000, guid: 72dc7a9bfcd031044be1dfd709869a74, type: 3}
+      x: -2.355
+      y: -2.4
+      width: 4.71
+      height: 4.8
+    outline:
+    - {x: -2.355, y: -2.39}
+    - {x: -2.345, y: -2.4}
+    - {x: -2.255, y: -2.39}
+    - {x: -1.995, y: -2.16}
+    - {x: 2.235, y: 1.85}
+    - {x: 2.305, y: 1.95}
+    - {x: 2.355, y: 2.05}
+    - {x: 2.355, y: 2.24}
+    - {x: 2.305, y: 2.3}
+    - {x: 2.205, y: 2.4}
+    - {x: 2.025, y: 2.39}
+    - {x: 1.965, y: 2.38}
+    - {x: 1.785, y: 2.23}
+    - {x: -2.355, y: -2.31}
+  - sprite: {fileID: 21300000, guid: 54bdd2e16f59bbb4faeb51d2d10ef0e2, type: 3}
     bounds:
       serializedVersion: 2
-      x: -0.42041057
-      y: 0
-      width: 0.84082115
-      height: 0.80260867
-    outline: []
-  - sprite: {fileID: 21300000, guid: e6cf328a3c72f344f9b8dcffe535ac06, type: 3}
-    bounds:
-      serializedVersion: 2
-      x: -0.4204105
-      y: 0
-      width: 0.8408211
-      height: 0.8535172
-    outline: []
-  - sprite: {fileID: 21300000, guid: d76d519173f9ea845bc49a374dd30591, type: 3}
-    bounds:
-      serializedVersion: 2
-      x: -0.4204106
-      y: 0
-      width: 0.8408212
-      height: 0.8591948
-    outline: []
-  - sprite: {fileID: 21300000, guid: 2d27d9f984f53324c9844e9f3611f45c, type: 3}
-    bounds:
-      serializedVersion: 2
-      x: -0.4204105
-      y: 0
-      width: 0.8408211
-      height: 0.8035574
-    outline: []
-  - sprite: {fileID: 21300000, guid: d39d19cd0885726439485ff909b8377d, type: 3}
-    bounds:
-      serializedVersion: 2
-      x: -0.4204105
-      y: 0
-      width: 0.84082115
-      height: 0.84533334
-    outline: []
-  - sprite: {fileID: 21300000, guid: 2d6a8fbbb412e654b99734581364ced6, type: 3}
-    bounds:
-      serializedVersion: 2
-      x: -0.4204105
-      y: 0
-      width: 0.8408211
-      height: 0.7688844
-    outline: []
-  - sprite: {fileID: 21300000, guid: 797478b3601c973439fb34526d074865, type: 3}
-    bounds:
-      serializedVersion: 2
-      x: -0.42041054
-      y: 0
-      width: 0.8408212
-      height: 0.83904225
-    outline: []
-  - sprite: {fileID: 21300000, guid: 22e63c8b1018afb448756fc444c928f9, type: 3}
-    bounds:
-      serializedVersion: 2
-      x: -0.42041054
-      y: 0
-      width: 0.8408211
-      height: 0.739233
-    outline: []
+      x: -2.7785714
+      y: -0.35
+      width: 5.5714283
+      height: 0.69285715
+    outline:
+    - {x: -2.7785714, y: -0.071428575}
+    - {x: -2.6857142, y: -0.15714286}
+    - {x: 2.3, y: -0.35}
+    - {x: 2.6142857, y: -0.34285715}
+    - {x: 2.7071428, y: -0.25}
+    - {x: 2.7857144, y: -0.16428572}
+    - {x: 2.7928572, y: -0.15}
+    - {x: 2.7928572, y: 0.15}
+    - {x: 2.7857144, y: 0.16428572}
+    - {x: 2.6214285, y: 0.33571428}
+    - {x: 2.6, y: 0.34285715}
+    - {x: 2.3428571, y: 0.33571428}
+    - {x: -2.6857142, y: 0.07857143}
+    - {x: -2.7785714, y: -0.007142857}

@@ -539,6 +539,8 @@ namespace Vampire
         {
             eliteFlatIndex = -1;
 
+            if (ColonMonsterRoster.InColon && ColonMonsterRoster.Active.TryEliteIndex(normalFlatIndex, out eliteFlatIndex)) return true;
+
             if (phase.normalToEliteMappings == null)
             {
                 return false;

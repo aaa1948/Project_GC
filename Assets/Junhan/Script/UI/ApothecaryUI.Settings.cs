@@ -19,7 +19,7 @@ namespace Vampire
 
         public void OpenSettings()
         {
-            if(starting || (level != null && (level.IsLevelEnded || (level.PlayerCharacter != null && level.PlayerCharacter.Skills != null && level.PlayerCharacter.Skills.IsCutin)))) return;
+            if(starting || (level != null && (StageProgression.Ensure(level).Travelling || level.IsLevelEnded || (level.PlayerCharacter != null && level.PlayerCharacter.Skills != null && level.PlayerCharacter.Skills.IsCutin)))) return;
             if(Page=="hud")
             {
                 // Do not steal a pause owned by a level-up dialog or another system.

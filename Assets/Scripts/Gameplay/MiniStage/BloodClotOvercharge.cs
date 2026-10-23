@@ -70,6 +70,7 @@ namespace Vampire
             if(Progress>=Target)
             {
                 Enhanced=true;
+                RunScore.Current?.Overcharge(this);
                 BloodClotOverchargedArt.Apply(gameObject);
                 player.GetComponent<PrescriptionRuntime>()?.Record(PrescriptionRuntime.Goal.Overcharge);
                 GameAudioManager.PlaySfx(GameAudioManager.GameSfxId.MiniStageClear);
