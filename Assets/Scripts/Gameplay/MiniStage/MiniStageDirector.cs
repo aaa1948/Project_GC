@@ -110,6 +110,21 @@ namespace Vampire
             }
         }
 
+        // A field transfer must not carry old entrances into the new terrain.
+        public void ResetForNextField()
+        {
+            if (isInsideMiniStage || isTransitioning) return;
+            foreach (var portal in FindObjectsOfType<BloodClotMiniStagePortal>())
+            {
+                portal.gameObject.SetActive(false);
+                Destroy(portal.gameObject);
+            }
+            activeEntrancePortal = null;
+            returnPortal = null;
+            CurrentEnhanced = false;
+            CleanupCurrentRoom();
+        }
+
         public void OpenEntrancePortal(Vector3 worldPosition)
         {
             if (isInsideMiniStage || isTransitioning)
@@ -128,7 +143,9 @@ namespace Vampire
                 return;
             }
 
-            if (removePreviousPortalWhenNewPortalOpens && activeEntrancePortal != null)
+            // Preplaced clots each retain their entrance until used or the field is left.
+            if (removePreviousPortalWhenNewPortalOpens && activeEntrancePortal != null &&
+                !(levelManager != null && levelManager.UsesInitialFieldLayout))
             {
                 Destroy(activeEntrancePortal.gameObject);
                 activeEntrancePortal = null;

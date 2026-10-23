@@ -23,6 +23,9 @@ const base={runId:id,rules:'qa_s1_v1',normal:10,special:2,elite:1,miniBoss:0,bos
 const call=(action,data)=>fn({params:{action,payload:JSON.stringify(data)},context});
 (async()=>{
  assert.equal(fn.validate(base,1),1100);
+ const twoFields={...base,boss:2,entered:28,cleared:28,overcharge:28,seconds:1800,success:true};
+ assert.equal(fn.validate(twoFields,1800),21300);
+ for(const key of ['entered','cleared','overcharge'])assert.throws(()=>fn.validate({...twoFields,[key]:29},1800));
  for(const bad of [{normal:-1},{normal:1.5},{special:Infinity},{cleared:2},{rules:'old'},{seconds:9999},{success:'yes'}])assert.throws(()=>fn.validate({...base,...bad},1));
  assert.equal((await call('submit',base)).rejected,'RUN_NOT_FOUND');
  await call('begin-test',{runId:id});const started=item.value.started;

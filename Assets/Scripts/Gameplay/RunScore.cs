@@ -65,7 +65,8 @@ namespace Vampire
             else if (IsSpecial(monster)) Data.special++;
             else Data.normal++;
         }
-        public static bool IsSpecial(Monster m) => m is SniperMonster || m is TrapMonster || m is AcidLeechMonster || m is MonsterSupportCaster || m is NutritionThiefBacteriaMonster || m is TreasureRunnerMonster;
+        public static bool IsSpecial(Monster m) => m is SniperMonster || m is TrapMonster || m is AcidLeechMonster || m is MonsterSupportCaster || m is NutritionThiefBacteriaMonster || m is TreasureRunnerMonster ||
+            (m != null && ColonMonsterRoster.InColon && ColonMonsterRoster.Active.IsSpecial(m.Blueprint));
         public void SpecialKill() { if (!finished) Data.special++; }
         public void BossKill() { if (!finished) Data.boss++; }
         public void Enter(UnityEngine.Object portal) { if (!finished && portal != null && portals.Add(portal.GetInstanceID())) Data.entered++; }
