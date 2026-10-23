@@ -443,6 +443,18 @@ namespace Vampire
             }
         }
 
+        // Complete the browser journey without opening the ordinary result panel.
+        // Keep time running for the outlet camera/iris while gameplay stays paused.
+        public void CompleteWebDemo()
+        {
+            if (levelEnded) return;
+            levelEnded = true;
+            SaveCoinsGained();
+            GameAudioManager.EndRunAudio(true);
+            RunScore.Current?.Finish(true);
+            PlayerPrefs.Save();
+        }
+
         public void AbandonRun()
         {
             if (levelEnded) return;

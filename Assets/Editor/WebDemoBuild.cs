@@ -23,7 +23,8 @@ namespace Vampire.Editor
             int oldMemory = PlayerSettings.WebGL.initialMemorySize;
             var oldSubtarget = EditorUserBuildSettings.webGLBuildSubtarget;
             bool mobile = Environment.GetEnvironmentVariable("PROJECT_GC_WEB_MOBILE") == "1";
-            bool stageOneOnly = !StageProgression.StageTwoEnabled;
+            // Public browser releases end at the Stage 1 capsule outlet.
+            bool stageOneOnly = true;
             WebDemoTextureScope textures = null;
             WebDemoStageScope stages = null;
             try

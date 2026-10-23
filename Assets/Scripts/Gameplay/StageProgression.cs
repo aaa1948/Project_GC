@@ -5,7 +5,22 @@ namespace Vampire
     [DisallowMultipleComponent]
     public sealed class StageProgression:MonoBehaviour
     {
-        public static bool StageTwoEnabled=>true;
+        public static bool StageTwoEnabled
+        {
+            get
+            {
+#if PROJECT_GC_STAGE_ONE_ONLY
+                return false;
+#elif UNITY_EDITOR
+                return !PreviewWebDemoEnding;
+#else
+                return true;
+#endif
+            }
+        }
+#if UNITY_EDITOR
+        public static bool PreviewWebDemoEnding;
+#endif
         public int StageNumber {get;private set;}=1;
         public bool FirstBossDefeated {get;private set;}
         public bool Travelling {get;private set;}
@@ -107,6 +122,19 @@ namespace Vampire
             CapsuleOutletReveal.Create(outlet);var exitShot=StageTravelCamera.Begin(outlet,to);
             yield return new WaitForSeconds(.35f);
             for(float t=0;t<1.25f;t+=Time.deltaTime){outlet.SetOpened(Mathf.SmoothStep(0,1,t/1.25f));yield return null;}outlet.SetOpened(1);
+            if(!StageTwoEnabled)
+            {
+                TransitionPhase="demo-complete";
+                level.CompleteWebDemo();
+                var dialogue=ApothecaryUI.Instance.BuildDemoCompletionDialogue();
+                while(dialogue!=null&&!dialogue.Confirmed)yield return null;
+                if(dialogue!=null)Destroy(dialogue.gameObject);
+                iris=SpiralStageTransition.Create();TransitionPhase="iris-close";yield return iris.Animate(true);
+                if(exitShot!=null)Destroy(exitShot);
+                Time.timeScale=1;
+                UnityEngine.SceneManagement.SceneManager.LoadScene(0);
+                yield break;
+            }
             iris=SpiralStageTransition.Create();TransitionPhase="iris-close";yield return iris.Animate(true);if(exitShot!=null)Destroy(exitShot);
             AtOutlet=false;entering=true;yield return EnterColon(player,outlet);
         }
