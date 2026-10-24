@@ -143,7 +143,7 @@ static IEnumerator Checks(LevelManager level){
  // Actual mini-stage entry/exit preserves every acquisition. Test the room's chest producer too.
  foreach(var m in level.EntityManager.LivingMonsters.ToArray())if(m!=null)m.gameObject.SetActive(false);
  var director=Object.FindObjectOfType<MiniStageDirector>();director.OpenEntrancePortal(player.transform.position+Vector3.right);
- var entry=Object.FindObjectsOfType<BloodClotMiniStagePortal>().First(p=>!p.Reserved);var charge=entry.GetComponent<BloodClotOvercharge>();typeof(BloodClotOvercharge).GetProperty("Kind").SetValue(charge,BloodClotOvercharge.Challenge.Stay);
+ var entry=Object.FindObjectsOfType<BloodClotMiniStagePortal>().First(p=>!p.Reserved);var charge=entry.GetComponent<BloodClotOvercharge>();typeof(BloodClotOvercharge).GetProperty("Kind").SetValue(charge,BloodClotOvercharge.Challenge.Kills);
  Check(charge.Begin(),"begin overcharge");charge.Advance(charge.Target);director.EnterMiniStageFromPortal(entry);
  end=Time.realtimeSinceStartup+15;while(director.IsTransitioning&&Time.realtimeSinceStartup<end)yield return null;
  Check(director.IsInsideMiniStage&&director.CurrentEnhanced,"enter enhanced mini-stage");

@@ -147,7 +147,7 @@ namespace Vampire.Tests.Editor
             director.OpenEntrancePortal(origin+Vector3.right);
             var entry=Object.FindObjectsOfType<BloodClotMiniStagePortal>().First(p=>!p.Reserved);
             var charge=entry.GetComponent<BloodClotOvercharge>();
-            typeof(BloodClotOvercharge).GetProperty("Kind").SetValue(charge,BloodClotOvercharge.Challenge.Stay);
+            typeof(BloodClotOvercharge).GetProperty("Kind").SetValue(charge,BloodClotOvercharge.Challenge.Kills);
             Check(charge.Begin(),"Begin overcharge");charge.Advance(charge.Target);
             Check(charge.Enhanced&&entry.GetComponentInChildren<SpriteRenderer>().sprite.name=="Overcharged blood clot","Overcharge swaps purple-vein art");
             var monster=level.EntityManager.LivingMonsters.FirstOrDefault(m=>m!=null&&m.HP>0);
