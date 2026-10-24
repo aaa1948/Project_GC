@@ -445,6 +445,29 @@ namespace Vampire
             }
         }
 
+        private bool bgmRequested;
+        private float nextBgmCheck;
+
+        private void Update()
+        {
+            // Web audio decoding and browser sound permission can finish after the
+            // initial Play call. Retry only the currently requested music layer.
+            // Never revive a stopped run, or the field track underneath a modal.
+            if (!bgmRequested || IntroMovie.Active || AudioListener.pause || !WebAudioPermission.Ready ||
+                Time.unscaledTime < nextBgmCheck) return;
+            nextBgmCheck = Time.unscaledTime + .25f;
+            var source = augmentSelectionBgmActive ? modalBgmSource :
+                currentOverrideBgm != OverrideBgmType.None ? overrideBgmSource : baseBgmSource;
+            if (source == null || source.clip == null || source.isPlaying) return;
+            var clip = source.clip;
+            if (clip.loadState == AudioDataLoadState.Unloaded) clip.LoadAudioData();
+            if (clip.loadState != AudioDataLoadState.Loaded) return;
+            source.UnPause();
+            if (!source.isPlaying) source.Play();
+            if (debugLog && source.isPlaying)
+                Debug.Log($"[GameAudio] BGM READY | Clip={clip.name} | Load={clip.loadState} | Pitch={source.pitch}", this);
+        }
+
         private void OnDestroy()
         {
             if (Instance != this)
@@ -796,8 +819,8 @@ namespace Vampire
             baseBgmSource.Stop();
             baseBgmSource.clip = clip;
             baseBgmSource.loop = true;
-            baseBgmSource.time = 0f;
-            baseBgmSource.Play();
+            bgmRequested = true;
+            nextBgmCheck = 0;
 
             if (debugLog)
             {
@@ -856,8 +879,8 @@ namespace Vampire
             overrideBgmSource.Stop();
             overrideBgmSource.clip = clip;
             overrideBgmSource.loop = true;
-            overrideBgmSource.time = 0f;
-            overrideBgmSource.Play();
+            bgmRequested = true;
+            nextBgmCheck = 0;
 
             if (debugLog)
             {
@@ -883,7 +906,7 @@ namespace Vampire
             currentOverrideBgm =
                 OverrideBgmType.None;
 
-            if (resumeBase &&
+            if (resumeBase && !augmentSelectionBgmActive &&
                 baseBgmPausedByOverride &&
                 baseBgmSource != null)
             {
@@ -966,8 +989,8 @@ namespace Vampire
             modalBgmSource.Stop();
             modalBgmSource.clip = augmentSelectionBgm;
             modalBgmSource.loop = true;
-            modalBgmSource.time = 0f;
-            modalBgmSource.Play();
+            bgmRequested = true;
+            nextBgmCheck = 0;
 
             augmentSelectionBgmActive = true;
 
@@ -1049,6 +1072,7 @@ namespace Vampire
 
         private void StopAllBgmInternal()
         {
+            bgmRequested = false;
             if (modalBgmSource != null)
             {
                 modalBgmSource.Stop();

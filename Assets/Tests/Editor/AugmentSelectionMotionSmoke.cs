@@ -61,6 +61,10 @@ namespace Vampire.Tests.Editor
         static IEnumerator Checks(LevelManager level)
         {
             Application.runInBackground = true;
+            RunScore.Exclude("Augment animation regression verification");
+            // Discovery cards are a separate pause owner after a new weapon is
+            // acquired. Isolate this test to the selection animation itself.
+            if (TutorialGuide.Instance != null) { TutorialGuide.Instance.Close(); TutorialGuide.Instance.enabled = false; }
             var prefs = GamePreferences.Current.Copy(); prefs.pauseOnFocusLoss = false; GamePreferences.Apply(prefs, false);
             var dialog = level.EntityManager.AbilitySelectionDialog;
             if (dialog.MenuOpen) dialog.Close(); dialog.Open(false);

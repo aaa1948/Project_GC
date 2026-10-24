@@ -1386,6 +1386,9 @@ namespace Vampire
 
         public void SetMoveDirection(InputAction.CallbackContext context)
         {
+            // Touch owns movement on the mobile HUD. A keyboard/gamepad action
+            // cancel during device switching must not overwrite a held stick.
+            if (MobileGameplayInput.Active) return;
             moveDirection = context.action.ReadValue<Vector2>().normalized;
         }
 

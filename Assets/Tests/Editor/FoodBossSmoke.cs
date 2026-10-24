@@ -182,8 +182,10 @@ namespace Vampire.Tests.Editor
             Check(Vector2.Distance(anchored,tongue.transform.position)<.01f,"tongue hitbox stays with closed shell when player crosses behind");
             Check(Vector2.Distance(tongue.transform.position,boss.Visual.TongueSocket)<.01f,"tongue hitbox matches artwork socket");Object.Destroy(boss.gameObject);yield return null;
             Position(player,origin+Vector2.right*3.4f);boss=FoodBossRuntime.Spawn(FoodBossKind.Tangdengi,player,origin);boss.AutoPatterns=false;yield return null;
-            boss.Play(FoodBossAttack.UniqueOne);yield return new WaitForSeconds(1.5f);
-            var beam=boss.Effects.GetComponentInChildren<FoodBossEnergyBeam>();Check(beam!=null,"continuous horn beam exists after charge");
+            Check(boss.Play(FoodBossAttack.UniqueOne),"horn charge starts");
+            FoodBossEnergyBeam beam=null;float beamDeadline=Time.time+6f;
+            while(beam==null&&boss.Busy&&Time.time<beamDeadline){yield return null;beam=boss.Effects.GetComponentInChildren<FoodBossEnergyBeam>();}
+            Check(beam!=null,"continuous horn beam exists after charge");
             Check(Vector2.Distance((Vector2)Field(beam,"origin").GetValue(beam),boss.Visual.HornTip)<.01f,"beam starts between horn tips");
             boss.SetPhaseTwoForTest();yield return null;Check(boss.Effects.GetComponentsInChildren<FoodBossEnergyBeam>().Length==0,"phase change removes active beam");Object.Destroy(boss.gameObject);yield return null;
             boss=FoodBossRuntime.Spawn(FoodBossKind.Hurumi,player,origin);boss.AutoPatterns=false;yield return null;

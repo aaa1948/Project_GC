@@ -43,6 +43,7 @@ namespace Vampire
         Material backMaterial, needleMaterial;
         Action completed;
         bool disposed;
+        double startedAt;
 
         public static AugmentSelectionMotion Create(RectTransform parent, AbilityCard selected,
             List<AbilityCard> cards, Action complete)
@@ -107,6 +108,7 @@ namespace Vampire
             motion.AddEffect("Front wind ribbons", AugmentOrbitGraphic.Part.Wind, true);
             motion.AddEffect("Front needles", AugmentOrbitGraphic.Part.Needles, true);
             motion.Sample(0);
+            motion.startedAt = Time.realtimeSinceStartupAsDouble;
             return motion;
         }
 
@@ -126,7 +128,9 @@ namespace Vampire
         void Update()
         {
             if (disposed || ManualPreview) return;
-            Sample(Age + Time.unscaledDeltaTime);
+            // The creation frame may already include a long layout/asset load.
+            // Count only time since this animation actually became ready.
+            Sample((float)(Time.realtimeSinceStartupAsDouble - startedAt));
             if (Age >= Duration)
             {
                 var callback = completed;
