@@ -1,5 +1,18 @@
 # 웹 데모 · 2026-10-24
 
+## 최신 배포 · 혁이 모션 통일 / 신이 상하 불 뿜기
+
+- 현재 주소: https://breath-michigan-employers-arena.trycloudflare.com
+- 게임 소스: `1f5e27ff6676228a40445a7b6c1ebde888238109` (`Junhan2`). 혁이의 승인 외형·대기·이동·대쉬·이동 연출을 연결하고 신이 상하 전용 불 뿜기 자세를 추가했다. 신이 좌우 자세와 불 이미지는 유지한다.
+- PC 빌드: `Builds/WebDemo-PC-20261024-hyuki-shini`, DXT Crunch 264개, 563,963,156 bytes (약 564 MB).
+- 모바일 빌드: `Builds/WebDemo-Mobile-20261024-hyuki-shini`, ASTC 4×4 753개, 402,558,181 bytes (약 403 MB).
+- 두 빌드 모두 Stage 1 전용이며 BuildReport에서 Stage 2 맵·몬스터 제외를 확인했다. 제작용 원본 텍스처 설정과 대장 Resources는 복원했다.
+- 에디터 실제 플레이 검증: 혁이 57항목 / 신이 105항목 통과. 프레임 가장자리 잘림, 공통 몸 배율, 방향별 부리 발사점, 피해 판정과 모션 복귀를 확인했다. 상세 내용은 `HyukiMotion-20261024.md`, `ShiniVerticalBreath-20261024.md`에 기록한다.
+- 배포 서버 16항목, 기기 선택 페이지 48항목, PC 빌드 정적 검사 통과. 실제 PC 웹에서 인트로·메인·혁이 출전준비·전투·종료, 모바일 웹에서 인트로·신이 출전준비·전투 진입·액티브/대쉬 표시·증강 선택을 확인했다. 모바일은 Chromium 터치/기기 에뮬레이션이며 실기기 Safari 성능 검증은 아니다.
+- 외부 HTTPS 루트, PC/모바일 빌드 정보, 모바일 페이지 및 새 데이터/실행 파일 HEAD 응답 200. 두 공개 빌드의 소스 커밋과 Stage 1 제한이 위 내용과 일치한다.
+- 이전 `touch-knives-won-dispatched` 주소는 만료되어 교체했다. 호스트 PC와 터널이 실행 중인 동안 접속 가능하다. 주소가 달라 이전 주소의 브라우저 저장 데이터는 자동 이전되지 않는다.
+- QA 증거: 작업 폴더 `work/web-motion-qa/pc-final`, `mobile-final` 및 `output/shini-vertical-breath-20261024`, `output/hyuki-walk-review-20261024/applied-review`. 신규 계정 개인 랭킹 조회의 기존 404 응답 외에 이번 실제 브라우저 검사에서 pageerror나 충돌은 발견되지 않았다.
+
 ## 공개 범위와 종료
 
 PC·모바일은 스테이지 1까지 공개한다. 기존 보스 도주/보상, 캡슐 낙하와 최초 한의사 튜토리얼, 해치 탑승, 육지·위산 수면 이동, 좌측 하단 구멍 열림을 유지한다. 목적지 도착 후 아래 문구를 하단 스티치 대화창에 표시한다.
@@ -36,9 +49,9 @@ PC DXT Crunch / 모바일 ASTC 4×4 / gzip. 이미지 해상도·스프라이트
 - 실제 컴파일된 PC 웹에서 인트로·출전 준비·전투·증강 선택을 확인했다. 안드로이드/아이폰 User-Agent·터치 에뮬레이션의 실제 모바일 빌드 출전/전투 진입도 통과했다. 휴대폰 실기기 및 실제 Safari의 성능 테스트는 하지 않았다.
 
 
-## 배포 결과
+## 이전 배포 결과 · 697f74d
 
-- 현재 주소: https://touch-knives-won-dispatched.trycloudflare.com
+- 이전 주소(만료): https://touch-knives-won-dispatched.trycloudflare.com
 - 기존 `https://gps-moms-studying-mai.trycloudflare.com` 주소는 DNS 만료로 사용할 수 없어 새 임시 주소를 발급했다. 호스트 PC와 터널이 실행 중인 동안 접속 가능하다. 주소 변경으로 이전 사이트의 브라우저 저장 데이터가 자동 이전되지는 않는다.
 - 게임 코드: `697f74dfb5e96cb3d9c6d45a5305bceddf567deb`. 빌드 당시 작업 트리를 해당 커밋과 확인한 뒤 배포 메타데이터에 기록했다. 빌드 시작 기준 커밋은 별도 `buildBaseCommit`으로 보존했다.
 - PC: DXT Crunch 대상 258개, 실제 참조 파일+StreamingAssets 다운로드 564,520,883 bytes (약 564.5 MB).
