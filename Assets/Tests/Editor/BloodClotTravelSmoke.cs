@@ -141,7 +141,7 @@ namespace Vampire.Tests.Editor
             Check(BloodClotTravel.Sample("Hyuki",false,.65f,.6f,1).frame==3,"Hyuki unfolds on upward hop");
             var apex=BloodClotTravel.Sample("Hyuki",false,BloodClotTravel.HyukiApex,.6f,1);
             Check(apex.frame==BloodClotTravel.HyukiCurledFrame&&apex.lift>BloodClotTravel.Sample("Hyuki",false,.72f,.6f,1).lift&&apex.lift>BloodClotTravel.Sample("Hyuki",false,.76f,.6f,1).lift,"Hyuki curls exactly at jump maximum");
-            Check(Mathf.Abs(BloodClotTravel.Frames("Hyuki")[4].bounds.size.y/BloodClotTravel.Frames("Hyuki")[0].bounds.size.y-.72f)<.001f,"Hyuki compact size preserved");
+            Check(BloodClotTravel.Frames("Hyuki")[4].pixelsPerUnit==BloodClotTravel.Frames("Hyuki")[0].pixelsPerUnit,"Hyuki curled and standing poses share a fixed pixel scale");
             Check(BloodClotTravel.Sample("Hyuki",true,.57f,.6f,1).lift>BloodClotTravel.Sample("Hyuki",true,.79f,.6f,1).lift,"Second rebound lower than first");
             player.transform.position=origin;body.position=origin;
             director.OpenEntrancePortal(origin+Vector3.right);

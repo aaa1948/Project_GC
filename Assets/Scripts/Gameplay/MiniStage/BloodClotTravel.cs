@@ -37,7 +37,7 @@ namespace Vampire
 
         public static BloodClotTravel Ensure(Character actor) => actor.GetComponent<BloodClotTravel>() ?? actor.gameObject.AddComponent<BloodClotTravel>();
         static Sprite[] RawFrames(string key) => Resources.LoadAll<Sprite>("BloodClotTravel/" + key).OrderBy(s => s.name).ToArray();
-        public static Sprite[] Frames(string key) => key == "Hyuki" ? RawFrames("HyukiApproach").Concat(RawFrames(key)).ToArray() : RawFrames(key);
+        public static Sprite[] Frames(string key) => RawFrames(key == "Hyuki" ? "HyukiApproved" : key);
         public static bool CanTravel(Character actor) => actor != null && actor.IsAlive && !actor.IsDashing && !actor.IsTrapBound &&
             !(actor.GetComponent<PlayerMiniStageStunRuntime>()?.IsStunned ?? false) && !(actor.Skills?.IsCutin ?? false) && !actor.IsPortalTravelling;
 
@@ -65,8 +65,9 @@ namespace Vampire
             var foot = new Vector3(visible.center.x, visible.yMin, 0);
             if (original.flipX) foot.x = -foot.x;
             footOffset = original.transform.TransformPoint(foot) - transform.position;
-            // Hyuki's fixed compact pose is calibrated to 72% standing height at import.
-            scale = height / Mathf.Max(.001f, frames[0].bounds.size.y);
+            // Approved Hyuki poses share the gameplay PPU/pivot. Atlas padding and
+            // tucked legs must not resize his head when switching into travel.
+            scale = CharacterKey == "Hyuki" ? Mathf.Abs(original.transform.lossyScale.y) : height / Mathf.Max(.001f, frames[0].bounds.size.y);
             if (Visual == null)
             {
                 var go = new GameObject("Blood clot travel visual");
@@ -220,10 +221,15 @@ namespace Vampire
             var p = Sample(CharacterKey, eject, t, mouth, height);
             SetPosition(Vector3.Lerp(source, destination, p.progress));
             Visual.sprite = frames[Mathf.Clamp(p.frame, 0, frames.Length - 1)];
+            if(CharacterKey=="Hyuki"&&!eject&&t<HyukiWalkEnd)
+            {
+                var walk=owner.Blueprint.walkSpriteSequence;
+                Visual.sprite=walk[Mathf.FloorToInt(t*Duration/owner.Blueprint.walkFrameTime)%walk.Length];
+            }
             Visual.flipX = CharacterKey == "Hyuki" ? !eject && t < HyukiApex && destination.x < source.x : eject;
             Visual.transform.localScale = Vector3.one * scale;
             Visual.transform.rotation = Quaternion.Euler(0, 0, p.angle);
-            Visual.transform.position = transform.position + footOffset + Vector3.up * (p.lift + Visual.sprite.bounds.size.y * scale * .5f);
+            Visual.transform.position = transform.position + footOffset + Vector3.up * (p.lift + GroundPivotOffset());
             Visual.color = new Color(1, 1, 1, p.alpha);
             SetChicks(eject && CharacterKey == "Ari" && t >= .72f, t * Duration);
         }
@@ -266,11 +272,12 @@ namespace Vampire
             if (!HoldingPose) return;
             if(reservedPose)return;
             if (owner == null || !owner.IsAlive || owner.EffectiveMoveDirection.sqrMagnitude > .0001f) { ReleasePose(); return; }
-            Visual.transform.position=transform.position+footOffset+Vector3.up*(Visual.sprite.bounds.size.y*scale*.5f);
+            Visual.transform.position=transform.position+footOffset+Vector3.up*GroundPivotOffset();
             // Last frame stays frozen, but the orbiting dizziness indicator remains alive.
             SetChicks(CharacterKey == "Ari", Time.time);
         }
         void RestorePhysics() { if (body != null) { body.velocity = Vector2.zero; body.angularVelocity = 0; body.simulated = simulated; } }
+        float GroundPivotOffset()=>CharacterKey=="Hyuki"?.27f*scale:Visual.sprite.bounds.size.y*scale*.5f;
         void RestorePortal() { if (animatedPortal != null) animatedPortal.localScale = portalScale; animatedPortal = null; }
         public void ReleasePose()
         {

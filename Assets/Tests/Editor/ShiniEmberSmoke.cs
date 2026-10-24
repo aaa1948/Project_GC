@@ -88,6 +88,35 @@ static IEnumerator Checks(LevelManager level){
  breath.ReleasePointer();breath.Advance(1.1f);var fadeFacing=(Vector2)Get(breath,"direction");player.LookDirection=Vector2.down;breath.Advance(.01f);
  Check((Vector2)Get(breath,"direction")==fadeFacing,"detached fading flame retains its final direction");
  breath.Cancel();front.gameObject.SetActive(false);rear.gameObject.SetActive(false);player.LookDirection=Vector2.right;
+ Check(art.castUp.Length==12&&art.castDown.Length==12&&art.mouthsUp.Length==12&&art.mouthsDown.Length==12,"north/south preparation, emission and recovery frames loaded");
+ var body=player.GetComponentInChildren<SpriteAnimator>().GetComponent<SpriteRenderer>();
+ float scale=(float)Get(breath,"poseScale");
+ foreach(var facing in new[]{Vector2.up,Vector2.down})
+ {
+  string label=facing.y>0?"up":"down";
+  front.gameObject.SetActive(true);rear.gameObject.SetActive(true);
+  front.transform.position=player.CenterTransform.position+(Vector3)(facing*2);rear.transform.position=player.CenterTransform.position-(Vector3)(facing*2);
+  Set(front,"currentHealth",10000f);Set(rear,"currentHealth",10000f);Physics2D.SyncTransforms();
+  player.LookDirection=facing;breath.RestoreFuel(24);Check(breath.Press(),label+" begins");breath.Advance(1.1f);yield return null;yield return null;
+  Check(front.HP<10000&&rear.HP==10000,label+" cone hits aimed direction only");
+  var frames=facing.y>0?art.castUp:art.castDown;var anchors=facing.y>0?art.mouthsUp:art.mouthsDown;
+  int index=Array.IndexOf(frames,pose.sprite);Check(index>=0&&!pose.flipX,label+" uses upright directional pose");
+  Check(Vector2.Dot(fire.transform.right,facing)>.999f,label+" keeps existing flame oriented to aim");
+  Near(Vector3.Distance(fire.transform.position,pose.transform.position+(Vector3)(anchors[index]*scale)),0,label+" flame exactly at authored beak anchor");
+  Check(Mathf.Abs(pose.transform.localScale.y-scale)<.0001f,label+" preserves side body calibration");
+  CaptureView("vertical-"+label);
+  front.gameObject.SetActive(false);rear.gameObject.SetActive(false);breath.Cancel();
+  player.LookDirection=facing;breath.RestoreFuel(24);breath.Tap();
+  Directory.CreateDirectory(Out+"/"+label);float cameraSize=Camera.main.orthographicSize;Camera.main.orthographicSize=cameraSize*.55f;
+  for(int f=0;f<38;f++){yield return new WaitForSeconds(.08f);CaptureView(label+"/frame-"+f.ToString("D2"));}
+  Camera.main.orthographicSize=cameraSize;Check(!breath.Busy&&!body.forceRenderingOff,label+" recovery restores normal body");
+ }
+ player.LookDirection=Vector2.right;
+ // The desktop HUD intentionally has no skill button. Exercise the real mobile
+ // layout before the existing pointer/hold/reward regression checks.
+ var mobile=player.GetComponent<MobileGameplayControls>()??player.gameObject.AddComponent<MobileGameplayControls>();
+ Set(mobile,"simulateInEditor",true);yield return null;yield return null;
+ ApothecaryUI.Instance.Show("hud");Time.timeScale=1;yield return new WaitForSecondsRealtime(.4f);
  var button=Object.FindObjectsOfType<UnityEngine.UI.Button>().First(b=>b.name=="Active skill R");var input=button.GetComponent<ShiniSkillButton>();Check(input!=null&&button.GetComponent<ApothecaryButtonFeedback>()!=null,"hold input preserves original button feedback");
  breath.RestoreFuel(24);var e=new UnityEngine.EventSystems.PointerEventData(UnityEngine.EventSystems.EventSystem.current){pointerId=42,button=UnityEngine.EventSystems.PointerEventData.InputButton.Left};input.OnPointerDown(e);Check(breath.Busy&&breath.Fuel==18,"HUD pointer down casts once");input.OnPointerUp(e);button.onClick.Invoke();Check(breath.Fuel==18,"pointer click does not double spend");
  yield return new WaitForSeconds(.64f);CaptureView("01-inflated-chest-and-digits");yield return new WaitForSeconds(.65f);CaptureView("02-fan-flame");
