@@ -55,7 +55,7 @@
 
 - 엔진: **Unity 2022.3.62f3**
 - 현재 개발·Windows 배포 기준 브랜치: **[Junhan2](https://github.com/junanime/Project_GC/tree/Junhan2)**
-- 저장소 첫 화면의 `main` README도 게임 안내용으로 유지합니다. 최신 개발 코드를 열 때는 `Junhan2`를 선택하세요.
+- 2026-10-25 노트북 최신 `Junhan2` 기준으로 `main`, `small_test`, `Junhan2`를 통일했습니다. PC의 이전 복사본을 맞추는 방법은 [기기 간 동기화 안내](Tools/Repository/README.md)를 참고하세요. 이후 개발 기준은 `Junhan2`입니다.
 - [Windows 배포 및 저장 정책 문서](https://github.com/junanime/Project_GC/blob/Junhan2/Documentation/WindowsDesktopDistribution.md)
 - 기존 원본 이미지 58개는 새 단순 도형 임시 이미지로 교체했습니다. 최신 달팽이·캐릭터 등 별도로 제작한 이미지는 유지합니다. [교체 범위 및 검증 안내](Documentation/UpstreamImageMigration.md)
 - 이미지 교체는 최신 소스 기준이며, 앞서 만든 설치 파일에는 소급 적용되지 않습니다. 이미지 정리 이후 새로 빌드한 배포본을 사용해야 합니다.
