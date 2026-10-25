@@ -117,7 +117,7 @@ namespace Vampire
         }
         private void Enqueue(string id)
         {
-            if (!entries.TryGetValue(id, out Entry entry) || PlayerPrefs.GetInt(SeenKey(id), 0) != 0 || !pendingIds.Add(id)) return;
+            if (!entries.TryGetValue(id, out Entry entry) || ProgressPrefs.GetInt(SeenKey(id), 0) != 0 || !pendingIds.Add(id)) return;
             pending.Enqueue(entry);
         }
 
@@ -181,8 +181,8 @@ namespace Vampire
             canvasObject.SetActive(true);
             if (discovery)
             {
-                PlayerPrefs.SetInt(SeenKey(entry.id), 1);
-                PlayerPrefs.Save();
+                ProgressPrefs.SetInt(SeenKey(entry.id), 1);
+                ProgressPrefs.Save();
             }
         }
         public void Replay() { clipStart = Time.unscaledTime; preview?.GetComponent<FoodTutorialPreview>()?.Restart(); }
