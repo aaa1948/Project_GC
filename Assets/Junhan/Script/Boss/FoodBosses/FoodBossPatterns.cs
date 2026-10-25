@@ -263,47 +263,7 @@ namespace Vampire
             Visual.Charge=true;var w=FoodBossEffects.Ring(this,transform.position,2);yield return Wait(1.15f);Destroy(w.gameObject);Visual.Charge=false;
             Audio.Play(FoodBossSound.Radial);for(int i=0;i<14;i++){var d=Dir(i*360f/14);FoodBossBullet.Fire(this,(Vector2)transform.position+d*1.3f,d,1.65f,7,PhaseTwo,PhaseTwo?null:FoodBossArt.Get("StrawberrySeed"));}yield return Wait(.8f);
         }
-        IEnumerator Curtain()
-        {
-            // Rows extend towards the player; every row is a noodle diving into and out of the floor.
-            Vector2 direction=Mathf.Abs(Aim.x)>Mathf.Abs(Aim.y)?Vector2.right:Vector2.up;
-            if(Vector2.Dot(direction,Aim)<0)direction=-direction;
-            bool vertical=Mathf.Abs(direction.y)>.5f;float laneSpacing=vertical?1.75f:1.25f;
-            Vector2 side=Rotate(direction,90),center=(Vector2)Player.transform.position+direction*.8f;int gap=3;
-            var warnings=new List<LineRenderer>();
-            for(int lane=1;lane<6;lane++)if(lane!=gap){Vector2 at=center+side*((lane-3)*laneSpacing);warnings.Add(FoodBossEffects.Line(Effects,new[]{at-direction*2.3f,at+direction*2.3f},.80f,new Color(Warning.r,Warning.g,Warning.b,.48f)));}
-            yield return Wait(1.1f);foreach(var w in warnings)Destroy(w.gameObject);Audio.Play(FoodBossSound.Skill1);
-            var noodles=new FoodBossNoodle[7,2];var holes=new LineRenderer[7,4];var ground=new LineRenderer[7];
-            for(int lane=0;lane<7;lane++){
-                Vector2 row=center+side*((lane-3)*laneSpacing);
-                ground[lane]=FoodBossEffects.Line(Effects,new[]{row-direction*2.3f,row+direction*2.3f},.8f,new Color(Warning.r,Warning.g,Warning.b,.32f));
-                for(int k=0;k<2;k++)noodles[lane,k]=FoodBossNoodle.Create(Effects,.55f,511);
-                for(int k=0;k<4;k++){Vector2 at=row+direction*(k==0?-2.3f:k==1?-.45f:k==2?.45f:2.3f);var oval=FoodBossEffects.Arc(Vector2.zero,.28f);for(int j=0;j<oval.Length;j++)oval[j]=at+new Vector2(oval[j].x,oval[j].y*.40f);holes[lane,k]=FoodBossEffects.Line(Effects,oval,.10f,new Color(.37f,.20f,.12f,.65f),true,487);}}
-            float hitAt=0;var levels=new float[7];LineRenderer closing=null;int warned=-1;
-            for(float t=0;t<4.8f;t+=Time.deltaTime)
-            {
-                int nextGap=PhaseTwo?(t<1.7f?3:t<3.2f?4:2):3;float transition=PhaseTwo?(t<1.7f?1:t<3.2f?t-1.7f:t-3.2f):1;
-                if(nextGap!=gap&&warned!=gap){Audio.Stop(FoodBossSound.Skill1,.08f);Audio.Play(FoodBossSound.Skill1,.45f);if(closing!=null)Destroy(closing.gameObject);Vector2 at=center+side*((gap-3)*laneSpacing);closing=FoodBossEffects.Line(Effects,new[]{at-direction*2.3f,at+direction*2.3f},.80f,new Color(Warning.r,Warning.g,Warning.b,.48f));warned=gap;}
-                for(int lane=0;lane<7;lane++)
-                {
-                    bool safe=lane==0||lane==6||lane==nextGap||PhaseTwo&&transition<.65f&&lane==gap;
-                    float wanted=safe||t>4.35f?0:1;levels[lane]=Mathf.MoveTowards(levels[lane],wanted,Time.deltaTime*3.5f);
-                    Vector2 row=center+side*((lane-3)*laneSpacing);
-                    ground[lane].enabled=levels[lane]>.15f&&!safe;for(int k=0;k<4;k++)holes[lane,k].enabled=levels[lane]>.03f;
-                    for(int k=0;k<2;k++){
-                        Vector2 a=row+direction*(k==0?-2.3f:.45f),b=a+direction*1.85f;var points=new Vector2[25];
-                        Vector2 rise=(vertical?side*(1.35f+.06f*Mathf.Sin(t*3+k))+Vector2.up*.2f:Vector2.up*(1.9f+.09f*Mathf.Sin(t*3+k))+side*.25f)*levels[lane];
-                        for(int j=0;j<25;j++){float u=j/24f,v=1-u;points[j]=v*v*v*a+3*v*v*u*(a+rise)+3*v*u*u*(b+rise)+u*u*u*b+Vector2.up*.18f*levels[lane];}
-                        noodles[lane,k].Set(points,levels[lane]);
-                    }
-                    if(levels[lane]>.75f&&!safe&&Time.time>=hitAt&&SnailBossProjectile.SegmentDistance(Player.transform.position,row-direction*2.3f,row+direction*2.3f)<.40f){Player.TakeDamage(12);hitAt=Time.time+.7f;}
-                }
-                if(transition>=.65f){gap=nextGap;if(closing!=null){Destroy(closing.gameObject);closing=null;}}
-                yield return null;
-            }
-            Audio.Stop(FoodBossSound.Skill1,.12f);
-            foreach(var r in noodles)Destroy(r.gameObject);foreach(var h in holes)Destroy(h.gameObject);foreach(var g in ground)Destroy(g.gameObject);if(closing!=null)Destroy(closing.gameObject);
-        }
+        IEnumerator Curtain() { yield return ConnectedCurtain(); }
         IEnumerator Whips()
         {
             int count=PhaseTwo?2:1;Visual.Face(Aim);Visual.Whipping=true;float facing=Aim.x>=0?1:-1;yield return null;
