@@ -4,7 +4,7 @@ namespace Vampire
     public sealed class FoodBossVisual:MonoBehaviour
     {
         public SpriteRenderer Body {get;private set;}
-        public float Lift,Roll,Recoil;public bool Airborne,Charge,Recovering,ClawsActive,Whipping;
+        public float Lift,Roll,Recoil,CreamPulse;public bool Airborne,Charge,Recovering,ClawsActive,Whipping;
         public Vector2 LeftClaw,RightClaw;public float ClawAngleLeft,ClawAngleRight;
         FoodBossRuntime boss;SpriteRenderer[] claws,arms;SpriteRenderer shadow;Transform rig;float clock,clawBlend;int facing=-1;
         SpriteRenderer suctionMouth;LineRenderer[] suction;
@@ -39,7 +39,7 @@ namespace Vampire
             ResetPose();Sample();
         }
         public void Face(Vector2 dir){if(Mathf.Abs(dir.x)>.05f)facing=dir.x<0?-1:1;}
-        public void ResetPose(){Lift=Roll=Recoil=0;Airborne=Charge=Recovering=ClawsActive=Whipping=false;LeftClaw=RestClaw(0);RightClaw=RestClaw(1);if(Body!=null){Body.color=Color.white;Body.enabled=true;Body.sharedMaterial=bodyMaterial;}}
+        public void ResetPose(){Lift=Roll=Recoil=CreamPulse=0;Airborne=Charge=Recovering=ClawsActive=Whipping=false;LeftClaw=RestClaw(0);RightClaw=RestClaw(1);if(Body!=null){Body.color=Color.white;Body.enabled=true;Body.sharedMaterial=bodyMaterial;}}
         void LateUpdate(){if(boss==null||FoodBossRuntime.Paused)return;clock+=Time.deltaTime;Sample();}
         void Sample()
         {
@@ -62,8 +62,9 @@ namespace Vampire
             rig.localScale=new Vector3(-facing,1,1);
             if(Recovering&&boss.Kind==FoodBossKind.Denikani)Body.transform.localRotation=Quaternion.Euler(0,0,Roll);
             bool inhale=Recovering&&boss.Kind==FoodBossKind.Rolpangi;
-            suctionMouth.enabled=inhale;
+            suctionMouth.enabled=inhale||CreamPulse>.01f;
             if(inhale){suctionMouth.transform.position=SnailMouth;suctionMouth.transform.localScale=new Vector3(.42f+.07f*Mathf.Sin(clock*12),.26f+.06f*Mathf.Sin(clock*12),1)/suctionMouth.sprite.bounds.size.x;}
+            else if(CreamPulse>0){suctionMouth.transform.position=SnailMouth;suctionMouth.transform.localScale=new Vector3(.30f,.18f+.05f*Mathf.Sin(clock*12)*CreamPulse,1)/suctionMouth.sprite.bounds.size.x;}
             for(int i=0;i<3;i++){var r=suction[i];r.enabled=inhale;if(!inhale)continue;r.positionCount=16;
                 float slide=Mathf.Repeat(clock*1.5f+i*.33f,1),reach=Mathf.Lerp(1.7f,.12f,slide);
                 for(int j=0;j<16;j++){float u=j/15f;Vector2 v=new Vector2(facing*(reach+.42f*u),(i-1)*.30f*u+Mathf.Sin(u*Mathf.PI)*.06f);r.SetPosition(j,SnailMouth+v);}}

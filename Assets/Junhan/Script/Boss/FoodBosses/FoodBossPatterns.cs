@@ -66,6 +66,8 @@ namespace Vampire
             Audio.Play(FoodBossSound.Dash);Visual.Body.enabled=false;var shell=new GameObject("Rolling cake").AddComponent<SpriteRenderer>();shell.transform.SetParent(Effects,false);shell.sprite=FoodBossArt.Get("RollShell"+(PhaseTwo?2:1));shell.sortingOrder=511;
             var toppings=new GameObject("Floating toppings").AddComponent<SpriteRenderer>();toppings.transform.SetParent(Effects,false);toppings.sprite=FoodBossArt.Get("RollToppings"+(PhaseTwo?2:1));toppings.sortingOrder=512;
             if(shell.sprite!=null)shell.transform.localScale=Vector3.one*(3.4f/shell.sprite.bounds.size.x);if(toppings.sprite!=null)toppings.transform.localScale=Vector3.one*(2.3f/toppings.sprite.bounds.size.x);
+            shell.transform.position=transform.position+Vector3.up*1.5f;
+            for(float t=0;t<.18f;t+=Time.deltaTime){toppings.transform.position=transform.position+Vector3.up*Mathf.Lerp(2.5f,3.2f,Mathf.SmoothStep(0,1,t/.18f));yield return null;}
             float distance=0;for(int i=1;i<points.Count;i++)distance+=Vector2.Distance(points[i-1],points[i]);float progress=0;int segment=1;float segmentProgress=0;
             while(progress<distance&&segment<points.Count)
             {
@@ -74,7 +76,8 @@ namespace Vampire
                 MoveToward(Vector2.Lerp(points[segment-1],points[segment],len<.001f?1:segmentProgress/len));shell.transform.position=transform.position+Vector3.up*1.5f;shell.transform.Rotate(0,0,-Time.deltaTime*800);toppings.transform.position=transform.position+Vector3.up*(3.2f+Mathf.Sin(progress*3)*.12f);yield return null;
             }
             Audio.Stop(FoodBossSound.Dash,.1f);Audio.Play(FoodBossSound.Land,.45f);
-            for(float t=0;t<.35f;t+=Time.deltaTime){toppings.transform.position=transform.position+Vector3.up*Mathf.Lerp(3.2f,2.5f,t/.35f);yield return null;}
+            Quaternion rolled=shell.transform.rotation;
+            for(float t=0;t<.35f;t+=Time.deltaTime){float u=Mathf.SmoothStep(0,1,t/.35f);toppings.transform.position=transform.position+Vector3.up*Mathf.Lerp(3.2f,2.5f,u);shell.transform.rotation=Quaternion.Slerp(rolled,Quaternion.identity,u);yield return null;}
             Destroy(shell.gameObject);Destroy(toppings.gameObject);Visual.Body.enabled=true;
         }
         IEnumerator Jump()
@@ -113,14 +116,33 @@ namespace Vampire
         }
         IEnumerator CreamSpiral()
         {
-            Vector2 origin=transform.position;int arms=PhaseTwo?2:1;
+            Visual.Face(Aim);yield return null;
+            Vector2 origin=transform.position,mouth=Visual.SnailMouth;
+            Vector2 firstCurl=mouth+new Vector2(Visual.Facing*1.45f,-.22f);
+            float mouthAngle=Mathf.Atan2(firstCurl.y-origin.y,firstCurl.x-origin.x)*Mathf.Rad2Deg;
+            float innerRadius=Vector2.Distance(origin,firstCurl);int arms=PhaseTwo?2:1;
             for(int arm=0;arm<arms;arm++)
             {
-                var paths=new List<Vector2[]>();var current=new List<Vector2>();
-                for(int i=0;i<=150;i++){float t=i/150f;bool gap=PhaseTwo&&i%38>=28;if(gap){if(current.Count>1)paths.Add(current.ToArray());current.Clear();continue;}current.Add(origin+Dir(t*600+arm*180)*(1.6f+t*5));}
-                if(current.Count>1)paths.Add(current.ToArray());var warnings=new List<LineRenderer>();foreach(var p in paths)warnings.Add(FoodBossEffects.Line(Effects,p,.65f,new Color(Warning.r,Warning.g,Warning.b,.35f)));
+                var points=new List<Vector2>{mouth};var gaps=new List<bool>{false};
+                for(int i=1;i<=16;i++){float u=i/16f;points.Add(Vector2.Lerp(mouth,firstCurl,u)+Vector2.down*(.10f*Mathf.Sin(u*Mathf.PI)));gaps.Add(false);}
+                // The second branch also comes from the mouth: it first curls around the inner shell.
+                if(arm==1)for(int i=1;i<=32;i++){points.Add(origin+Dir(mouthAngle+180*i/32f)*innerRadius);gaps.Add(false);}
+                for(int i=1;i<=240;i++)
+                {
+                    float u=i/240f;points.Add(origin+Dir(mouthAngle+arm*180+u*600)*Mathf.Lerp(innerRadius,6.6f,u));
+                    gaps.Add(PhaseTwo&&(Mathf.FloorToInt(u*150)%38>=28));
+                }
+                var warnings=new List<LineRenderer>();var segment=new List<Vector2>();
+                for(int i=0;i<points.Count;i++)
+                {
+                    if(gaps[i]){if(segment.Count>1)warnings.Add(FoodBossEffects.Line(Effects,segment.ToArray(),.65f,new Color(Warning.r,Warning.g,Warning.b,.35f)));segment.Clear();}
+                    else segment.Add(points[i]);
+                }
+                if(segment.Count>1)warnings.Add(FoodBossEffects.Line(Effects,segment.ToArray(),.65f,new Color(Warning.r,Warning.g,Warning.b,.35f)));
                 yield return Wait(.9f);foreach(var w in warnings)Destroy(w.gameObject);Audio.Play(FoodBossSound.Skill1);
-                foreach(var p in paths)FoodBossEffects.Path(this,p,.55f,6,0,true);yield return Wait(.45f);
+                FoodBossCreamTrail.Create(this,points.ToArray(),gaps.ToArray());
+                for(float t=0;t<FoodBossCreamTrail.ExtrusionSeconds;t+=Time.deltaTime){Visual.CreamPulse=Mathf.Sin(t*Mathf.PI/FoodBossCreamTrail.ExtrusionSeconds);yield return null;}
+                Visual.CreamPulse=0;yield return Wait(.12f);
             }
         }
         IEnumerator Toppings()
@@ -204,7 +226,7 @@ namespace Vampire
                 Vector2 left=PhaseTwo&&n==1?Visual.RestClaw(0):new Vector2(-1.1f,2.5f),right=PhaseTwo&&n==0?Visual.RestClaw(1):new Vector2(1.1f,2.5f);
                 yield return PoseClaws(left,right,.45f);yield return Wait(n==0?1.37f:.27f);
                 yield return PoseClaws(new Vector2(left.x,.3f),new Vector2(right.x,.3f),.18f);Destroy(w.gameObject);
-                var wave=FoodBossEffects.Ring(this,origin,4.2f,start,sweep);wave.gameObject.AddComponent<FoodBossFade>().Lifetime=.42f;
+                FoodBossImpactWave.Create(this,origin,4.2f,start,sweep);
                 Vector2 delta=(Vector2)Player.transform.position-origin;if(delta.magnitude<=4.2f&&(sweep==360||n==0&&delta.x<=0||n==1&&delta.x>=0))Player.TakeDamage(14);
                 Audio.Play(FoodBossSound.Land,.7f);ToadCameraShake.Play(.12f,.06f);yield return Wait(.42f);
             }
