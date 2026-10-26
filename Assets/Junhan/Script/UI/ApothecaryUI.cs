@@ -104,6 +104,7 @@ namespace Vampire
         }
         void OnDestroy()
         {
+            ReleaseKeyboardEditing();
             SilverWallet.OnChanged -= OnSilver;
             LobbyLoadoutData.OnChanged -= OnLoadout;
             if (Instance == this) Instance = null;
@@ -142,19 +143,21 @@ namespace Vampire
                     portrait.sprite = frames[(int)(Time.unscaledTime / Mathf.Max(.05f, previewCharacter.idleFrameTime)) % frames.Length];
             }
             if (TutorialGuide.BlocksMenuInput || StageEntryLoading.IsLoading || level!=null && StageProgression.Ensure(level).Travelling) return;
-            if (level != null && GameInput.GetKeyDown(KeyCode.Tab))
+            if (UpdateKeyboardSelection()) return;
+            if (level != null && GameInput.Pressed(GameKeyAction.Journal))
             {
                 if (Page == "hud") OpenRunBook();
                 else if (Page == "run") CloseRunBook();
                 else if (Page == "settings") SelectCharacterBookmark();
             }
-            if (GameInput.GetKeyDown(KeyCode.Escape)) Back();
+            if (!GameInput.TextEntryFocused && GameInput.GetKeyDown(KeyCode.Escape)) Back();
         }
         public void Show(string page, int tab = 0)
         {
             page = SteamGuardPage(page);
             if(page=="settings" && Page!="settings")BeginSettings();
-            Page = page; Tab = tab; selection = page=="prepare"&&tab==0?characterIndex:0;pageIndex=0; message = "";
+            Page = page; Tab = tab;
+            SyncKeyboardEditing(); selection = page=="prepare"&&tab==0?characterIndex:0;pageIndex=0; message = "";
             Render();
         }
         public void Back()
@@ -417,7 +420,7 @@ namespace Vampire
             if(Tab==4) ConsumableBook();
             else if(Tab==5) GuideBook();
             Label(content,$"이번 탐험 골드  {(stats!=null?stats.CoinsGained:0):N0}",.55f,.08f,.85f,.15f,21);
-            ActionButton(content,"닫기 / TAB",.12f,.07f,.32f,.15f,CloseRunBook);
+            ActionButton(content,$"닫기 / {GameInput.Label(GameKeyAction.Journal)}",.12f,.07f,.32f,.15f,CloseRunBook);
             ActionButton(content,"설정",.35f,.07f,.49f,.15f,()=>Show("settings"));
         }
         public static bool TryShowResult(bool success)

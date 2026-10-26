@@ -144,7 +144,7 @@ namespace Vampire
             if (Definition==null) return;
             if (!owner.IsAlive) { Clear(); return; }
             Tick(Time.deltaTime);
-            if(!IsShini && GameInput.GetKeyDown(GameInput.ActiveSkillKey)) TryActivate();
+            if(!IsShini && GameInput.Pressed(GameKeyAction.Active)) TryActivate();
         }
         public void Tick(float delta)
         {

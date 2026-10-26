@@ -479,8 +479,7 @@ namespace Vampire
             }
 
             bool dashPressed =
-                Keyboard.current.leftShiftKey.wasPressedThisFrame ||
-                Keyboard.current.rightShiftKey.wasPressedThisFrame;
+                GameInput.Pressed(GameKeyAction.Dash);
 
             if (dashPressed)
             {

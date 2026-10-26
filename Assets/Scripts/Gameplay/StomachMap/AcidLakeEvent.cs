@@ -58,7 +58,7 @@ namespace Vampire
         void Update()
         {
             if (!Active) { if (visual != null) visual.SetVisible(false); return; }
-            if (Keyboard.current != null && Keyboard.current.equalsKey.wasPressedThisFrame && Time.timeScale > 0) StartDebugFlood();
+            if (GameInput.DebugPressed(KeyCode.Equals) && Time.timeScale > 0) StartDebugFlood();
             bool paused = level.IsRunFlowPaused || MiniStageRuntimeState.IsInsideMiniStage;
             float dt = level.IsLevelEnded ? Time.unscaledDeltaTime : paused ? 0 : Time.deltaTime;
             if (level.IsLevelEnded) EventTime += dt;

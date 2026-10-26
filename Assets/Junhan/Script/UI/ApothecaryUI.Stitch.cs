@@ -40,6 +40,10 @@ namespace Vampire
                 if(f.name=="Record close"||f.name.Contains("skill slot")||f.name.StartsWith("Record ")&&f.name.Contains("slot "))continue;
                 bool smallToolbar=f.name=="Record consumables"||f.name=="Record guide";
                 StitchPatchTheme.Button(f,f.primary||f.chosen,!slot&&!smallToolbar);
+                if(f.name.StartsWith("Keyboard assign ")) {
+                    var seam=f.visual.GetComponentInChildren<StitchPatchGraphic>();
+                    if(seam!=null){seam.inset=4;seam.radius=8;}
+                }
                 if(slot)
                     foreach(var label in f.visual.GetComponentsInChildren<TextMeshProUGUI>())
                         if(!string.IsNullOrEmpty(label.text)&&label.rectTransform.anchorMax.y<.25f)

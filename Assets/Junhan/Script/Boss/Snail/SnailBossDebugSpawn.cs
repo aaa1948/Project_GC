@@ -16,7 +16,7 @@ namespace Vampire
         }
         void Update()
         {
-            if(GameInput.GetKeyDown(KeyCode.Insert)){RunScore.Exclude("보스 소환 테스트");TrySpawn();}
+            if(GameInput.DebugPressed(KeyCode.Insert)){RunScore.Exclude("보스 소환 테스트");TrySpawn();}
         }
 #if UNITY_EDITOR
         // Explicit art/test preview only; field mini roll cakes no longer spawn during gameplay.

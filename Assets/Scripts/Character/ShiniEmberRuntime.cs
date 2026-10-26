@@ -76,12 +76,12 @@ namespace Vampire
             if(owner.IsPortalTravelling||owner.IsPortalPoseHeld||owner.IsTrapBound||owner.IsDashing){Cancel();return;}
             // A reward freezes the existing cast, including its prepaid time and next fuel tick.
             // Still observe release while paused so dismissing the reward cannot latch the channel.
-            if(keyboardHeld&&!GameInput.GetKey(GameInput.ActiveSkillKey))keyboardHeld=false;
+            if(keyboardHeld&&!GameInput.Held(GameKeyAction.Active))keyboardHeld=false;
             if(pointerHeld&&heldPointer!=null&&(!heldPointer.device.added||!heldPointer.isPressed))ReleasePointer();
             if(IsRewardPaused)return;
             if(Time.timeScale<=0
                 ||(ApothecaryUI.Instance!=null&&ApothecaryUI.Instance.Page!="hud")){Cancel();return;}
-            if(GameInput.GetKeyDown(GameInput.ActiveSkillKey))Press(true);
+            if(GameInput.Pressed(GameKeyAction.Active))Press(true);
             Advance(Time.deltaTime);UpdateDrops(Time.deltaTime);
         }
         public void Advance(float dt)

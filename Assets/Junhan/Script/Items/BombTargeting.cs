@@ -74,7 +74,7 @@ namespace Vampire
         void Update()
         {
             if(!CanUse){if(Aiming)Cancel();return;}
-            if(GameInput.GetKeyDown(KeyCode.Alpha1)||GameInput.GetKeyDown(KeyCode.Z))
+            if(GameInput.Pressed(GameKeyAction.Slot1))
             {
                 var bomb=inventory.Slots.FirstOrDefault(s=>s.IsBomb);if(bomb!=null)ThrowAutomatic(bomb);return;
             }

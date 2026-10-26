@@ -63,13 +63,13 @@ namespace Vampire
         {
             if(travelReserved)return;
             if(player==null)player=FindObjectOfType<LevelManager>()?.PlayerCharacter;
-            if(PlayerInside && GameInput.GetKeyDown(KeyCode.Q))Begin();
+            if(PlayerInside && GameInput.Pressed(GameKeyAction.Overcharge))Begin();
             RefreshDashWindow();
             var color=Enhanced?new Color(1,.75f,.18f):CanProgress?new Color(1,.4f,.3f):new Color(.7f,.65f,.5f,.55f);
             ring.startColor=ring.endColor=color;
             string kind=Kind==Challenge.Kills?"몬스터 처치":Kind==Challenge.ActiveKills?"액티브 효과 중 처치":"대쉬 후 5초 내 처치";
             string hint=Kind==Challenge.DashKills ? (DashRemaining>0?$"남은 시간 {DashRemaining:0.0}초":"대쉬로 도전 시작 · 실패 시 재도전") : "범위 안에서 진행";
-            label.text=Enhanced?"격화 혈전\n스킬 강화 + 레벨업 상자":!Started?$"Q · 과충전\n{kind} {Target:0}마리 / E · 일반 입장":$"{kind} {Mathf.FloorToInt(Progress)}/{Target:0}\n{(PlayerInside?hint:"범위 밖 · 처치 집계 정지")}";
+            label.text=Enhanced?"격화 혈전\n스킬 강화 + 레벨업 상자":!Started?$"{GameInput.Label(GameKeyAction.Overcharge)} · 과충전\n{kind} {Target:0}마리 / {GameInput.Label(GameKeyAction.Interact)} · 일반 입장":$"{kind} {Mathf.FloorToInt(Progress)}/{Target:0}\n{(PlayerInside?hint:"범위 밖 · 처치 집계 정지")}";
         }
         void RefreshDashWindow()
         {
