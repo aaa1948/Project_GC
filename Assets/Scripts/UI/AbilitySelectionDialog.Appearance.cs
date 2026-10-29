@@ -67,6 +67,7 @@ namespace Vampire
                 var feedback=rerollButton.gameObject.AddComponent<ApothecaryButtonFeedback>();
                 feedback.button=rerollButton;feedback.visual=visual;feedback.body=body;feedback.sparkle=light;feedback.label=rerollButtonText;
                 feedback.useThemeStates=false;feedback.borderOnly=true;
+                StitchPatchTheme.Button(feedback,false);
                 rerollButton.targetGraphic=rerollButtonImage;rerollButton.transition=Selectable.Transition.None;
                 rerollAvailableImageColor=rerollUsedImageColor=Color.clear;
                 rerollAvailableTextColor=rerollUsedTextColor=OctoberArt.Ink;
@@ -86,13 +87,14 @@ namespace Vampire
             var skipFeedback=skipRoot.gameObject.AddComponent<ApothecaryButtonFeedback>();
             skipFeedback.button=skipButton;skipFeedback.visual=skipVisual;skipFeedback.body=skipBody;skipFeedback.sparkle=skipLight;skipFeedback.label=skipText;
             skipFeedback.useThemeStates=false;skipFeedback.borderOnly=true;
+            StitchPatchTheme.Button(skipFeedback,true);
             skipButton.onClick.AddListener(SkipAbilities);
             UpdatePanelLayout();
         }
 
         public void SkipAbilities()
         {
-            if(!menuOpen)return;
+            if(!menuOpen || SelectionAnimating)return;
             GameAudioManager.PlaySfx(GameAudioManager.GameSfxId.UiClick);
             Close(); // Consume this offer only; the normal level-up queue continues on the next frame.
         }

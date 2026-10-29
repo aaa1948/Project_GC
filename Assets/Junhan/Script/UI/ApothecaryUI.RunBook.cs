@@ -57,7 +57,7 @@ namespace Vampire
             for(int i=0;i<2;i++)
             {
                 bool active=i==1;var data=character.skills;float x=.060f+i*.108f;
-                var b=RecordButton(active?"Active skill slot":"Passive skill slot","",x,.505f,.081f,.102f,()=>ShowSkillDetails(character,active));
+                var b=RecordButton(active?"Active skill slot":"Passive skill slot","",x,.497f,.081f,.094f,()=>ShowSkillDetails(character,active));
                 var v=b.transform.Find("Visual");ImageAt(v,data!=null?(active?data.activeIcon:data.passiveIcon):null,.13f,.23f,.87f,.98f);
                 var label=Label(v,data!=null?(active?data.activeName:data.passiveName):"준비 중",.04f,.01f,.96f,.24f,13);label.color=RecordInk;
                 HudTooltip.Bind(b.gameObject,()=>SkillTitle(character,active),()=>SkillHelp(character,active));
@@ -91,8 +91,8 @@ namespace Vampire
             for(int slot=0;slot<pageSize;slot++)
             {
                 int index=recordPages[section]*pageSize+slot;var entry=index<entries.Count?entries[index]:null;
-                float bx=x+.002f+(slot%columns)*cellW,by=section==0?.718f:.690f+(slot/columns)*.061f;
-                var b=RecordButton($"Record {section} slot {slot}","",bx,by,cellW-.004f,.057f,()=>{recordSelected[section]=entry.id;Render();},entry!=null&&recordSelected[section]==entry.id,entry!=null);
+                float bx=x+.002f+(slot%columns)*cellW,by=section==0?.718f:.686f+(slot/columns)*.055f;
+                var b=RecordButton($"Record {section} slot {slot}","",bx,by,cellW-.004f,section==0?.057f:.050f,()=>{recordSelected[section]=entry.id;Render();},entry!=null&&recordSelected[section]==entry.id,entry!=null);
                 if(entry!=null)
                 {
                     var v=b.transform.Find("Visual");ImageAt(v,entry.icon,.09f,.09f,.91f,.91f);
@@ -138,6 +138,8 @@ namespace Vampire
         {
             var map=ExplorationMapSystem.Instance;
             var viewport=RecordRect("Record map viewport",content,.499f,.214f,.347f,.360f);viewport.gameObject.AddComponent<RectMask2D>();
+            var frame=viewport;frame.gameObject.AddComponent<Image>().color=Color.clear;
+            viewport=Rect("Zoomable map",frame,0,0,1,1);
             if(map!=null && map.UsesStomachMap)
             {
                 Canvas.ForceUpdateCanvases();
@@ -166,6 +168,8 @@ namespace Vampire
                 foreach(var gem in FindObjectsOfType<ExpGem>())
                     if(count<60&&map.TryBookPoint(gem.transform.position,out var point)){RecordMapPoint(points,point,RunBookArt.Icon(14),8);count++;}
                 map.CopyBookMarkers(viewport);
+                frame.gameObject.AddComponent<RunBookMapZoom>().Initialize(frame,viewport);
+                RecordText("Map zoom hint","휠 / 두 손가락 · 드래그",.70f,.165f,.24f,.022f,11,TextAlignmentOptions.Right);
             }
             else RecordText("Map unavailable","탐험 지도를 준비하고 있습니다",.515f,.355f,.305f,.065f,18,TextAlignmentOptions.Center);
             string[] labels={"플레이어","일반 몬스터","엘리트 몬스터","보스","보물상자","골드","경험치 보석","특수 오브젝트","혈전","상인","자판기","보스 제단","미니보스"};
